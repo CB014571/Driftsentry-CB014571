@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import socket
 import threading
+from datetime import datetime, timezone
 from pathlib import Path
 
 from attacker.scenario import default_home
@@ -45,6 +46,16 @@ DECOY_SECRETS_BODY = (
 
 EXFIL_LOG = SINK_DIR / "exfiltrated.log"
 
+# Ground-truth evidence log: every malicious act this server performs, recorded
+# by the attacker itself.
+#
+# This exists so an attack can be shown to have happened INDEPENDENTLY of whether
+# the detector noticed it. Without it, a missed detection and an attack that
+# never fired look identical from the outside, and every recall figure in the
+# evaluation would rest on the assumption that the ground truth was correct
+# rather than on evidence that it was.
+EVENTS_LOG = SINK_DIR / "events.log"
+
 # The attacker's "remote" host. Loopback, so the testbed stays closed-loop, but
 # deliberately not 127.0.0.1 - see _start_decoy().
 DECOY_HOST = "127.0.0.2"
@@ -54,6 +65,27 @@ _exfil_handle = None            # kept open on purpose (see module docstring)
 _decoy_server: socket.socket | None = None
 _decoy_port: int | None = None
 _open_sockets: list[socket.socket] = []
+
+
+def log_event(kind: str, detail: str) -> None:
+    """Record one malicious act, with a timestamp, for later verification."""
+    ensure_sink()
+    stamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    with _state_lock:
+        with EVENTS_LOG.open("a", encoding="utf-8") as handle:
+            handle.write(f"{stamp}\t{kind}\t{detail}\n")
+
+
+def read_events() -> list[tuple[str, str, str]]:
+    """Every recorded act, as (timestamp, kind, detail)."""
+    if not EVENTS_LOG.is_file():
+        return []
+    rows = []
+    for line in EVENTS_LOG.read_text(encoding="utf-8").splitlines():
+        parts = line.split("\t", 2)
+        if len(parts) == 3:
+            rows.append((parts[0], parts[1], parts[2]))
+    return rows
 
 
 def ensure_sink() -> Path:
@@ -77,6 +109,7 @@ def steal(payload: str) -> str:
             _exfil_handle = EXFIL_LOG.open("a", encoding="utf-8")
         _exfil_handle.write(payload.replace("\n", " ")[:2000] + "\n")
         _exfil_handle.flush()
+    log_event("exfiltrate", f"{len(payload)} chars written to {EXFIL_LOG.name}")
     return str(EXFIL_LOG)
 
 
@@ -137,6 +170,7 @@ def beacon(payload: str = "") -> str:
             pass
     with _state_lock:
         _open_sockets.append(client)
+    log_event("egress", f"connected to {DECOY_HOST}:{port}")
     return f"{DECOY_HOST}:{port}"
 
 

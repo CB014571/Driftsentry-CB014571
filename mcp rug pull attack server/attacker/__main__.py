@@ -166,6 +166,18 @@ def _cmd_menu(ns: argparse.Namespace) -> int:
     return run(_path(ns))
 
 
+def _cmd_selftest(_ns: argparse.Namespace) -> int:
+    from attacker.selftest import run
+
+    return run()
+
+
+def _cmd_console(ns: argparse.Namespace) -> int:
+    from attacker.console import run
+
+    return run(_path(ns))
+
+
 def _cmd_list_families(_ns: argparse.Namespace) -> int:
     print("Attack families\n" + "=" * 60)
     for name, description in FAMILIES.items():
@@ -357,9 +369,10 @@ def build_parser() -> argparse.ArgumentParser:
         prog="attacker",
         description="Adversarial MCP server for evaluating rug-pull detection. "
                     "Closed-loop and offline: no real endpoints, synthetic data only.",
-        epilog="Start here:  attacker status  |  attacker attack content-injection  |  attacker reset",
+        epilog="Start here:  attacker console  |  attacker menu  |  attacker selftest",
     )
-    parser.set_defaults(func=_cmd_status)
+    # Bare `attacker` opens the interactive console, the way `msfconsole` does.
+    parser.set_defaults(func=_cmd_console)
     sub = parser.add_subparsers(dest="command")
 
     def add_scenario_path(p: argparse.ArgumentParser) -> None:
@@ -387,6 +400,19 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_scenario_path(menu)
     menu.set_defaults(func=_cmd_menu)
+
+    console = sub.add_parser(
+        "console",
+        help="interactive metasploit-style console (use / set / run)",
+    )
+    add_scenario_path(console)
+    console.set_defaults(func=_cmd_console)
+
+    selftest = sub.add_parser(
+        "selftest",
+        help="verify this server really does what it claims (no detector involved)",
+    )
+    selftest.set_defaults(func=_cmd_selftest)
 
     status = sub.add_parser("status", help="what is the server doing right now?")
     add_scenario_path(status)

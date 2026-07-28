@@ -51,7 +51,29 @@ store, no detector code.
 
 ## Use
 
-### The easy way — the control menu
+### The console (metasploit-style)
+
+Just run `attacker` with no arguments, or `attacker console`:
+
+```
+attacker > use exfiltration
+attacker(exfiltration) > set level L2
+attacker(exfiltration) > set variation 30
+attacker(exfiltration) > show options
+attacker(exfiltration) > run
+[+] ARMED: exfiltration at L2, 30% of calls.
+```
+
+A persistent prompt where you compose an attack the way you would a module in a
+penetration-testing framework. `use` picks a family, `set` configures it, `run`
+arms it. The prompt shows the selected family, and `show options` prints its
+settings as a table. Type `help` for the full command list.
+
+`run` only *arms* the scenario — it writes the file a running server reads on its
+next call. The server is started by whatever you point at it (normally the
+detector), and the change lands with no restart.
+
+### The control menu (number-driven)
 
 ```bash
 attacker menu
