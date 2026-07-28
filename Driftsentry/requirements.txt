@@ -1,0 +1,19 @@
+# DriftSentry — core runtime dependencies (intent).
+# Exact, fully-resolved versions for reproducible installs live in
+# requirements.lock (a `pip freeze` of the known-good environment).
+# Reproducibility is a graded contribution, so prefer:  pip install -r requirements.lock
+#
+# Verified to install and import on CPython 3.14 (Windows).
+
+mcp==1.28.1            # official MCP Python SDK — proxy, echo server, client
+chromadb==1.5.9        # fingerprint / behavioural-baseline vector store
+numpy==2.5.1           # vector maths for the drift scorer
+httpx==0.28.1          # HTTP transport + Ollama embeddings client (later phases)
+typer==0.27.0          # CLI framework (Phase 6) — pulled in transitively, pinned here
+rich==15.0.0           # human-readable terminal alerts (Phases 5–6)
+psutil==7.2.2          # sandbox monitor: files touched / hosts contacted (Phase 3)
+
+# Embeddings: the dependency-free hashing backend needs nothing extra. For real
+# semantic embeddings, either install Ollama (see requirements-optional.txt) or
+# run once with `--embedding onnx` to fetch all-MiniLM-L6-v2 (~79 MB, cached to
+# ~/.cache/chroma, offline thereafter). `--embedding auto` never downloads.

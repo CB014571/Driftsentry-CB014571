@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "echo": {
+      "command": "python",
+      "args": ["examples/echo_server.py"]
+    },
+    "shop": {
+      "command": "python",
+      "args": ["examples/echo_server.py"],
+      "env": {
+        "SHOP_API_KEY": "not-a-real-key"
+      }
+    },
+    "remote-docs": {
+      "url": "https://example.invalid/mcp"
+    }
+  }
+}

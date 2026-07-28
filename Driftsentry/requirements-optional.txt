@@ -1,0 +1,35 @@
+# Optional / later-phase dependencies — NOT installed by default, to keep the
+# environment lean and fast. Install per phase, as needed. Versions are filled
+# in (and moved to requirements.lock) once a phase actually adopts them.
+
+# --- Embedding backends -------------------------------------------------------
+# DriftSentry's embedding layer is pluggable. The dependency-free hashing backend
+# always works; these give real semantic embeddings:
+#   * Ollama: a separate native install (https://ollama.com), model e.g.
+#     `ollama pull nomic-embed-text`. Talks over localhost HTTP (httpx).
+#   * ONNX (all-MiniLM-L6-v2): provided by chromadb's default embedding function
+#     via onnxruntime (already installed) — no torch needed.
+# sentence-transformers        # torch-based; heavy (~2 GB with torch)
+# torch==2.13.0
+
+# --- Sandbox monitor (Phase 3) ------------------------------------------------
+# psutil is now a CORE dependency (see requirements.txt) - the side-effect
+# signals it provides are too central to the scorer to be optional.
+
+# --- Probe value generation (Phase 3) -----------------------------------------
+# Faker                        # not used: probe templates are hand-written in
+#                              # driftsentry/probes.py so that value selection is
+#                              # fully seed-deterministic with no extra dependency.
+
+# --- Daemon / control API (Phase 6) -------------------------------------------
+# fastapi                      # local-only control API
+# (uvicorn is already present as an mcp dependency)
+
+# --- Desktop dashboard (Phase 6) ----------------------------------------------
+# pywebview                    # native window; or:
+# nicegui                      # native-mode dashboard alternative
+
+# --- Evaluation harness (Phase 9) ---------------------------------------------
+# pandas
+# scikit-learn
+# matplotlib

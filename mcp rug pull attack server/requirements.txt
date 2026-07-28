@@ -1,0 +1,9 @@
+# The attacker's entire dependency list.
+#
+# One library, on purpose. This server needs to speak MCP and nothing more - it
+# has no embedding model, no vector store, and no access to DriftSentry. Keeping
+# it this small is not minimalism for its own sake: it is the clearest possible
+# evidence that the attacker shares no machinery with the detector it is used to
+# evaluate.
+
+mcp==1.28.1

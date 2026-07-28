@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "driftsentry"
+version = "0.1.0"
+description = "A proxy-based detector for behavioural rug-pull attacks in the Model Context Protocol"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "Shevon Fernando" }]
+license = { text = "MIT" }
+
+# Kept in sync with requirements.txt; requirements.lock holds exact pins.
+dependencies = [
+    "mcp==1.28.1",
+    "chromadb==1.5.9",
+    "numpy==2.5.1",
+    "httpx==0.28.1",
+    "typer==0.27.0",
+    "rich==15.0.0",
+]
+
+[project.scripts]
+# The command the roadmap centres on. Subcommands are added phase by phase.
+driftsentry = "driftsentry.__main__:main"
+
+[tool.setuptools]
+# The detector and its evaluation harness only.
+#
+# The adversarial server is NOT here. It lives in its own project, with its own
+# environment, and cannot be imported from this one - see ../mcp rug pull attack
+# server. The two meet only as operating-system processes speaking MCP over
+# stdio, which is the same way DriftSentry meets any third-party server.
+packages = ["driftsentry", "eval"]

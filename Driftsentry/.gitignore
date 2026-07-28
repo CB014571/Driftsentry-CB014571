@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Virtual environment
+.venv/
+venv/
+
+# DriftSentry runtime state (baselines, logs, alerts, chroma store)
+.driftsentry_data/
+*.log
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Evaluation outputs (regenerated from seeds — keep the scripts, not the artefacts)
+eval/results/
+eval/plots/

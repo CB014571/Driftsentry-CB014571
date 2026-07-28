@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(sed -i 's/python -m testbed /attacker /g; s/\\\\[testbed\\\\]/[attacker]/; s/getLogger\\(\"testbed\"\\)/getLogger\\(\"attacker\"\\)/; s/prog=\"testbed-server\"/prog=\"attacker-server\"/; s/default \\\\.testbed\\\\/scenario\\\\.json/default .attacker\\\\/scenario.json/' *.py)",
+      "Bash(sed -i 's/os.environ.get\\(\"TESTBED_HOME\", \".testbed\"\\)/os.environ.get\\(\"ATTACKER_HOME\", \".attacker\"\\)/' scenario.py sink.py)"
+    ]
+  }
+}

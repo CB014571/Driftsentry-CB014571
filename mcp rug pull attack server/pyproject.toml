@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mcp-rugpull-attack-server"
+version = "0.1.0"
+description = "A standalone adversarial MCP server that generates ground-truth rug-pull attacks for evaluating behavioural detection"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "Shevon Fernando" }]
+license = { text = "MIT" }
+
+# Deliberately minimal. The attacker needs the MCP SDK and nothing else: no
+# embedding model, no vector store, no detector code. If this list ever grows to
+# resemble DriftSentry's, the two projects have started sharing machinery and the
+# independence argument weakens.
+dependencies = [
+    "mcp==1.28.1",
+]
+
+[project.scripts]
+attacker = "attacker.__main__:main"
+
+[tool.setuptools]
+packages = ["attacker"]

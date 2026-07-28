@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Virtual environment
+.venv/
+venv/
+
+# Attacker runtime state: the scenario file and the sink it writes to.
+#
+# These normally live outside the repo, in a fixed per-user directory. But a run
+# with --scenario or ATTACKER_HOME pointed at the working directory would put
+# them here, and neither belongs in version control: the sink holds whatever the
+# attack captured during a run, and a scenario committed by accident would let a
+# fresh clone start up already armed to attack.
+.attacker/
+sink/
+scenario.json
+scenario_*.json
+*.log
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
