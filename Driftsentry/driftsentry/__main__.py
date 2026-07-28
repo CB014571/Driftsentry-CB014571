@@ -260,6 +260,93 @@ def _cmd_verify(ns: argparse.Namespace) -> int:
     return 0 if report.verdict != "alert" else 1
 
 
+def _watch_line(report) -> str:
+    """One compact status line per check, for the live monitor."""
+    from datetime import datetime
+
+    stamp = datetime.now().strftime("%H:%M:%S")
+    verdict = report.verdict.upper()
+    tag = {"OK": "  OK  ", "WATCH": " WATCH", "ALERT": "ALERT!"}.get(verdict, verdict)
+    line = f"  {stamp}   {report.server:<10} [{tag}]  score {report.score:5.2f}"
+    if report.triggered_by:
+        line += f"   <- {report.triggered_by}"
+    return line
+
+
+def _cmd_watch(ns: argparse.Namespace) -> int:
+    """Re-verify a server on a schedule and alert the moment drift appears.
+
+    This is the resident behaviour that separates DriftSentry from a one-shot
+    scanner: nothing about a rug pull shows up at install time, so the detector
+    has to keep looking. `verify` checks once; `watch` keeps checking, so an
+    alert can surface on its own while you do something else - which is the whole
+    point of monitoring after approval.
+
+    It is a foreground loop, not the full daemon (that owns scheduling for many
+    servers at once and backs the dashboard). But the schedule-and-alert core is
+    the same, and this is enough to watch a rug pull get caught live.
+    """
+    import anyio
+
+    from driftsentry.alerts import AlertStore, build_alerts, render
+    from driftsentry.store import BaselineStore
+
+    store = BaselineStore()
+    baseline = store.load(ns.server)
+    if baseline is None:
+        print(f"error: no baseline for {ns.server!r}. Run `driftsentry baseline` first.", file=sys.stderr)
+        return 2
+
+    _configure_logging(verbose=False)
+    print(f"Watching {ns.server!r} every {ns.interval}s - re-probing on a schedule.")
+    print("This is the resident behaviour a one-shot scanner does not have.")
+    print("Arm an attack in the attacker console and watch it get caught. Ctrl-C to stop.\n")
+
+    alert_store = AlertStore()
+    from driftsentry.verify import verify_server
+
+    async def _loop() -> None:
+        last = None
+        checks = 0
+        while True:
+            try:
+                report = await verify_server(
+                    baseline,
+                    samples_per_probe=ns.samples_per_probe,
+                    monitor_sandbox=not ns.no_sandbox,
+                )
+            except Exception as exc:  # noqa: BLE001 - a bad cycle must not kill the monitor
+                from datetime import datetime
+                print(f"  {datetime.now():%H:%M:%S}   check failed: {exc}")
+                await anyio.sleep(ns.interval)
+                continue
+
+            checks += 1
+            print(_watch_line(report))
+
+            # Show the full alert card only when the state CHANGES into alert, so
+            # a sustained attack does not repeat the whole card every cycle.
+            if report.verdict == "alert" and last != "alert":
+                print()
+                for alert in build_alerts(report):
+                    render(alert, use_rich=not ns.plain)
+                    alert_store.append(alert)
+                print()
+            elif report.verdict != "alert" and last == "alert":
+                print("  -> recovered: the server is behaving again.\n")
+
+            last = report.verdict
+            if ns.once or (ns.max_checks and checks >= ns.max_checks):
+                return
+            await anyio.sleep(ns.interval)
+
+    try:
+        anyio.run(_loop)
+    except KeyboardInterrupt:
+        print("\nstopped watching.")
+    return 0
+
+
 def _cmd_report(ns: argparse.Namespace) -> int:
     from driftsentry.alerts import AlertStore, render, render_text
     from driftsentry.policy import PolicyStore
@@ -581,6 +668,7 @@ def _default(_: argparse.Namespace) -> int:
     print("  baseline  --server <name> --exec ..  capture a behavioural baseline")
     print("  calibrate                           set the threshold from benign servers only")
     print("  verify    --server <name>            re-probe, score, and alert on drift")
+    print("  watch     --server <name>            keep re-checking on a timer, alert live")
     print("  report    [--server <name>]          alert history and policy state")
     print("  quarantine/trust --server <name>     mark a server unsafe / safe again")
     print("  run       --server <name> --exec ..  headless proxy (your client launches this)")
@@ -639,6 +727,22 @@ def build_parser() -> argparse.ArgumentParser:
     verify.add_argument("--exec", nargs=argparse.REMAINDER, default=[],
                         help="launch command override; defaults to the one stored in the baseline")
     verify.set_defaults(func=_cmd_verify)
+
+    # watch ----------------------------------------------------------------
+    watch = sub.add_parser(
+        "watch",
+        help="re-verify a server on a schedule and alert live when drift appears (Phase 6 preview)",
+    )
+    watch.add_argument("--server", required=True, help="name of the stored baseline")
+    watch.add_argument("--interval", type=float, default=12.0,
+                       help="seconds between checks (default 12)")
+    watch.add_argument("--samples-per-probe", type=int, default=1,
+                       help="samples per probe each cycle (default 1, for responsiveness)")
+    watch.add_argument("--no-sandbox", action="store_true", help="disable side-effect monitoring")
+    watch.add_argument("--plain", action="store_true", help="plain-text alerts, no colour")
+    watch.add_argument("--once", action="store_true", help="run a single check and exit")
+    watch.add_argument("--max-checks", type=int, default=None, help="stop after this many checks")
+    watch.set_defaults(func=_cmd_watch)
 
     # calibrate ------------------------------------------------------------
     calibrate = sub.add_parser(
