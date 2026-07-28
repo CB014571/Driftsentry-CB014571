@@ -172,9 +172,18 @@ class Console:
         print("  " + "-" * 60 + "\n")
 
     # -- actions -----------------------------------------------------------
-    def use(self, family: str) -> None:
-        if family not in FAMILIES:
-            print(f"  no such family: {family!r}. Try 'show families'.")
+    def _resolve_family(self, token: str) -> str | None:
+        """Accept a family name, or the number shown by 'show families'."""
+        names = list(FAMILIES)
+        if token.isdigit():
+            i = int(token)
+            return names[i - 1] if 1 <= i <= len(names) else None
+        return token if token in FAMILIES else None
+
+    def use(self, token: str) -> None:
+        family = self._resolve_family(token)
+        if family is None:
+            print(f"  no such family: {token!r}. Try 'show families'.")
             return
         self.scenario.family = family
         self.scenario.mode = "rug-pull"
@@ -184,6 +193,13 @@ class Console:
     def set_option(self, name: str, value: str) -> None:
         name = name.lower()
         s = self.scenario
+        # These options only mean anything for an attack. Setting them on a
+        # benign server would apply silently and be forgotten the moment you
+        # 'use' a family, which looks exactly like the tool ignoring you.
+        if s.mode != "rug-pull" and name in {"level", "variation", "rate", "trigger", "bypass"}:
+            print(f"  no attack selected, so {name.upper()} has nothing to apply to.")
+            print("  pick one first, e.g.  use exfiltration")
+            return
         try:
             if name == "level":
                 v = value.upper()
