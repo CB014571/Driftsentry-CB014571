@@ -99,6 +99,7 @@ python examples/midpoint_demo.py
 
 ## Documentation
 
+* [`Driftsentry/docs/CODE_GUIDE.md`](Driftsentry/docs/CODE_GUIDE.md) — **every module explained, and the detection logic in full**
 * [`Driftsentry/docs/TESTING.md`](Driftsentry/docs/TESTING.md) — how to verify it works
 * [`Driftsentry/docs/VIVA_DEMO.md`](Driftsentry/docs/VIVA_DEMO.md) — demonstration runbook and expected questions
 * [`Driftsentry/docs/MIDPOINT_SCRIPT.md`](Driftsentry/docs/MIDPOINT_SCRIPT.md) — the mid-point presentation script
