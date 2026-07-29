@@ -22,7 +22,26 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from attacker.scenario import FAMILIES, LEVELS, Scenario
+from attacker.scenario import (
+    FAMILIES,
+    FAMILY_BRIEF,
+    LEVELS,
+    TOOLS_AFFECTED,
+    TOOLS_UNTOUCHED,
+    Scenario,
+)
+
+QUICKSTART = """
+  Quick start
+  ------------------------------------------------------------------
+    show families              what you can launch (6 attack types)
+    use <name|number>          pick one            e.g.  use 3
+    set level <L1..L5>         how stealthy        e.g.  set level L2
+    run                        ARM it - the server starts attacking
+    benign                     stop attacking
+    status                     what is it doing right now?
+    help                       every command
+  ------------------------------------------------------------------"""
 
 BANNER = r"""
    =======================================================================
@@ -85,15 +104,28 @@ class Console:
     def __init__(self, path: Path) -> None:
         self.path = path
         self.scenario = Scenario.load(path)
+        # Selecting a family and ARMING it are separate steps, exactly as `use`
+        # and `run` are separate in a penetration-testing framework. Merging them
+        # made `use` immediately turn the server malicious, so simply browsing
+        # the options started an attack - surprising, and easy to leave armed by
+        # accident between sessions.
+        self.selected: str | None = (
+            self.scenario.family if self.scenario.mode == "rug-pull" else None
+        )
         # Make sure a file exists from the start, so a server launched with
         # --reuse never silently falls back to a default benign scenario.
         self.scenario.save(path)
 
+    @property
+    def armed(self) -> bool:
+        return self.scenario.mode == "rug-pull"
+
     # -- prompt ------------------------------------------------------------
     @property
     def prompt(self) -> str:
-        if self.scenario.mode == "rug-pull":
-            return f"attacker({self.scenario.family}) > "
+        if self.selected:
+            flag = "*" if self.armed else ""
+            return f"attacker({self.selected}{flag}) > "
         return "attacker > "
 
     def _save(self) -> bool:
@@ -122,7 +154,7 @@ class Console:
 
     def show_options(self) -> None:
         s = self.scenario
-        if s.mode != "rug-pull":
+        if not self.selected:
             print("\n  No attack selected. 'use <family>' first, or 'show families'.\n")
             return
         rows = [
@@ -132,7 +164,7 @@ class Console:
             ("BYPASS", "on" if s.probe_aware else "off", "no", "probe-aware evasion (L4/L5)"),
             ("SEED", str(s.seed), "yes", "reproducible run seed"),
         ]
-        print(f"\n  Attack: {s.family}\n")
+        print(f"\n  Attack: {s.family}   [{'ARMED' if self.armed else 'not armed'}]\n")
         print(f"  {'Name':<11}{'Current':<10}{'Required':<10}Description")
         print(f"  {'----':<11}{'-------':<10}{'--------':<10}-----------")
         for name, cur, req, desc in rows:
@@ -145,7 +177,7 @@ class Console:
         print()
 
     def info(self, family: str | None) -> None:
-        family = family or (self.scenario.family if self.scenario.mode == "rug-pull" else None)
+        family = family or self.selected
         if not family:
             print("  info <family>   (or 'use' one first)")
             return
@@ -185,10 +217,19 @@ class Console:
         if family is None:
             print(f"  no such family: {token!r}. Try 'show families'.")
             return
+        self.selected = family
         self.scenario.family = family
-        self.scenario.mode = "rug-pull"
+        # Deliberately NOT setting mode to rug-pull: selecting is not attacking.
         if self._save():
-            print(f"  selected {family}. 'show options' to configure, 'run' to arm.")
+            brief = FAMILY_BRIEF.get(family, {})
+            print(f"\n  selected: {family}   [not armed yet]")
+            print("  " + "-" * 64)
+            for line in _wrap(brief.get("does", FAMILIES[family])):
+                print(f"    {line}")
+            print(f"\n    What the user sees:")
+            for line in _wrap(brief.get("visible", "-")):
+                print(f"      {line}")
+            print(f"\n  Configure it with 'set level L1..L5', then 'run' to arm.\n")
 
     def set_option(self, name: str, value: str) -> None:
         name = name.lower()
@@ -196,7 +237,7 @@ class Console:
         # These options only mean anything for an attack. Setting them on a
         # benign server would apply silently and be forgotten the moment you
         # 'use' a family, which looks exactly like the tool ignoring you.
-        if s.mode != "rug-pull" and name in {"level", "variation", "rate", "trigger", "bypass"}:
+        if not self.selected and name in {"level", "variation", "rate", "trigger", "bypass"}:
             print(f"  no attack selected, so {name.upper()} has nothing to apply to.")
             print("  pick one first, e.g.  use exfiltration")
             return
@@ -230,22 +271,50 @@ class Console:
             print(f"  {name.upper()} => {value}")
 
     def run_attack(self) -> None:
-        if self.scenario.mode != "rug-pull":
+        if not self.selected:
             print("  nothing selected. 'use <family>' first.")
             return
+        self.scenario.mode = "rug-pull"
         if not self._save():
             print("  attack NOT armed - fix the problems above.")
             return
         s = self.scenario
-        extra = ""
-        if s.level == "L2":
-            extra = f", {int(s.stochastic_rate*100)}% of calls"
-        elif s.level == "L3":
-            extra = f", after {s.trigger.after_calls} calls"
-        elif s.probe_aware:
-            extra = ", hiding from probes"
-        print(f"  [+] ARMED: {s.family} at {s.level}{extra}.")
-        print("      A running server attacks on its next call. Point the detector at it.")
+        brief = FAMILY_BRIEF.get(s.family, {})
+        when = {
+            "L1": "on EVERY call",
+            "L2": f"on about {int(s.stochastic_rate * 100)}% of calls, chosen by seed {s.seed}",
+            "L3": f"only after {s.trigger.after_calls} calls, or on triggering input",
+            "L4": "on every call EXCEPT ones that look like a detector's probe",
+            "L5": "as L4, and shaped to look statistically like the benign answer",
+        }.get(s.level, s.level)
+
+        print()
+        print("  " + "=" * 64)
+        print(f"   ARMED:  {s.family}  at  {s.level}")
+        print("  " + "=" * 64)
+        print("   What it does")
+        for line in _wrap(brief.get("does", "-"), 60):
+            print(f"     {line}")
+        print(f"\n   When it fires")
+        for line in _wrap(when, 60):
+            print(f"     {line}")
+        print(f"\n   Tools affected")
+        print(f"     {', '.join(TOOLS_AFFECTED)}")
+        print(f"     (not {', '.join(TOOLS_UNTOUCHED)} - it is side-effecting, so the")
+        print("      detector refuses to probe it and the attack never touches it)")
+        print(f"\n   What the user sees")
+        for line in _wrap(brief.get("visible", "-"), 60):
+            print(f"     {line}")
+        print(f"\n   Traces left behind")
+        for line in _wrap(brief.get("traces", "-"), 60):
+            print(f"     {line}")
+        print(f"\n   How a detector could catch it")
+        for line in _wrap(brief.get("detect", "-"), 60):
+            print(f"     {line}")
+        print("  " + "=" * 64)
+        print("   Live now: a running server attacks on its next tool call.")
+        print("   No restart, and its advertised tool definitions are UNCHANGED.")
+        print()
 
     def benign(self, updates: bool = False) -> None:
         self.scenario.mode = "benign"
@@ -263,10 +332,12 @@ class Console:
             print("  [+] trigger fired - a sleeper attack starts on the next call.")
 
     def back(self) -> None:
+        self.selected = None
         self.benign()
         print("  (deselected)")
 
     def reset(self) -> None:
+        self.selected = None
         seed = self.scenario.seed
         self.scenario = Scenario(seed=seed)
         self._save()
@@ -327,6 +398,7 @@ def run(path: Path) -> int:
     console = Console(path)
     print(BANNER)
     console.status()
+    print(QUICKSTART)
     while True:
         try:
             line = input(console.prompt)

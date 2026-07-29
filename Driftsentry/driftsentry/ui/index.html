@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>DriftSentry</title>
+<style>
+  :root{
+    --bg:#0b0f14; --panel:#121924; --panel2:#0e1520; --line:#1e2a3a;
+    --txt:#d7e2ef; --dim:#7c8ea4; --ok:#2ecc71; --watch:#f1c40f;
+    --alert:#ff4d5e; --accent:#4aa8ff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);
+       font:13px/1.5 "Segoe UI",system-ui,sans-serif}
+  header{display:flex;align-items:center;gap:16px;padding:12px 18px;
+         background:var(--panel);border-bottom:1px solid var(--line)}
+  .logo{font-weight:700;letter-spacing:.14em;font-size:15px}
+  .logo span{color:var(--accent)}
+  .pill{font-size:11px;padding:3px 9px;border-radius:99px;border:1px solid var(--line);color:var(--dim)}
+  .spacer{flex:1}
+  button{background:var(--panel2);color:var(--txt);border:1px solid var(--line);
+         border-radius:6px;padding:5px 11px;cursor:pointer;font-size:12px}
+  button:hover{border-color:var(--accent);color:#fff}
+  button.danger:hover{border-color:var(--alert);color:var(--alert)}
+  main{display:grid;grid-template-columns:1.35fr 1fr;gap:14px;padding:14px}
+  @media(max-width:1000px){main{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:9px;overflow:hidden}
+  .card h2{margin:0;padding:10px 14px;font-size:11px;letter-spacing:.13em;
+           text-transform:uppercase;color:var(--dim);border-bottom:1px solid var(--line)}
+  .server{padding:13px 14px;border-bottom:1px solid var(--line)}
+  .server:last-child{border-bottom:none}
+  .row{display:flex;align-items:center;gap:10px}
+  .name{font-weight:600;font-size:14px}
+  .badge{font-size:10px;font-weight:700;letter-spacing:.09em;padding:3px 9px;border-radius:5px}
+  .b-ok{background:rgba(46,204,113,.14);color:var(--ok);border:1px solid rgba(46,204,113,.4)}
+  .b-watch{background:rgba(241,196,15,.14);color:var(--watch);border:1px solid rgba(241,196,15,.4)}
+  .b-alert{background:rgba(255,77,94,.16);color:var(--alert);border:1px solid rgba(255,77,94,.5)}
+  .b-error,.b-unknown{background:rgba(124,142,164,.12);color:var(--dim);border:1px solid var(--line)}
+  .meta{color:var(--dim);font-size:11px;margin-top:3px}
+  .spark{margin-top:9px;background:var(--panel2);border:1px solid var(--line);border-radius:6px}
+  .tools{margin-top:9px;display:flex;flex-wrap:wrap;gap:6px}
+  .tool{font-size:11px;padding:3px 8px;border-radius:5px;border:1px solid var(--line);color:var(--dim)}
+  .tool.alert{border-color:rgba(255,77,94,.5);color:var(--alert)}
+  .tool.watch{border-color:rgba(241,196,15,.4);color:var(--watch)}
+  .acts{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap}
+  .alert-card{padding:12px 14px;border-bottom:1px solid var(--line)}
+  .alert-card:last-child{border-bottom:none}
+  .a-head{display:flex;gap:8px;align-items:center}
+  .a-sev{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;
+         background:rgba(255,77,94,.16);color:var(--alert);border:1px solid rgba(255,77,94,.45)}
+  .a-cause{margin-top:7px;font-size:12.5px}
+  .ba{margin-top:8px;font-size:11.5px;background:var(--panel2);border:1px solid var(--line);
+      border-radius:6px;padding:8px}
+  .ba div{margin:3px 0;word-break:break-word}
+  .ba b{color:var(--dim);font-weight:600;letter-spacing:.05em;font-size:10px}
+  .fix{margin-top:8px;font-size:11.5px;color:var(--dim)}
+  .fix li{margin:3px 0}
+  .empty{padding:26px 14px;text-align:center;color:var(--dim)}
+  code{background:var(--panel2);padding:1px 5px;border-radius:4px;font-size:11px;color:var(--accent)}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:p 2s infinite}
+  @keyframes p{0%,100%{opacity:1}50%{opacity:.25}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">DRIFT<span>SENTRY</span></div>
+  <div class="pill" id="mode">behavioural rug-pull monitor</div>
+  <div class="spacer"></div>
+  <div class="pill" id="thr">threshold --</div>
+  <div class="pill"><span class="dot" id="dot"></span> <span id="live">live</span></div>
+  <button id="pause">Pause</button>
+</header>
+
+<main>
+  <section class="card">
+    <h2>Monitored servers</h2>
+    <div id="servers"><div class="empty">Waiting for the first check...</div></div>
+  </section>
+
+  <section class="card">
+    <h2>Alerts</h2>
+    <div id="alerts"><div class="empty">No alerts. Servers are behaving.</div></div>
+  </section>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+
+function sparkline(history){
+  if(!history || history.length < 2) return '';
+  const w = 520, h = 46, pad = 3;
+  const scores = history.map(p => p.score);
+  const max = Math.max(1.35, ...scores);
+  const step = (w - pad*2) / (history.length - 1);
+  const y = v => h - pad - (v / max) * (h - pad*2);
+  const pts = history.map((p,i) => `${(pad + i*step).toFixed(1)},${y(p.score).toFixed(1)}`).join(' ');
+  const line = y(1.0).toFixed(1);   // the alert threshold, normalised to 1.0
+  const last = history[history.length-1];
+  const col = last.verdict === 'alert' ? 'var(--alert)'
+            : last.verdict === 'watch' ? 'var(--watch)' : 'var(--ok)';
+  return `<svg class="spark" width="100%" height="${h}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+    <line x1="0" y1="${line}" x2="${w}" y2="${line}" stroke="var(--alert)"
+          stroke-width="1" stroke-dasharray="4 4" opacity=".55"/>
+    <polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.8"/>
+  </svg>`;
+}
+
+function serverCard(s){
+  const cls = 'b-' + (s.status || 'unknown');
+  const when = s.last_check ? new Date(s.last_check).toLocaleTimeString() : 'never';
+  const tools = (s.tools||[]).map(t =>
+    `<span class="tool ${t.verdict}">${t.tool} ${t.score.toFixed(2)}</span>`).join('');
+  const why = s.triggered_by ? ` &middot; ${s.triggered_by}` : '';
+  const err = s.error ? `<div class="meta" style="color:var(--alert)">${s.error}</div>` : '';
+  const quarantined = s.policy_status === 'quarantined';
+  return `<div class="server">
+    <div class="row">
+      <span class="name">${s.name}</span>
+      <span class="badge ${cls}">${(s.status||'unknown').toUpperCase()}</span>
+      ${quarantined ? '<span class="badge b-alert">QUARANTINED</span>' : ''}
+      ${s.enforce ? '<span class="badge b-watch">ENFORCING</span>' : ''}
+      <div class="spacer"></div>
+      <span class="meta">score ${s.score.toFixed(2)} / 1.00</span>
+    </div>
+    <div class="meta">checked ${when} &middot; ${s.checks} checks${why}
+      ${s.embedding_backend ? ' &middot; ' + s.embedding_backend : ''}</div>
+    ${err}
+    ${sparkline(s.history)}
+    <div class="tools">${tools}</div>
+    <div class="acts">
+      <button onclick="post('scan','${s.name}')">Scan now</button>
+      ${quarantined
+        ? `<button onclick="post('trust','${s.name}')">Trust again</button>`
+        : `<button class="danger" onclick="post('quarantine','${s.name}')">Quarantine</button>`}
+      <button onclick="post('enforce','${s.name}?on=${s.enforce?'false':'true'}')">
+        ${s.enforce ? 'Stop blocking' : 'Block calls'}</button>
+    </div>
+  </div>`;
+}
+
+function alertCard(a){
+  const when = new Date(a.created_at).toLocaleTimeString();
+  const fixes = (a.mitigations||[]).slice(0,3).map(m =>
+    `<li><b>${m.urgency}</b> &mdash; ${m.action}</li>`).join('');
+  return `<div class="alert-card">
+    <div class="a-head">
+      <span class="a-sev">${(a.severity||'high').toUpperCase()}</span>
+      <b>${a.server} / ${a.tool}</b>
+      <div class="spacer"></div>
+      <span class="meta">${when}</span>
+    </div>
+    <div class="a-cause">${a.cause}</div>
+    <div class="meta">signal ${a.triggered_by} &middot; score ${a.score.toFixed(2)}</div>
+    <div class="ba">
+      <div><b>BEFORE</b><br>${a.before}</div>
+      <div><b>AFTER</b><br>${a.after}</div>
+    </div>
+    <div class="fix"><ul>${fixes}</ul></div>
+  </div>`;
+}
+
+async function post(action, server){
+  await fetch(`/api/${action}/${server}`, {method:'POST'});
+  refresh();
+}
+
+$('#pause').onclick = async () => {
+  const r = await (await fetch('/api/pause',{method:'POST'})).json();
+  $('#pause').textContent = r.paused ? 'Resume' : 'Pause';
+  $('#live').textContent = r.paused ? 'paused' : 'live';
+  $('#dot').style.animation = r.paused ? 'none' : 'p 2s infinite';
+  $('#dot').style.background = r.paused ? 'var(--dim)' : 'var(--ok)';
+};
+
+async function refresh(){
+  let d;
+  try { d = await (await fetch('/api/state')).json(); }
+  catch { $('#live').textContent = 'daemon offline'; return; }
+
+  $('#thr').textContent = `threshold ${d.threshold.toFixed(2)} - ${d.threshold_source}`;
+  const worst = d.servers.reduce((a,s)=>
+    s.status==='alert' ? 'alert' : (a==='alert'?a:(s.status==='watch'?'watch':a)), 'ok');
+  $('#mode').textContent = worst==='alert' ? 'DRIFT DETECTED'
+                        : worst==='watch' ? 'watching' : 'all servers nominal';
+  $('#mode').style.color = worst==='alert' ? 'var(--alert)'
+                        : worst==='watch' ? 'var(--watch)' : 'var(--ok)';
+
+  $('#servers').innerHTML = d.servers.length
+    ? d.servers.map(serverCard).join('')
+    : `<div class="empty">No baselines yet. Run <code>driftsentry baseline</code> first.</div>`;
+  $('#alerts').innerHTML = d.alerts.length
+    ? d.alerts.map(alertCard).join('')
+    : `<div class="empty">No alerts. Servers are behaving.</div>`;
+}
+
+refresh();
+setInterval(refresh, 2000);
+</script>
+</body>
+</html>

@@ -273,6 +273,74 @@ def _watch_line(report) -> str:
     return line
 
 
+def _cmd_ui(ns: argparse.Namespace) -> int:
+    """Start the daemon and open the desktop dashboard.
+
+    The window is the control plane: it reads daemon state and issues commands,
+    and it holds no detection logic of its own. That separation is deliberate -
+    the numbers on screen are produced by exactly the same code path the CLI and
+    the evaluation use, so a good-looking dashboard cannot flatter the results.
+    """
+    import threading
+
+    import uvicorn
+
+    from driftsentry.api import create_app
+    from driftsentry.daemon import Daemon
+
+    _configure_logging(verbose=ns.verbose)
+
+    daemon = Daemon(interval=ns.interval, samples_per_probe=ns.samples_per_probe,
+                    monitor_sandbox=not ns.no_sandbox)
+    if not daemon.servers:
+        print("No baselines found, so there is nothing to monitor yet.")
+        print("Capture one first, e.g.:")
+        print("    python scripts/setup_demo.py")
+        print("    driftsentry baseline --server <name> --exec <command...>")
+        return 2
+
+    daemon.start()
+    app = create_app(daemon)
+    url = f"http://127.0.0.1:{ns.port}"
+
+    # Bound to loopback on purpose: this API can quarantine a user's tooling, so
+    # it must not be reachable from the network.
+    config = uvicorn.Config(app, host="127.0.0.1", port=ns.port, log_level="warning")
+    server = uvicorn.Server(config)
+    threading.Thread(target=server.run, name="driftsentry-api", daemon=True).start()
+
+    print(f"DriftSentry is monitoring {len(daemon.servers)} server(s) every {ns.interval:.0f}s.")
+    print(f"Dashboard: {url}")
+
+    if ns.no_window:
+        print("Press Ctrl-C to stop.")
+        try:
+            threading.Event().wait()
+        except KeyboardInterrupt:
+            print("\nstopped.")
+        return 0
+
+    try:
+        import webview  # pywebview: a real window rather than a browser tab
+
+        webview.create_window("DriftSentry", url, width=1280, height=860,
+                              background_color="#0b0f14")
+        webview.start()
+        return 0
+    except Exception as exc:  # noqa: BLE001 - fall back rather than fail
+        log = logging.getLogger("driftsentry.ui")
+        log.info("native window unavailable (%s); opening a browser instead", exc)
+        import webbrowser
+
+        webbrowser.open(url)
+        print("Press Ctrl-C to stop.")
+        try:
+            threading.Event().wait()
+        except KeyboardInterrupt:
+            print("\nstopped.")
+        return 0
+
+
 def _cmd_watch(ns: argparse.Namespace) -> int:
     """Re-verify a server on a schedule and alert the moment drift appears.
 
@@ -668,6 +736,7 @@ def _default(_: argparse.Namespace) -> int:
     print("  baseline  --server <name> --exec ..  capture a behavioural baseline")
     print("  calibrate                           set the threshold from benign servers only")
     print("  verify    --server <name>            re-probe, score, and alert on drift")
+    print("  ui                                  open the desktop dashboard (recommended)")
     print("  watch     --server <name>            keep re-checking on a timer, alert live")
     print("  report    [--server <name>]          alert history and policy state")
     print("  quarantine/trust --server <name>     mark a server unsafe / safe again")
@@ -727,6 +796,22 @@ def build_parser() -> argparse.ArgumentParser:
     verify.add_argument("--exec", nargs=argparse.REMAINDER, default=[],
                         help="launch command override; defaults to the one stored in the baseline")
     verify.set_defaults(func=_cmd_verify)
+
+    # ui -------------------------------------------------------------------
+    ui = sub.add_parser(
+        "ui",
+        help="open the desktop dashboard, with the monitoring daemon behind it (Phase 6)",
+    )
+    ui.add_argument("--interval", type=float, default=20.0,
+                    help="seconds between scheduled checks (default 20)")
+    ui.add_argument("--samples-per-probe", type=int, default=1,
+                    help="samples per probe each cycle (default 1)")
+    ui.add_argument("--port", type=int, default=8787, help="localhost port (default 8787)")
+    ui.add_argument("--no-window", action="store_true",
+                    help="serve only; do not open a window")
+    ui.add_argument("--no-sandbox", action="store_true", help="disable side-effect monitoring")
+    ui.add_argument("--verbose", action="store_true", help="log daemon activity")
+    ui.set_defaults(func=_cmd_ui)
 
     # watch ----------------------------------------------------------------
     watch = sub.add_parser(

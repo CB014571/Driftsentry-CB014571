@@ -45,10 +45,44 @@ except Exception:  # pragma: no cover
     psutil = None  # type: ignore[assignment]
     _HAVE_PSUTIL = False
 
-# Paths that every Python process touches. Keeping them would drown the real
-# signal in interpreter noise, so they are filtered out of file evidence.
-_NOISE_SUFFIXES = (".pyc", ".pyd", ".dll", ".so", ".dylib")
+# Runtime artefacts that say nothing about what a TOOL did.
+#
+# The distinction that matters: file evidence is only meaningful for files the
+# tool's own logic touched. Shared libraries, bytecode caches and operating-system
+# resources are opened by the interpreter and by Windows itself, and crucially
+# WHICH of them a process holds depends on how it was launched - a server started
+# from a console has console resource files open, the same server started from a
+# background service does not.
+#
+# That made the set environment-dependent, so a baseline captured one way and a
+# check run another way differed by files neither the tool nor the attacker ever
+# chose to open, and a perfectly benign server raised new_file_access. Filtering
+# them is not about tidiness; an unfiltered monitor measures the launcher rather
+# than the tool.
+_NOISE_SUFFIXES = (
+    ".pyc", ".pyd", ".dll", ".so", ".dylib",
+    ".mui", ".cat", ".manifest", ".nls", ".drv", ".sys", ".exe",
+)
 _NOISE_FRAGMENTS = ("site-packages", "lib-dynload", "__pycache__", ".venv")
+
+
+def _system_roots() -> tuple[str, ...]:
+    """Directories owned by the OS or the interpreter, normalised for comparison."""
+    roots = [sys.prefix, sys.base_prefix]
+    for var in ("SystemRoot", "windir", "ProgramFiles", "ProgramFiles(x86)", "ProgramData"):
+        value = os.environ.get(var)
+        if value:
+            roots.append(value)
+    out = []
+    for root in roots:
+        try:
+            out.append(str(Path(root)).lower().replace("\\", "/").rstrip("/"))
+        except Exception:  # pragma: no cover
+            continue
+    return tuple(sorted(set(out)))
+
+
+_SYSTEM_ROOTS = _system_roots()
 
 
 def _is_noise(path: str) -> bool:
@@ -57,13 +91,8 @@ def _is_noise(path: str) -> bool:
         return True
     if any(fragment in lowered for fragment in _NOISE_FRAGMENTS):
         return True
-    # Anything inside the interpreter's own installation.
-    for root in {sys.prefix, sys.base_prefix}:
-        try:
-            if lowered.startswith(str(Path(root)).lower().replace("\\", "/")):
-                return True
-        except Exception:  # pragma: no cover
-            pass
+    if any(lowered.startswith(root + "/") for root in _SYSTEM_ROOTS):
+        return True
     return False
 
 
