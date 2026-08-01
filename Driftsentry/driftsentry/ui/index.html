@@ -101,6 +101,7 @@
   <div class="brand">DRIFT<span>SENTRY</span></div>
   <div class="navsec">Monitor</div>
   <div class="navitem on" data-page="overview"><span class="ic">◉</span> Overview</div>
+  <div class="navitem" data-page="graph"><span class="ic">◪</span> Drift graph</div>
   <div class="navitem" data-page="servers"><span class="ic">▤</span> Servers</div>
   <div class="navitem" data-page="alerts"><span class="ic">⚠</span> Alerts <span id="alertN"></span></div>
   <div class="navsec">Connect</div>
@@ -125,6 +126,48 @@
     <div class="card">
       <h2>Servers</h2>
       <div id="ovservers"></div>
+    </div>
+  </section>
+
+  <!-- DRIFT GRAPH -->
+  <section class="page" id="p-graph" hidden>
+    <h1>Drift graph</h1>
+    <div class="sub">Every scheduled check plotted against the calibrated alert threshold.</div>
+    <div class="card">
+      <div class="pad" style="display:flex;gap:14px;align-items:end;flex-wrap:wrap">
+        <div style="min-width:190px">
+          <label>Server</label>
+          <select id="g-server"></select>
+        </div>
+        <div style="min-width:150px">
+          <label>Show</label>
+          <select id="g-range">
+            <option value="30">last 30 checks</option>
+            <option value="60" selected>last 60 checks</option>
+            <option value="120">all history</option>
+          </select>
+        </div>
+        <div style="min-width:150px">
+          <label>Y axis</label>
+          <select id="g-scale">
+            <option value="auto" selected>auto</option>
+            <option value="fixed">fixed 0 – 3.2</option>
+          </select>
+        </div>
+        <div style="flex:1"></div>
+        <div id="g-stats" style="font-size:11.5px;color:var(--dim);text-align:right"></div>
+      </div>
+    </div>
+    <div class="card"><div class="pad" id="g-chart"></div></div>
+    <div class="card">
+      <h2>How to read it</h2>
+      <div class="pad" style="font-size:12px;color:var(--dim)">
+        The <b style="color:var(--txt)">drift score</b> is how far a tool's behaviour has moved from
+        its approved baseline, divided by how much that tool naturally varies, divided again by the
+        calibrated threshold. So <b style="color:var(--txt)">1.00 always means "at the alert line"</b>,
+        whichever tool it came from — a chatty tool and a deterministic one are directly comparable.
+        The green band is normal, amber is approaching the line, red is an alert.
+      </div>
     </div>
   </section>
 
@@ -295,6 +338,128 @@ function sparkline(h){
     <polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.6"/></svg>`;
 }
 
+/* ---------- the big drift chart ---------- */
+function driftChart(server, limit, scaleMode){
+  const all = server.history || [];
+  const h = all.slice(-limit);
+  const W=1000, H=380, L=68, R=26, T=22, B=64;          // canvas + margins
+  const pw = W-L-R, ph = H-T-B;                          // plot area
+
+  if(h.length < 2){
+    return `<div class="empty" style="padding:60px">
+      Not enough data yet — ${h.length} check${h.length===1?'':'s'} recorded.<br>
+      <span style="font-size:11px">The graph appears once two checks have run
+      (every ${STATE.interval}s).</span></div>`;
+  }
+
+  const maxScore = Math.max(...h.map(p=>p.score));
+  const yMax = scaleMode==='fixed' ? 3.2 : Math.max(1.35, Math.ceil(maxScore*1.18*10)/10);
+  const x = i => L + (i/(h.length-1))*pw;
+  const y = v => T + ph - (Math.min(v,yMax)/yMax)*ph;
+
+  // horizontal gridlines at sensible intervals
+  const step = yMax>2.5?0.5:yMax>1.6?0.25:0.2;
+  let grid='', yLabels='';
+  for(let v=0; v<=yMax+0.001; v+=step){
+    const yy=y(v);
+    grid += `<line x1="${L}" y1="${yy}" x2="${L+pw}" y2="${yy}" stroke="var(--line)" stroke-width="1"/>`;
+    yLabels += `<text x="${L-10}" y="${yy+4}" text-anchor="end" fill="var(--dim)" font-size="11">${v.toFixed(2)}</text>`;
+  }
+
+  // coloured verdict bands
+  const bands = `
+    <rect x="${L}" y="${y(0.85)}" width="${pw}" height="${y(0)-y(0.85)}" fill="rgba(46,204,113,.07)"/>
+    <rect x="${L}" y="${y(1.0)}" width="${pw}" height="${y(0.85)-y(1.0)}" fill="rgba(241,196,15,.09)"/>
+    <rect x="${L}" y="${T}" width="${pw}" height="${y(1.0)-T}" fill="rgba(255,77,94,.08)"/>`;
+
+  // x ticks: about 8 across, labelled with clock time
+  const every = Math.max(1, Math.ceil(h.length/8));
+  let xLabels='', xTicks='';
+  h.forEach((p,i)=>{
+    if(i%every && i!==h.length-1) return;
+    const t=new Date(p.t).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    xTicks  += `<line x1="${x(i)}" y1="${T+ph}" x2="${x(i)}" y2="${T+ph+5}" stroke="var(--line2)"/>`;
+    xLabels += `<text x="${x(i)}" y="${T+ph+19}" text-anchor="middle" fill="var(--dim)" font-size="10.5">${t}</text>`;
+  });
+
+  const line = h.map((p,i)=>`${x(i).toFixed(1)},${y(p.score).toFixed(1)}`).join(' ');
+  const area = `${L},${T+ph} ${line} ${L+pw},${T+ph}`;
+  const dots = h.map((p,i)=>{
+    const col = p.verdict==='alert'?'var(--alert)':p.verdict==='watch'?'var(--watch)':'var(--ok)';
+    const r = p.verdict==='alert'?4:3;
+    return `<circle cx="${x(i).toFixed(1)}" cy="${y(p.score).toFixed(1)}" r="${r}" fill="${col}"
+              stroke="var(--panel)" stroke-width="1.4"><title>${new Date(p.t).toLocaleTimeString()}
+score ${p.score.toFixed(3)} — ${p.verdict.toUpperCase()}</title></circle>`;
+  }).join('');
+
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block"
+      font-family="ui-sans-serif,system-ui,sans-serif">
+    ${bands}${grid}
+
+    <line x1="${L}" y1="${y(1.0)}" x2="${L+pw}" y2="${y(1.0)}"
+          stroke="var(--alert)" stroke-width="1.8" stroke-dasharray="7 4"/>
+    <text x="${L+pw-6}" y="${y(1.0)-7}" text-anchor="end" fill="var(--alert)"
+          font-size="11" font-weight="700">ALERT THRESHOLD (1.00)</text>
+
+    <line x1="${L}" y1="${y(0.85)}" x2="${L+pw}" y2="${y(0.85)}"
+          stroke="var(--watch)" stroke-width="1.2" stroke-dasharray="3 4" opacity=".85"/>
+    <text x="${L+pw-6}" y="${y(0.85)-6}" text-anchor="end" fill="var(--watch)" font-size="10">watch (0.85)</text>
+
+    <polygon points="${area}" fill="rgba(74,168,255,.10)"/>
+    <polyline points="${line}" fill="none" stroke="var(--accent)" stroke-width="2"
+              stroke-linejoin="round"/>
+    ${dots}
+
+    <line x1="${L}" y1="${T}" x2="${L}" y2="${T+ph}" stroke="var(--line2)" stroke-width="1.5"/>
+    <line x1="${L}" y1="${T+ph}" x2="${L+pw}" y2="${T+ph}" stroke="var(--line2)" stroke-width="1.5"/>
+    ${yLabels}${xTicks}${xLabels}
+
+    <text transform="translate(17,${T+ph/2}) rotate(-90)" text-anchor="middle"
+          fill="var(--txt)" font-size="12" font-weight="600">Drift score  (1.00 = alert threshold)</text>
+    <text x="${L+pw/2}" y="${H-8}" text-anchor="middle" fill="var(--txt)"
+          font-size="12" font-weight="600">Time of scheduled check</text>
+  </svg>
+
+  <div style="display:flex;gap:20px;font-size:11px;color:var(--dim);margin-top:10px;flex-wrap:wrap">
+    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;
+      background:var(--ok);margin-right:5px"></span>OK (&lt; 0.85)</span>
+    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;
+      background:var(--watch);margin-right:5px"></span>Watch (0.85 – 1.00)</span>
+    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;
+      background:var(--alert);margin-right:5px"></span>Alert (&ge; 1.00)</span>
+    <span style="margin-left:auto">hover any point for its exact score</span>
+  </div>`;
+}
+
+function renderGraph(){
+  const sel = $('#g-server');
+  const names = STATE.servers.map(s=>s.name);
+  if(sel.options.length !== names.length ||
+     [...sel.options].some((o,i)=>o.value!==names[i])){
+    const keep = sel.value;
+    sel.innerHTML = names.map(n=>`<option${n===keep?' selected':''}>${n}</option>`).join('');
+  }
+  const server = STATE.servers.find(s=>s.name===sel.value) || STATE.servers[0];
+  if(!server){
+    $('#g-chart').innerHTML = '<div class="empty">No servers connected.</div>';
+    $('#g-stats').textContent=''; return;
+  }
+  const limit = +$('#g-range').value;
+  $('#g-chart').innerHTML = driftChart(server, limit, $('#g-scale').value);
+
+  const h = (server.history||[]).slice(-limit);
+  if(h.length){
+    const scores = h.map(p=>p.score);
+    const mean = scores.reduce((a,b)=>a+b,0)/scores.length;
+    const alerts = h.filter(p=>p.verdict==='alert').length;
+    $('#g-stats').innerHTML =
+      `<b style="color:var(--txt);font-size:13px">${server.name}</b> &nbsp;·&nbsp;
+       ${h.length} checks &nbsp;·&nbsp; mean ${mean.toFixed(2)} &nbsp;·&nbsp;
+       peak ${Math.max(...scores).toFixed(2)} &nbsp;·&nbsp;
+       <span style="color:${alerts?'var(--alert)':'var(--ok)'}">${alerts} alert${alerts===1?'':'s'}</span>`;
+  }
+}
+
 function serverRows(full){
   const s = STATE.servers;
   if(!s.length) return `<div class="empty">No servers connected yet.<br><br>
@@ -364,6 +529,8 @@ function render(){
       <div><b>${STATE.interval}s</b><span>Interval</span></div>`;
     $('#ovservers').innerHTML = serverRows(false);
   }
+
+  if(page==='graph') renderGraph();
 
   if(page==='servers') $('#serverlist').innerHTML = `<div class="card">${serverRows(true)}</div>`;
 
@@ -474,6 +641,8 @@ $('#cf-protect').onclick = async () => {
       <br><br>Restart your MCP client, then add these servers on the <b>Add server</b> page so they are baselined too.
     </div><pre>${r.diff.replace(/</g,'&lt;')}</pre></div>`;
 };
+
+['#g-server','#g-range','#g-scale'].forEach(id => $(id).onchange = renderGraph);
 
 $('#pause').onclick = async () => {
   const r = await post('/api/pause');
