@@ -5,196 +5,489 @@
 <title>DriftSentry</title>
 <style>
   :root{
-    --bg:#0b0f14; --panel:#121924; --panel2:#0e1520; --line:#1e2a3a;
+    --bg:#0b0f14; --panel:#121924; --panel2:#0e1520; --line:#1e2a3a; --line2:#2a3a4f;
     --txt:#d7e2ef; --dim:#7c8ea4; --ok:#2ecc71; --watch:#f1c40f;
-    --alert:#ff4d5e; --accent:#4aa8ff;
+    --alert:#ff4d5e; --accent:#4aa8ff; --accent2:#1e6fd9;
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--txt);
-       font:13px/1.5 "Segoe UI",system-ui,sans-serif}
-  header{display:flex;align-items:center;gap:16px;padding:12px 18px;
-         background:var(--panel);border-bottom:1px solid var(--line)}
-  .logo{font-weight:700;letter-spacing:.14em;font-size:15px}
-  .logo span{color:var(--accent)}
-  .pill{font-size:11px;padding:3px 9px;border-radius:99px;border:1px solid var(--line);color:var(--dim)}
-  .spacer{flex:1}
-  button{background:var(--panel2);color:var(--txt);border:1px solid var(--line);
-         border-radius:6px;padding:5px 11px;cursor:pointer;font-size:12px}
-  button:hover{border-color:var(--accent);color:#fff}
-  button.danger:hover{border-color:var(--alert);color:var(--alert)}
-  main{display:grid;grid-template-columns:1.35fr 1fr;gap:14px;padding:14px}
-  @media(max-width:1000px){main{grid-template-columns:1fr}}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:9px;overflow:hidden}
-  .card h2{margin:0;padding:10px 14px;font-size:11px;letter-spacing:.13em;
+       font:13px/1.55 "Segoe UI",system-ui,sans-serif;display:flex;height:100vh;overflow:hidden}
+
+  /* ---- sidebar ---- */
+  nav{width:210px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--line);
+      display:flex;flex-direction:column;padding:14px 0}
+  .brand{padding:0 16px 14px;font-weight:700;letter-spacing:.13em;font-size:14px;
+         border-bottom:1px solid var(--line);margin-bottom:10px}
+  .brand span{color:var(--accent)}
+  .navitem{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;
+           color:var(--dim);border-left:3px solid transparent;user-select:none}
+  .navitem:hover{background:var(--panel2);color:var(--txt)}
+  .navitem.on{background:var(--panel2);color:#fff;border-left-color:var(--accent)}
+  .navitem .ic{width:17px;text-align:center;font-size:14px}
+  .navsec{padding:12px 16px 5px;font-size:9.5px;letter-spacing:.14em;color:#4a5b6f;
+          text-transform:uppercase}
+  .badge-n{margin-left:auto;background:var(--alert);color:#fff;border-radius:9px;
+           padding:0 6px;font-size:10px;font-weight:700}
+  .navfoot{margin-top:auto;padding:12px 16px 0;border-top:1px solid var(--line);
+           font-size:11px;color:var(--dim)}
+
+  /* ---- main ---- */
+  main{flex:1;overflow-y:auto;padding:18px 22px}
+  h1{font-size:19px;margin:0 0 3px}
+  .sub{color:var(--dim);font-size:12px;margin-bottom:18px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:9px;
+        margin-bottom:14px;overflow:hidden}
+  .card h2{margin:0;padding:10px 14px;font-size:11px;letter-spacing:.12em;
            text-transform:uppercase;color:var(--dim);border-bottom:1px solid var(--line)}
-  .server{padding:13px 14px;border-bottom:1px solid var(--line)}
-  .server:last-child{border-bottom:none}
-  .row{display:flex;align-items:center;gap:10px}
-  .name{font-weight:600;font-size:14px}
-  .badge{font-size:10px;font-weight:700;letter-spacing:.09em;padding:3px 9px;border-radius:5px}
+  .pad{padding:14px}
+
+  button{background:var(--panel2);color:var(--txt);border:1px solid var(--line2);
+         border-radius:6px;padding:6px 12px;cursor:pointer;font-size:12px}
+  button:hover{border-color:var(--accent);color:#fff}
+  button.primary{background:var(--accent2);border-color:var(--accent2);color:#fff;font-weight:600}
+  button.primary:hover{background:var(--accent)}
+  button.danger:hover{border-color:var(--alert);color:var(--alert)}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  input,select{background:var(--panel2);border:1px solid var(--line2);color:var(--txt);
+        border-radius:6px;padding:7px 10px;font-size:12px;width:100%;font-family:inherit}
+  input:focus,select:focus{outline:none;border-color:var(--accent)}
+  label{display:block;font-size:11px;color:var(--dim);margin:0 0 4px}
+  .field{margin-bottom:12px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .hint{font-size:11px;color:var(--dim);margin-top:4px}
+  code{background:var(--panel2);padding:1px 5px;border-radius:4px;font-size:11px;color:var(--accent);
+       font-family:Consolas,monospace}
+  pre{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:10px;
+      font-size:11px;overflow-x:auto;font-family:Consolas,monospace;margin:8px 0 0;max-height:260px}
+
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th{text-align:left;color:var(--dim);font-weight:600;font-size:10.5px;letter-spacing:.07em;
+     text-transform:uppercase;padding:8px 14px;border-bottom:1px solid var(--line)}
+  td{padding:9px 14px;border-bottom:1px solid var(--line)}
+  tr:last-child td{border-bottom:none}
+
+  .badge{font-size:10px;font-weight:700;letter-spacing:.07em;padding:3px 8px;border-radius:5px;
+         display:inline-block}
   .b-ok{background:rgba(46,204,113,.14);color:var(--ok);border:1px solid rgba(46,204,113,.4)}
   .b-watch{background:rgba(241,196,15,.14);color:var(--watch);border:1px solid rgba(241,196,15,.4)}
   .b-alert{background:rgba(255,77,94,.16);color:var(--alert);border:1px solid rgba(255,77,94,.5)}
-  .b-error,.b-unknown{background:rgba(124,142,164,.12);color:var(--dim);border:1px solid var(--line)}
-  .meta{color:var(--dim);font-size:11px;margin-top:3px}
-  .spark{margin-top:9px;background:var(--panel2);border:1px solid var(--line);border-radius:6px}
-  .tools{margin-top:9px;display:flex;flex-wrap:wrap;gap:6px}
-  .tool{font-size:11px;padding:3px 8px;border-radius:5px;border:1px solid var(--line);color:var(--dim)}
-  .tool.alert{border-color:rgba(255,77,94,.5);color:var(--alert)}
-  .tool.watch{border-color:rgba(241,196,15,.4);color:var(--watch)}
-  .acts{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap}
-  .alert-card{padding:12px 14px;border-bottom:1px solid var(--line)}
-  .alert-card:last-child{border-bottom:none}
-  .a-head{display:flex;gap:8px;align-items:center}
-  .a-sev{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;
-         background:rgba(255,77,94,.16);color:var(--alert);border:1px solid rgba(255,77,94,.45)}
-  .a-cause{margin-top:7px;font-size:12.5px}
-  .ba{margin-top:8px;font-size:11.5px;background:var(--panel2);border:1px solid var(--line);
-      border-radius:6px;padding:8px}
-  .ba div{margin:3px 0;word-break:break-word}
-  .ba b{color:var(--dim);font-weight:600;letter-spacing:.05em;font-size:10px}
-  .fix{margin-top:8px;font-size:11.5px;color:var(--dim)}
-  .fix li{margin:3px 0}
-  .empty{padding:26px 14px;text-align:center;color:var(--dim)}
-  code{background:var(--panel2);padding:1px 5px;border-radius:4px;font-size:11px;color:var(--accent)}
-  .dot{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:p 2s infinite}
+  .b-off{background:rgba(124,142,164,.12);color:var(--dim);border:1px solid var(--line2)}
+
+  .empty{padding:30px 14px;text-align:center;color:var(--dim)}
+  .spark{background:var(--panel2);border:1px solid var(--line);border-radius:5px}
+  .kv{display:flex;gap:26px;flex-wrap:wrap}
+  .kv div b{display:block;font-size:19px;font-weight:700;margin-bottom:1px}
+  .kv div span{font-size:10.5px;color:var(--dim);letter-spacing:.06em;text-transform:uppercase}
+  .job{border-left:3px solid var(--accent);padding:8px 12px;margin-bottom:8px;background:var(--panel2);
+       border-radius:0 6px 6px 0}
+  .job.done{border-left-color:var(--ok)} .job.failed{border-left-color:var(--alert)}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--ok);display:inline-block;
+       animation:p 2s infinite}
   @keyframes p{0%,100%{opacity:1}50%{opacity:.25}}
+  .warn{background:rgba(241,196,15,.1);border:1px solid rgba(241,196,15,.35);color:#e8c86a;
+        border-radius:6px;padding:9px 12px;font-size:11.5px;margin-bottom:12px}
+  .steps{counter-reset:s;list-style:none;padding:0;margin:0}
+  .steps li{counter-increment:s;padding:9px 0 9px 34px;position:relative;border-bottom:1px solid var(--line)}
+  .steps li:last-child{border-bottom:none}
+  .steps li::before{content:counter(s);position:absolute;left:0;top:9px;width:22px;height:22px;
+      border-radius:50%;background:var(--panel2);border:1px solid var(--line2);color:var(--dim);
+      text-align:center;line-height:21px;font-size:11px;font-weight:700}
+  .steps li.ok::before{content:"✓";background:rgba(46,204,113,.15);border-color:var(--ok);color:var(--ok)}
 </style>
 </head>
 <body>
-<header>
-  <div class="logo">DRIFT<span>SENTRY</span></div>
-  <div class="pill" id="mode">behavioural rug-pull monitor</div>
-  <div class="spacer"></div>
-  <div class="pill" id="thr">threshold --</div>
-  <div class="pill"><span class="dot" id="dot"></span> <span id="live">live</span></div>
-  <button id="pause">Pause</button>
-</header>
+
+<nav>
+  <div class="brand">DRIFT<span>SENTRY</span></div>
+  <div class="navsec">Monitor</div>
+  <div class="navitem on" data-page="overview"><span class="ic">◉</span> Overview</div>
+  <div class="navitem" data-page="servers"><span class="ic">▤</span> Servers</div>
+  <div class="navitem" data-page="alerts"><span class="ic">⚠</span> Alerts <span id="alertN"></span></div>
+  <div class="navsec">Connect</div>
+  <div class="navitem" data-page="addserver"><span class="ic">＋</span> Add server</div>
+  <div class="navitem" data-page="client"><span class="ic">⇄</span> MCP clients</div>
+  <div class="navsec">Setup</div>
+  <div class="navitem" data-page="calibrate"><span class="ic">◎</span> Calibration</div>
+  <div class="navitem" data-page="activity"><span class="ic">≡</span> Activity</div>
+  <div class="navfoot">
+    <div><span class="dot" id="dot"></span> <span id="live">monitoring</span></div>
+    <div style="margin-top:6px"><button id="pause" style="width:100%">Pause</button></div>
+  </div>
+</nav>
 
 <main>
-  <section class="card">
-    <h2>Monitored servers</h2>
-    <div id="servers"><div class="empty">Waiting for the first check...</div></div>
+  <!-- OVERVIEW -->
+  <section class="page" id="p-overview">
+    <h1>Overview</h1>
+    <div class="sub" id="ovsub">—</div>
+    <div id="setupwarn"></div>
+    <div class="card"><div class="pad kv" id="ovstats"></div></div>
+    <div class="card">
+      <h2>Servers</h2>
+      <div id="ovservers"></div>
+    </div>
   </section>
 
-  <section class="card">
-    <h2>Alerts</h2>
-    <div id="alerts"><div class="empty">No alerts. Servers are behaving.</div></div>
+  <!-- SERVERS -->
+  <section class="page" id="p-servers" hidden>
+    <h1>Servers</h1>
+    <div class="sub">Everything DriftSentry is watching, and what it has learned.</div>
+    <div id="serverlist"></div>
+  </section>
+
+  <!-- ALERTS -->
+  <section class="page" id="p-alerts" hidden>
+    <h1>Alerts</h1>
+    <div class="sub">Raised when a tool's behaviour drifts past the calibrated threshold.</div>
+    <div id="alertlist"></div>
+  </section>
+
+  <!-- ADD SERVER -->
+  <section class="page" id="p-addserver" hidden>
+    <h1>Add an MCP server</h1>
+    <div class="sub">DriftSentry launches the server, learns how it behaves, and watches it from then on.</div>
+    <div class="card">
+      <h2>Connect</h2>
+      <div class="pad">
+        <div class="field">
+          <label>Name</label>
+          <input id="c-name" placeholder="e.g. shop">
+          <div class="hint">How it appears in the dashboard.</div>
+        </div>
+        <div class="field">
+          <label>Launch command</label>
+          <input id="c-cmd" placeholder="python -m mcp_server_git --repository C:\path\to\repo">
+          <div class="hint">Exactly how you would start the server yourself. Quote paths containing spaces.</div>
+        </div>
+        <div class="field">
+          <label>Working directory <span style="color:#4a5b6f">(optional)</span></label>
+          <input id="c-cwd" placeholder="leave blank unless the server needs one">
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label>Probes per tool</label>
+            <input id="c-probes" type="number" value="3" min="1" max="8">
+            <div class="hint">Different questions asked of each tool.</div>
+          </div>
+          <div class="field">
+            <label>Samples per probe</label>
+            <input id="c-samples" type="number" value="8" min="3" max="20">
+            <div class="hint">Repeats, used to learn natural variation.</div>
+          </div>
+        </div>
+        <button class="primary" id="c-go">Connect and learn baseline</button>
+        <span class="hint" style="margin-left:10px">Takes a few minutes — safe to leave this page.</span>
+        <div id="c-out"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>What happens</h2>
+      <div class="pad">
+        <ul class="steps">
+          <li>DriftSentry starts the server and asks which tools it offers.</li>
+          <li>Each tool is checked for safety. Anything that looks side-effecting (send, delete, commit) is <b>never probed</b> — only observed.</li>
+          <li>Safe tools are asked the same questions repeatedly, to learn both the usual answer and how much it naturally varies.</li>
+          <li>That becomes the baseline. From then on the server is re-checked on a schedule.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- MCP CLIENTS -->
+  <section class="page" id="p-client" hidden>
+    <h1>MCP clients</h1>
+    <div class="sub">Put DriftSentry in the live path between your AI assistant and its tool servers.</div>
+
+    <div class="card">
+      <h2>Detected on this machine</h2>
+      <div id="discover"><div class="empty">Searching…</div></div>
+    </div>
+
+    <div class="card">
+      <h2>Inspect a config</h2>
+      <div class="pad">
+        <div class="field">
+          <label>Path to the client's MCP config</label>
+          <input id="cf-path" placeholder="%APPDATA%\Claude\claude_desktop_config.json">
+        </div>
+        <button id="cf-inspect">Inspect</button>
+        <button class="primary" id="cf-protect" disabled>Protect these servers</button>
+        <label style="display:inline-flex;align-items:center;gap:6px;margin-left:12px;font-size:11.5px">
+          <input type="checkbox" id="cf-inplace" style="width:auto"> update the original file
+        </label>
+        <div class="hint">Unchecked writes a new <code>*.driftsentry.json</code> and leaves yours untouched.
+          Checked takes a timestamped backup first.</div>
+        <div id="cf-out"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CALIBRATION -->
+  <section class="page" id="p-calibrate" hidden>
+    <h1>Calibration</h1>
+    <div class="sub">Where the alarm line sits, and the evidence behind it.</div>
+    <div class="card">
+      <h2>Current threshold</h2>
+      <div class="pad" id="calnow"></div>
+    </div>
+    <div class="card">
+      <h2>Recalibrate</h2>
+      <div class="pad">
+        <p style="margin-top:0;color:var(--dim);font-size:12px">
+          Re-probes every connected server while it is <b>behaving</b>, measures how much benign
+          behaviour naturally varies, and places the alarm line above it.
+          Only benign data is used — never an attack.
+        </p>
+        <div class="field" style="max-width:220px">
+          <label>Rounds per server</label>
+          <input id="cal-repeats" type="number" value="3" min="1" max="10">
+        </div>
+        <button class="primary" id="cal-go">Run calibration</button>
+        <div id="cal-out"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ACTIVITY -->
+  <section class="page" id="p-activity" hidden>
+    <h1>Activity</h1>
+    <div class="sub">Background jobs.</div>
+    <div class="card"><div class="pad" id="jobs"></div></div>
   </section>
 </main>
 
 <script>
 const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+let STATE = null, page = 'overview';
 
-function sparkline(history){
-  if(!history || history.length < 2) return '';
-  const w = 520, h = 46, pad = 3;
-  const scores = history.map(p => p.score);
-  const max = Math.max(1.35, ...scores);
-  const step = (w - pad*2) / (history.length - 1);
-  const y = v => h - pad - (v / max) * (h - pad*2);
-  const pts = history.map((p,i) => `${(pad + i*step).toFixed(1)},${y(p.score).toFixed(1)}`).join(' ');
-  const line = y(1.0).toFixed(1);   // the alert threshold, normalised to 1.0
-  const last = history[history.length-1];
-  const col = last.verdict === 'alert' ? 'var(--alert)'
-            : last.verdict === 'watch' ? 'var(--watch)' : 'var(--ok)';
-  return `<svg class="spark" width="100%" height="${h}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
-    <line x1="0" y1="${line}" x2="${w}" y2="${line}" stroke="var(--alert)"
-          stroke-width="1" stroke-dasharray="4 4" opacity=".55"/>
-    <polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.8"/>
-  </svg>`;
+/* ---------- navigation ---------- */
+$$('.navitem').forEach(el => el.onclick = () => {
+  page = el.dataset.page;
+  $$('.navitem').forEach(n => n.classList.toggle('on', n === el));
+  $$('.page').forEach(p => p.hidden = p.id !== 'p-' + page);
+  if (page === 'client') discover();
+  render();
+});
+
+async function api(path, opts) {
+  const r = await fetch(path, opts);
+  return r.json();
+}
+async function post(path, body) {
+  return api(path, {method:'POST', headers:{'Content-Type':'application/json'},
+                    body: body ? JSON.stringify(body) : undefined});
 }
 
-function serverCard(s){
-  const cls = 'b-' + (s.status || 'unknown');
-  const when = s.last_check ? new Date(s.last_check).toLocaleTimeString() : 'never';
-  const tools = (s.tools||[]).map(t =>
-    `<span class="tool ${t.verdict}">${t.tool} ${t.score.toFixed(2)}</span>`).join('');
-  const why = s.triggered_by ? ` &middot; ${s.triggered_by}` : '';
-  const err = s.error ? `<div class="meta" style="color:var(--alert)">${s.error}</div>` : '';
-  const quarantined = s.policy_status === 'quarantined';
-  return `<div class="server">
-    <div class="row">
-      <span class="name">${s.name}</span>
-      <span class="badge ${cls}">${(s.status||'unknown').toUpperCase()}</span>
-      ${quarantined ? '<span class="badge b-alert">QUARANTINED</span>' : ''}
-      ${s.enforce ? '<span class="badge b-watch">ENFORCING</span>' : ''}
-      <div class="spacer"></div>
-      <span class="meta">score ${s.score.toFixed(2)} / 1.00</span>
-    </div>
-    <div class="meta">checked ${when} &middot; ${s.checks} checks${why}
-      ${s.embedding_backend ? ' &middot; ' + s.embedding_backend : ''}</div>
-    ${err}
-    ${sparkline(s.history)}
-    <div class="tools">${tools}</div>
-    <div class="acts">
-      <button onclick="post('scan','${s.name}')">Scan now</button>
-      ${quarantined
-        ? `<button onclick="post('trust','${s.name}')">Trust again</button>`
-        : `<button class="danger" onclick="post('quarantine','${s.name}')">Quarantine</button>`}
-      <button onclick="post('enforce','${s.name}?on=${s.enforce?'false':'true'}')">
-        ${s.enforce ? 'Stop blocking' : 'Block calls'}</button>
-    </div>
-  </div>`;
+/* ---------- rendering helpers ---------- */
+function badge(v){ return `<span class="badge b-${v==='ok'?'ok':v==='watch'?'watch':v==='alert'?'alert':'off'}">${(v||'—').toUpperCase()}</span>`; }
+
+function sparkline(h){
+  if(!h || h.length<2) return '<span style="color:var(--dim);font-size:11px">gathering…</span>';
+  const w=240,ht=34,p=3, max=Math.max(1.3,...h.map(x=>x.score));
+  const st=(w-p*2)/(h.length-1), y=v=>ht-p-(v/max)*(ht-p*2);
+  const pts=h.map((x,i)=>`${(p+i*st).toFixed(1)},${y(x.score).toFixed(1)}`).join(' ');
+  const last=h[h.length-1];
+  const col=last.verdict==='alert'?'var(--alert)':last.verdict==='watch'?'var(--watch)':'var(--ok)';
+  return `<svg class="spark" width="${w}" height="${ht}">
+    <line x1="0" y1="${y(1).toFixed(1)}" x2="${w}" y2="${y(1).toFixed(1)}"
+          stroke="var(--alert)" stroke-dasharray="3 3" opacity=".5"/>
+    <polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.6"/></svg>`;
 }
 
-function alertCard(a){
-  const when = new Date(a.created_at).toLocaleTimeString();
-  const fixes = (a.mitigations||[]).slice(0,3).map(m =>
-    `<li><b>${m.urgency}</b> &mdash; ${m.action}</li>`).join('');
-  return `<div class="alert-card">
-    <div class="a-head">
-      <span class="a-sev">${(a.severity||'high').toUpperCase()}</span>
-      <b>${a.server} / ${a.tool}</b>
-      <div class="spacer"></div>
-      <span class="meta">${when}</span>
-    </div>
-    <div class="a-cause">${a.cause}</div>
-    <div class="meta">signal ${a.triggered_by} &middot; score ${a.score.toFixed(2)}</div>
-    <div class="ba">
-      <div><b>BEFORE</b><br>${a.before}</div>
-      <div><b>AFTER</b><br>${a.after}</div>
-    </div>
-    <div class="fix"><ul>${fixes}</ul></div>
-  </div>`;
+function serverRows(full){
+  const s = STATE.servers;
+  if(!s.length) return `<div class="empty">No servers connected yet.<br><br>
+      <button class="primary" onclick="document.querySelector('[data-page=addserver]').click()">Add your first server</button></div>`;
+  return `<table><tr><th>Server</th><th>Status</th><th>Score</th><th>Trend</th><th>Tools</th>
+      ${full?'<th>Actions</th>':''}</tr>` + s.map(x=>`<tr>
+    <td><b>${x.name}</b><div style="color:var(--dim);font-size:11px">
+        ${x.checks} checks${x.last_check?' · '+new Date(x.last_check).toLocaleTimeString():''}</div></td>
+    <td>${badge(x.status)}${x.policy_status==='quarantined'?' <span class="badge b-alert">QUARANTINED</span>':''}
+        ${x.enforce?' <span class="badge b-watch">BLOCKING</span>':''}</td>
+    <td><b style="font-size:14px">${x.score.toFixed(2)}</b>
+        <span style="color:var(--dim);font-size:11px">/1.00</span>
+        ${x.triggered_by?`<div style="color:var(--dim);font-size:10.5px">${x.triggered_by}</div>`:''}</td>
+    <td>${sparkline(x.history)}</td>
+    <td style="font-size:11px;color:var(--dim)">${(x.tools||[]).map(t=>t.tool).join('<br>')||'—'}</td>
+    ${full?`<td>
+      <button onclick="act('scan','${x.name}')">Scan</button>
+      ${x.policy_status==='quarantined'
+        ? `<button onclick="act('trust','${x.name}')">Trust</button>`
+        : `<button class="danger" onclick="act('quarantine','${x.name}')">Quarantine</button>`}
+      <button onclick="act('enforce','${x.name}?on=${x.enforce?'false':'true'}')">${x.enforce?'Stop blocking':'Block'}</button>
+      <button class="danger" onclick="removeServer('${x.name}')">Remove</button>
+    </td>`:''}
+  </tr>`).join('') + '</table>';
 }
 
-async function post(action, server){
-  await fetch(`/api/${action}/${server}`, {method:'POST'});
+async function act(a, s){ await post(`/api/${a}/${s}`); refresh(); }
+async function removeServer(n){
+  if(!confirm(`Remove ${n}? Its baseline will be deleted and it will no longer be monitored.`)) return;
+  await post(`/api/disconnect/${n}`); refresh();
+}
+
+function jobHtml(j){
+  return `<div class="job ${j.state}">
+    <b>${j.label}</b> <span class="badge b-${j.state==='done'?'ok':j.state==='failed'?'alert':'off'}"
+      style="margin-left:6px">${j.state}</span>
+    <div style="font-size:11.5px;color:var(--dim);margin-top:3px">${j.message}</div>
+    ${j.detail.length?`<pre>${j.detail.slice(-14).join('\n')}</pre>`:''}</div>`;
+}
+
+/* ---------- pages ---------- */
+function render(){
+  if(!STATE) return;
+  const alerts = STATE.alerts.length;
+  $('#alertN').innerHTML = alerts ? `<span class="badge-n">${alerts}</span>` : '';
+
+  if(page==='overview'){
+    const worst = STATE.servers.reduce((a,s)=>s.status==='alert'?'alert':(a==='alert'?a:(s.status==='watch'?'watch':a)),'ok');
+    $('#ovsub').innerHTML = STATE.servers.length
+      ? (worst==='alert' ? '<span style="color:var(--alert)">Drift detected — see Alerts.</span>'
+        : worst==='watch' ? '<span style="color:var(--watch)">One server is close to the line.</span>'
+        : '<span style="color:var(--ok)">All servers behaving normally.</span>')
+      : 'Nothing connected yet.';
+    const c = STATE.calibrated;
+    $('#setupwarn').innerHTML =
+      !STATE.servers.length ? `<div class="warn">Step 1 — connect an MCP server so DriftSentry has something to watch.
+          <button style="margin-left:8px" onclick="document.querySelector('[data-page=addserver]').click()">Add server</button></div>`
+      : !c.present ? `<div class="warn">No calibration yet — a provisional threshold is in use, so results are not trustworthy.
+          <button style="margin-left:8px" onclick="document.querySelector('[data-page=calibrate]').click()">Calibrate</button></div>`
+      : c.weak ? `<div class="warn">Calibration is thin (${c.observations} observations from ${c.servers} server(s)).
+          Connect more benign servers and recalibrate before quoting these numbers.</div>` : '';
+    $('#ovstats').innerHTML = `
+      <div><b>${STATE.servers.length}</b><span>Servers</span></div>
+      <div><b style="color:${alerts?'var(--alert)':'var(--ok)'}">${alerts}</b><span>Alerts</span></div>
+      <div><b>${STATE.calibrated.present?STATE.calibrated.threshold.toFixed(2):'—'}</b><span>Threshold</span></div>
+      <div><b>${STATE.servers.reduce((a,s)=>a+s.checks,0)}</b><span>Checks run</span></div>
+      <div><b>${STATE.interval}s</b><span>Interval</span></div>`;
+    $('#ovservers').innerHTML = serverRows(false);
+  }
+
+  if(page==='servers') $('#serverlist').innerHTML = `<div class="card">${serverRows(true)}</div>`;
+
+  if(page==='alerts'){
+    $('#alertlist').innerHTML = STATE.alerts.length ? STATE.alerts.map(a=>`
+      <div class="card"><div class="pad">
+        <span class="badge b-alert">${(a.severity||'high').toUpperCase()}</span>
+        <b style="margin-left:8px">${a.server} / ${a.tool}</b>
+        <span style="float:right;color:var(--dim);font-size:11px">${new Date(a.created_at).toLocaleString()}</span>
+        <p style="margin:9px 0 4px">${a.cause}</p>
+        <div style="color:var(--dim);font-size:11px">signal ${a.triggered_by} · score ${a.score.toFixed(2)}</div>
+        <pre><b style="color:var(--dim)">BEFORE</b>  ${a.before}
+
+<b style="color:var(--alert)">AFTER</b>   ${a.after}</pre>
+        <div style="margin-top:9px;font-size:11.5px">
+          ${(a.mitigations||[]).slice(0,3).map(m=>`<div style="margin:3px 0">
+            <span class="badge b-${m.urgency==='immediate'?'alert':'off'}">${m.urgency}</span> ${m.action}</div>`).join('')}
+        </div>
+      </div></div>`).join('')
+      : `<div class="card"><div class="empty">No alerts. Servers are behaving.</div></div>`;
+  }
+
+  if(page==='calibrate'){
+    const c = STATE.calibrated;
+    $('#calnow').innerHTML = c.present ? `
+      <div class="kv">
+        <div><b>${c.threshold.toFixed(3)}</b><span>Alert at ratio</span></div>
+        <div><b>${c.observations}</b><span>Benign observations</span></div>
+        <div><b>${c.servers}</b><span>Servers</span></div>
+        <div><b>${(c.far*100).toFixed(1)}%</b><span>False-alarm rate</span></div>
+      </div>
+      <div class="hint" style="margin-top:10px">embedding ${c.backend} · set ${new Date(c.created_at).toLocaleString()}</div>
+      ${c.warnings.map(w=>`<div class="warn" style="margin-top:10px">${w}</div>`).join('')}`
+      : `<div class="warn" style="margin:0">Not calibrated. A provisional threshold is in use — run a calibration before trusting any result.</div>`;
+  }
+
+  if(page==='activity'){
+    $('#jobs').innerHTML = STATE.jobs.length
+      ? STATE.jobs.slice().reverse().map(jobHtml).join('')
+      : '<div class="empty">Nothing running.</div>';
+  }
+
+  // live job feedback on the connect / calibrate pages
+  const running = STATE.jobs.filter(j=>j.kind==='connect');
+  if(running.length && $('#c-out')) $('#c-out').innerHTML = jobHtml(running[running.length-1]);
+  const cal = STATE.jobs.filter(j=>j.kind==='calibrate');
+  if(cal.length && $('#cal-out')) $('#cal-out').innerHTML = jobHtml(cal[cal.length-1]);
+}
+
+/* ---------- actions ---------- */
+$('#c-go').onclick = async () => {
+  const body = {name:$('#c-name').value.trim(), command:$('#c-cmd').value.trim(),
+                cwd:$('#c-cwd').value.trim()||null,
+                probes:+$('#c-probes').value, samples:+$('#c-samples').value};
+  if(!body.name || !body.command){ $('#c-out').innerHTML =
+      '<div class="warn" style="margin-top:12px">A name and a launch command are both required.</div>'; return; }
+  $('#c-go').disabled = true;
+  const r = await post('/api/connect', body);
+  $('#c-go').disabled = false;
+  if(!r.ok) $('#c-out').innerHTML = `<div class="warn" style="margin-top:12px">${r.error}</div>`;
+  else { $('#c-name').value=''; $('#c-cmd').value=''; refresh(); }
+};
+
+$('#cal-go').onclick = async () => {
+  const r = await post(`/api/calibrate?repeats=${$('#cal-repeats').value}`);
+  if(!r.ok) $('#cal-out').innerHTML = `<div class="warn" style="margin-top:12px">${r.error}</div>`;
   refresh();
+};
+
+async function discover(){
+  const r = await api('/api/client/discover');
+  $('#discover').innerHTML = r.found.length ? `<table><tr><th>Client</th><th>Config</th><th>Servers</th><th></th></tr>`
+    + r.found.map(f=>`<tr><td><b>${f.client}</b></td>
+        <td style="font-size:11px;color:var(--dim)">${f.path}</td>
+        <td>${f.servers===null?'—':f.servers}</td>
+        <td><button onclick="useConfig('${f.path.replace(/\\/g,'\\\\')}')">Inspect</button></td></tr>`).join('')
+    + '</table>'
+    : '<div class="empty">No MCP client configs found in the usual locations.</div>';
 }
+function useConfig(p){ $('#cf-path').value = p; $('#cf-inspect').click(); }
+
+$('#cf-inspect').onclick = async () => {
+  const r = await post('/api/client/inspect', {path:$('#cf-path').value.trim()});
+  if(!r.ok){ $('#cf-out').innerHTML = `<div class="warn" style="margin-top:12px">${r.error}</div>`;
+             $('#cf-protect').disabled = true; return; }
+  const can = r.servers.filter(s=>s.action==='wrapped').length;
+  $('#cf-protect').disabled = can === 0;
+  $('#cf-out').innerHTML = `<div style="margin-top:14px">
+    <table><tr><th>Server</th><th>Transport</th><th>Command</th><th>Status</th></tr>` +
+    (r.servers.length ? r.servers.map(s=>`<tr><td><b>${s.name}</b></td><td>${s.transport}</td>
+      <td style="font-size:11px;color:var(--dim)">${(s.command+' '+s.args.join(' ')).slice(0,58)}</td>
+      <td>${s.action==='wrapped'?'<span class="badge b-ok">CAN PROTECT</span>'
+          :s.action==='already-wrapped'?'<span class="badge b-ok">PROTECTED</span>'
+          :`<span class="badge b-off">${s.action.replace('skipped-','')}</span>`}
+          ${s.note?`<div class="hint">${s.note}</div>`:''}</td></tr>`).join('')
+      : '<tr><td colspan=4 class="empty">No servers in this config.</td></tr>') +
+    `</table>${can?'':'<div class="hint" style="margin-top:8px">Nothing here can be protected — only stdio servers are supported.</div>'}</div>`;
+};
+
+$('#cf-protect').onclick = async () => {
+  const r = await post('/api/client/protect',
+                       {path:$('#cf-path').value.trim(), in_place:$('#cf-inplace').checked});
+  if(!r.ok){ $('#cf-out').innerHTML = `<div class="warn" style="margin-top:12px">${r.error}</div>`; return; }
+  $('#cf-out').innerHTML = `<div style="margin-top:14px">
+    <div class="warn" style="background:rgba(46,204,113,.1);border-color:rgba(46,204,113,.35);color:#7fdca5">
+      Protected: <b>${r.protected.join(', ')}</b><br>Written to <code>${r.written}</code>
+      ${r.backup?`<br>Backup: <code>${r.backup}</code>`:''}
+      <br><br>Restart your MCP client, then add these servers on the <b>Add server</b> page so they are baselined too.
+    </div><pre>${r.diff.replace(/</g,'&lt;')}</pre></div>`;
+};
 
 $('#pause').onclick = async () => {
-  const r = await (await fetch('/api/pause',{method:'POST'})).json();
+  const r = await post('/api/pause');
   $('#pause').textContent = r.paused ? 'Resume' : 'Pause';
-  $('#live').textContent = r.paused ? 'paused' : 'live';
+  $('#live').textContent = r.paused ? 'paused' : 'monitoring';
   $('#dot').style.animation = r.paused ? 'none' : 'p 2s infinite';
   $('#dot').style.background = r.paused ? 'var(--dim)' : 'var(--ok)';
 };
 
 async function refresh(){
-  let d;
-  try { d = await (await fetch('/api/state')).json(); }
-  catch { $('#live').textContent = 'daemon offline'; return; }
-
-  $('#thr').textContent = `threshold ${d.threshold.toFixed(2)} - ${d.threshold_source}`;
-  const worst = d.servers.reduce((a,s)=>
-    s.status==='alert' ? 'alert' : (a==='alert'?a:(s.status==='watch'?'watch':a)), 'ok');
-  $('#mode').textContent = worst==='alert' ? 'DRIFT DETECTED'
-                        : worst==='watch' ? 'watching' : 'all servers nominal';
-  $('#mode').style.color = worst==='alert' ? 'var(--alert)'
-                        : worst==='watch' ? 'var(--watch)' : 'var(--ok)';
-
-  $('#servers').innerHTML = d.servers.length
-    ? d.servers.map(serverCard).join('')
-    : `<div class="empty">No baselines yet. Run <code>driftsentry baseline</code> first.</div>`;
-  $('#alerts').innerHTML = d.alerts.length
-    ? d.alerts.map(alertCard).join('')
-    : `<div class="empty">No alerts. Servers are behaving.</div>`;
+  try { STATE = await api('/api/state'); } catch { $('#live').textContent='daemon offline'; return; }
+  render();
 }
-
-refresh();
-setInterval(refresh, 2000);
+refresh(); setInterval(refresh, 2000);
 </script>
 </body>
 </html>

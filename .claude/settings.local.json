@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(sed -i 's/python -m testbed /attacker /g; s/\\\\[testbed\\\\]/[attacker]/; s/getLogger\\(\"testbed\"\\)/getLogger\\(\"attacker\"\\)/; s/prog=\"testbed-server\"/prog=\"attacker-server\"/; s/default \\\\.testbed\\\\/scenario\\\\.json/default .attacker\\\\/scenario.json/' *.py)",
-      "Bash(sed -i 's/os.environ.get\\(\"TESTBED_HOME\", \".testbed\"\\)/os.environ.get\\(\"ATTACKER_HOME\", \".attacker\"\\)/' scenario.py sink.py)"
+      "Bash(sed -i 's/os.environ.get\\(\"TESTBED_HOME\", \".testbed\"\\)/os.environ.get\\(\"ATTACKER_HOME\", \".attacker\"\\)/' scenario.py sink.py)",
+      "Bash(mkdir -p \"C:/Users/LEGION/AppData/Local/Temp/claude/F--fyp-project/714ec55f-96b7-4463-a688-f998a3f91c40/scratchpad\")",
+      "Bash(py -m pip install --target ./libs python-docx --quiet)",
+      "Bash(PYTHONPATH=./libs py -c \"import docx; print\\('python-docx ready'\\)\")",
+      "Bash(py -)"
     ]
   }
 }

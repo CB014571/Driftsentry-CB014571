@@ -292,12 +292,11 @@ def _cmd_ui(ns: argparse.Namespace) -> int:
 
     daemon = Daemon(interval=ns.interval, samples_per_probe=ns.samples_per_probe,
                     monitor_sandbox=not ns.no_sandbox)
+    # Starting with no servers is fine: the dashboard's "Add server" page is now
+    # the primary way to connect one, so refusing to open the window here would
+    # leave a new user with no route in at all.
     if not daemon.servers:
-        print("No baselines found, so there is nothing to monitor yet.")
-        print("Capture one first, e.g.:")
-        print("    python scripts/setup_demo.py")
-        print("    driftsentry baseline --server <name> --exec <command...>")
-        return 2
+        print("No servers connected yet - use the 'Add server' page in the dashboard.")
 
     daemon.start()
     app = create_app(daemon)
