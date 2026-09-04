@@ -109,7 +109,7 @@ def _cmd_run(ns: argparse.Namespace) -> int:
     _configure_logging(verbose=True)
 
     async def _main() -> None:
-        await run_stdio_proxy(ns.server, command, args, cwd=ns.cwd, env=env, enforce=ns.enforce)
+        await run_stdio_proxy(ns.server, command, args, cwd=ns.cwd, env=env, enforce=ns.enforce, passive=ns.passive)
 
     anyio.run(_main)
     return 0
@@ -758,6 +758,9 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--cwd", default=None, help="working directory for the real server")
     run.add_argument("--forward-env", action="append", default=[], metavar="KEY",
                      help="environment variable name to pass down to the real server (repeatable)")
+    run.add_argument("--passive", action="store_true",
+                     help="watch real traffic for security invariants as well as proxying it "
+                          "(catches a server that behaves for probes and attacks real users)")
     run.add_argument("--enforce", action="store_true",
                      help="opt-in: refuse tool calls to a quarantined server (detection is the "
                           "default; blocking is not)")

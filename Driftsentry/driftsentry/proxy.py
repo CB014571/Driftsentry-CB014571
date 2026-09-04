@@ -84,12 +84,16 @@ class ProxyLogger:
     ``tools/list`` responses get their definition hash recorded.
     """
 
-    def __init__(self, server_name: str) -> None:
+    def __init__(self, server_name: str, passive: Any | None = None) -> None:
         self.server_name = server_name
         self.path: Path = logs_dir() / f"{server_name}.jsonl"
         self._fh = self.path.open("a", encoding="utf-8")
         # request id -> (method, tool_name); lets us name responses.
         self._pending: dict[Any, tuple[str, str | None]] = {}
+        # Optional passive monitor. It only ever reads: it is handed a copy of
+        # what was already parsed for the audit log, and every call into it is
+        # wrapped so that a defect there cannot reach the forwarding path.
+        self._passive = passive
 
     def close(self) -> None:
         try:
@@ -131,6 +135,8 @@ class ProxyLogger:
                 rec["args"] = _truncate(params.get("arguments"))
                 if kind == "request":
                     self._pending[rec["id"]] = (method, tool)
+                    if self._passive is not None:
+                        self._passive.on_request(rec["id"], tool, params.get("arguments") or {})
             elif kind == "request":
                 self._pending[rec["id"]] = (method, None)
 
@@ -157,6 +163,12 @@ class ProxyLogger:
                     rec["definition_hash"] = tools_definition_hash(tools)
                 else:
                     rec["result"] = _truncate(result)
+                    # Passive evaluation of a REAL call. The untruncated result is
+                    # passed, because a content rule that only ever saw the first
+                    # 500 characters would miss a payload appended to the end -
+                    # which is exactly where the injection family puts it.
+                    if self._passive is not None and isinstance(result, dict):
+                        self._passive.on_response(rid, result)
 
         self._emit(rec)
 
@@ -268,6 +280,7 @@ async def run_stdio_proxy(
     cwd: str | None = None,
     env: dict[str, str] | None = None,
     enforce: bool = False,
+    passive: bool = False,
 ) -> None:
     """Run the transparent proxy for one stdio MCP server until either end closes.
 
@@ -279,7 +292,22 @@ async def run_stdio_proxy(
     server: detection is the contribution being evaluated, and a proxy that
     silently blocked attacks would confound every detection measurement.
     """
-    plog = ProxyLogger(server_name)
+    monitor = None
+    if passive:
+        # Watch real traffic for security invariants the active probes cannot
+        # reach: a server that behaves for canaries and misbehaves for the user.
+        from driftsentry.passive import PassiveMonitor
+        from driftsentry.store import BaselineStore
+
+        baseline = BaselineStore().load(server_name)
+        if baseline is None:
+            log.warning("passive monitoring requested for %r but it has no baseline; "
+                        "there is nothing to compare real traffic against", server_name)
+        else:
+            monitor = PassiveMonitor(server_name, baseline)
+            log.info("passive monitoring enabled for %r (watch-only)", server_name)
+
+    plog = ProxyLogger(server_name, passive=monitor)
     log.info("proxying server %r via: %s %s", server_name, command, " ".join(args))
     log.info("exchange log: %s", plog.path)
     if enforce:
@@ -303,4 +331,10 @@ async def run_stdio_proxy(
                     tg.start_soon(_pump, server_read, client_write, "s2c", plog, tg.cancel_scope)
     finally:
         plog.close()
+        if monitor is not None:
+            summary = monitor.summary()
+            log.info("passive: %d call(s) observed, %d finding(s), %d high severity",
+                     summary["calls_seen"], summary["findings"], summary["high_severity"])
+            for finding in monitor.findings():
+                log.warning("passive finding: %s/%s - %s", finding.tool, finding.kind, finding.detail)
         log.info("proxy for %r stopped", server_name)

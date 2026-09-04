@@ -35,6 +35,7 @@ from typing import Any, Iterator
 import numpy as np
 
 from driftsentry.embeddings import cosine_distance
+from driftsentry.fielddrift import learn_profiles
 
 # Floor on a probe's variance band: the embedding noise floor.
 #
@@ -103,6 +104,11 @@ class NormalizedResponse:
     n_chars: int
     n_blocks: int
     is_error: bool
+    # Hash of the normalised text. Cheap, and it supports an exact-equality test
+    # that the embedding distance cannot express: for a tool whose answer never
+    # varies, "identical or not" is a far sharper question than "how far did the
+    # meaning move".
+    text_hash: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -140,6 +146,7 @@ def normalize_result(result: dict[str, Any]) -> NormalizedResponse:
         n_chars=len(text),
         n_blocks=len(blocks),
         is_error=bool(result.get("isError")),
+        text_hash="sha256:" + hashlib.sha256(text.encode("utf-8")).hexdigest()[:32],
     )
 
 
@@ -156,6 +163,8 @@ class ProbeSample:
     hosts: list[str] = field(default_factory=list)
     files: list[str] = field(default_factory=list)
     content_flags: list[str] = field(default_factory=list)
+    # The unreduced response, kept only long enough to learn field profiles.
+    raw: dict[str, Any] | None = None
 
 
 @dataclass
@@ -176,6 +185,15 @@ class ProbeBaseline:
     chars_std: float
     error_rate: float
     latency_ms_mean: float
+    # Every distinct response text seen at baseline. A probe that produced ONE
+    # hash across all its samples is perfectly deterministic, and for those the
+    # variance band is a numerical floor rather than a measurement - see
+    # `is_deterministic`.
+    text_hashes: list[str] = field(default_factory=list)
+    # Per-field profiles learned from this probe's own repeated samples,
+    # including which fields are volatile. Empty on a v1 baseline, in which
+    # case field-level comparison is simply unavailable rather than wrong.
+    field_profiles: dict[str, Any] = field(default_factory=dict)
     hosts: list[str] = field(default_factory=list)
     files: list[str] = field(default_factory=list)
     # What this tool NORMALLY does. The security rules are differential, so a
@@ -194,6 +212,26 @@ class ProbeBaseline:
         # Tolerate baselines written by an earlier version that lacked newer fields.
         known = {f for f in cls.__dataclass_fields__}
         return cls(**{k: v for k, v in data.items() if k in known})
+
+    def is_deterministic(self) -> bool:
+        """True if this probe returned byte-identical text on every sample.
+
+        Worth treating specially. Such a probe's band is MIN_BAND - a numerical
+        floor chosen so the scorer does not divide by zero, not a measurement of
+        anything. Scaling by it and then by the calibrated threshold means a tool
+        that has never varied by a single character is still allowed a
+        substantial semantic shift before anything fires, which is precisely the
+        room a low-drift (L5 mimicry) attacker needs.
+
+        Requires an explicit sample count: a baseline captured with one sample
+        says nothing about determinism, and treating it as proof would turn every
+        thin baseline into a hair-trigger.
+        """
+        return (
+            self.n_samples >= 3
+            and self.dist_max == 0.0
+            and len(self.text_hashes) == 1
+        )
 
 
 @dataclass
@@ -245,13 +283,28 @@ class ServerBaseline:
     # command. Holds {"command": str, "args": [str], "cwd": str | None}.
     launch: dict[str, Any] = field(default_factory=dict)
 
+    # --- keyed / dynamic probing -----------------------------------------
+    # Defaults reproduce the original fixed-probe baseline exactly, so a file
+    # written before any of this existed loads and verifies unchanged. That is
+    # not politeness: the fixed path is the control condition the whole
+    # evaluation compares against, and it has to keep working byte for byte.
+    schema_version: int = 1
+    probe_mode: str = "fixed"                 # fixed | keyed
+    key_id: str = ""                          # identifies the key, never the key
+    generator_version: str = ""
+    families: list[Any] = field(default_factory=list)   # TemplateFamilyBaseline
+
     def to_dict(self) -> dict[str, Any]:
         data = asdict(self)
         data["tools"] = [t.to_dict() for t in self.tools]
+        data["families"] = [f.to_dict() if hasattr(f, "to_dict") else f
+                            for f in self.families]
         return data
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ServerBaseline":
+        from driftsentry.families import TemplateFamilyBaseline
+
         return cls(
             server=data["server"],
             definition_hash=data["definition_hash"],
@@ -264,7 +317,16 @@ class ServerBaseline:
             n_samples=data["n_samples"],
             captured_at=data["captured_at"],
             launch=data.get("launch", {}),
+            schema_version=data.get("schema_version", 1),
+            probe_mode=data.get("probe_mode", "fixed"),
+            key_id=data.get("key_id", ""),
+            generator_version=data.get("generator_version", ""),
+            families=[TemplateFamilyBaseline.from_dict(f)
+                      for f in data.get("families", [])],
         )
+
+    def family_for(self, tool: str):
+        return next((f for f in self.families if f.tool == tool), None)
 
     def tool(self, name: str) -> ToolBaseline | None:
         return next((t for t in self.tools if t.tool == name), None)
@@ -369,6 +431,9 @@ def summarize_probe(
         dist_max=dist_max,
         band=band,
         shape_hashes=sorted({s.normalized.shape_hash for s in samples}),
+        text_hashes=sorted({s.normalized.text_hash for s in samples}),
+        field_profiles={k: v.to_dict() for k, v in
+                        learn_profiles([s.raw for s in samples if s.raw]).items()},
         chars_mean=float(statistics.fmean(chars)),
         chars_std=float(statistics.pstdev(chars)) if len(chars) > 1 else 0.0,
         error_rate=sum(1 for s in samples if s.normalized.is_error) / len(samples),

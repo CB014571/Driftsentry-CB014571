@@ -19,15 +19,28 @@ from driftsentry.store import BaselineStore
 log = logging.getLogger("driftsentry.verify")
 
 
-def _launch_of(baseline: ServerBaseline, override: dict[str, Any] | None = None) -> tuple[str, list[str], str | None]:
-    """Resolve how to start a server, preferring an explicit override."""
+def _launch_of(
+    baseline: ServerBaseline, override: dict[str, Any] | None = None
+) -> tuple[str, list[str], str | None, dict[str, str] | None]:
+    """Resolve how to start a server, preferring an explicit override.
+
+    ``env`` is honoured from an explicit override only, and is never read from
+    the stored baseline. Two reasons. An environment block can carry API keys, so
+    persisting one into a baseline JSON that the write-up encourages people to
+    read would be careless. And the MCP SDK filters the inherited environment
+    down to a safe default set when none is given, so a caller that needs a
+    custom variable to reach the server - the evaluation harness isolating
+    ATTACKER_HOME per episode, for instance - has to pass it explicitly rather
+    than hope it survives inheritance.
+    """
     launch = override or baseline.launch
     if not launch or not launch.get("command"):
         raise ValueError(
             f"no launch command recorded for {baseline.server!r}; "
             "pass --exec, or re-capture the baseline so it is stored"
         )
-    return launch["command"], list(launch.get("args") or []), launch.get("cwd")
+    env = (override or {}).get("env")
+    return launch["command"], list(launch.get("args") or []), launch.get("cwd"), env
 
 
 async def verify_server(
@@ -38,13 +51,16 @@ async def verify_server(
     monitor_sandbox: bool = True,
     mode: str = "full",
     threshold_ratio: float | None = None,
+    cycle: int = 1,
+    key: bytes | None = None,
 ) -> DriftReport:
     """Re-probe a server and score the result."""
-    command, args, cwd = _launch_of(baseline, launch)
+    command, args, cwd, env = _launch_of(baseline, launch)
     measurement = await reprobe(
-        baseline, command, args, cwd=cwd,
+        baseline, command, args, cwd=cwd, env=env,
         samples_per_probe=samples_per_probe,
         monitor_sandbox=monitor_sandbox,
+        cycle=cycle, key=key,
     )
     if threshold_ratio is None:
         threshold_ratio, source = active_threshold(measurement.embedding_backend)
@@ -117,10 +133,10 @@ async def calibrate_servers(
 
         ratios: list[float] = []
         for launch in launches:
-            command, args, cwd = _launch_of(baseline, launch or None)
+            command, args, cwd, env = _launch_of(baseline, launch or None)
             for run in range(repeats):
                 measurement = await reprobe(
-                    baseline, command, args, cwd=cwd,
+                    baseline, command, args, cwd=cwd, env=env,
                     samples_per_probe=samples_per_probe,
                     monitor_sandbox=monitor_sandbox,
                 )

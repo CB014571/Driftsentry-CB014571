@@ -40,3 +40,6 @@ eval/plots/
 Thumbs.db
 .idea/
 .vscode/
+
+# Claude Code per-machine settings (local allowlists, absolute paths)
+.claude/settings.local.json

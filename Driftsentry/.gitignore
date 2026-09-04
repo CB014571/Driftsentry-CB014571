@@ -23,3 +23,17 @@ Thumbs.db
 # Evaluation outputs (regenerated from seeds — keep the scripts, not the artefacts)
 eval/results/
 eval/plots/
+
+# Per-episode isolated homes created by the harness. Each one holds a throwaway
+# DRIFTSENTRY_HOME and ATTACKER_HOME: baselines, a Chroma store, alert and event
+# logs. Tens of megabytes of binary state, rebuilt from the seed on every run, so
+# the harness is the artefact and these are not.
+.eval_workspace/
+.eval_workspace_keyed/
+
+# eval_results/ IS tracked: the CSV and JSONL rows are the experimental evidence
+# behind the write-up. The run transcripts there are added explicitly with
+# `git add -f`, because the *.log rule above would otherwise drop them.
+
+# Personal working notes. Kept locally, not published.
+docs/VIVA_PREP_PRIVATE.md

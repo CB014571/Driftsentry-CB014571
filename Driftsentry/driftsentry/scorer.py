@@ -83,6 +83,36 @@ W_STRUCTURAL = 0.85
 # own it never raises a tool's verdict.
 W_ERROR_RATE = 0.4
 
+# A probe that never varied by a single character at baseline has returned
+# something different.
+#
+# Why this needs its own signal rather than relying on the embedding distance:
+# a deterministic probe's variance band is MIN_BAND, a numerical floor rather
+# than a measurement. Dividing by it and then by a calibrated threshold of ~10
+# means such a tool is allowed a large semantic shift before anything fires -
+# which is exactly the room a low-drift mimicry attacker works in. Measured on
+# the acme baseline, lookup_customer and read_document both required a cosine
+# distance of 0.108 to alert despite having zero observed variance.
+#
+# Placed just above the line, not far above it. "This changed at all" is strong
+# evidence for a deterministic tool, but a legitimate update produces exactly the
+# same signal, so it should alert and be dismissible rather than alarm loudly.
+W_DETERMINISM = 1.15
+
+# A security-relevant FIELD changed value.
+#
+# The signal a whole-response embedding is worst at. Changing one digit of an
+# account number leaves the sentence meaning the same thing, so the vector
+# barely moves - measured at 0.1367 cosine distance on a real response, against
+# a field-drift score of 1.0 for the same edit.
+#
+# The incoming score is already weighted by what KIND of field moved: identity
+# (account, recipient, URL, host) at 1.0, prose at 0.3. Multiplying by this
+# weight means a redirected recipient alerts clearly while a reworded summary
+# lands around 0.5 and never does. Fields the baseline learned to be volatile -
+# timestamps, request ids - are masked before comparison and cannot contribute.
+W_FIELD_DRIFT = 1.6
+
 # Ceiling on the behavioural signal.
 #
 # Past a few multiples of the threshold the signal has said everything it can:
@@ -294,7 +324,16 @@ def score_report(
             # Dividing by the calibrated threshold puts a noisy tool and a
             # deterministic one on the same scale: both alert at 1.0.
             raw_behavioural = check.ratio / threshold_ratio if threshold_ratio > 0 else 0.0
-            behavioural = min(raw_behavioural, W_BEHAVIOURAL_MAX)
+            # Scale by how comparable this family's responses actually are.
+            #
+            # For the exact-probe path this is 1.0 and nothing changes. For a
+            # keyed family whose answers genuinely differ between inputs, the
+            # embedding distance partly measures the input rather than the tool,
+            # and asserting otherwise would manufacture false alarms. Where the
+            # signal is weak the detector leans on the invariant evidence -
+            # structure, rules, side effects - which does not depend on the input.
+            comparability = getattr(check, "comparability", 1.0)
+            behavioural = min(raw_behavioural * comparability, W_BEHAVIOURAL_MAX)
             signals.append(Signal(
                 name="behavioural_drift",
                 score=behavioural,
@@ -322,6 +361,38 @@ def score_report(
                     severity=_severity_for(W_STRUCTURAL),
                     detail="the response's structure differs from every shape seen at baseline",
                     evidence={"observed_shape": check.observed_shape_hash},
+                ))
+
+            # -- a security-relevant field changed value
+            field_drift = getattr(check, "field_drift", 0.0)
+            if field_drift > 0.0:
+                score = min(field_drift * W_FIELD_DRIFT, W_BEHAVIOURAL_MAX)
+                signals.append(Signal(
+                    name="field_drift",
+                    score=score,
+                    severity=_severity_for(score),
+                    detail=("a security-relevant field changed value: "
+                            + "; ".join(getattr(check, "field_changes", []) or ["(unspecified)"])),
+                    evidence={"field_drift": field_drift,
+                              "changes": getattr(check, "field_changes", [])},
+                ))
+
+            # -- exact-equality break on a provably deterministic probe
+            if getattr(check, "determinism_break", False):
+                signals.append(Signal(
+                    name="determinism_break",
+                    score=W_DETERMINISM,
+                    severity=_severity_for(W_DETERMINISM),
+                    detail=(
+                        "this probe returned byte-identical text on every sample at "
+                        "baseline, and now returns something different"
+                    ),
+                    evidence={
+                        "baseline_excerpt": check.baseline_excerpt,
+                        "observed_excerpt": check.observed_excerpt,
+                        "distance": check.distance,
+                        "band": check.band,
+                    },
                 ))
 
             # -- error-rate change

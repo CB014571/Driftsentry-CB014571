@@ -74,6 +74,24 @@
   .b-off{background:rgba(124,142,164,.12);color:var(--dim);border:1px solid var(--line2)}
 
   .empty{padding:30px 14px;text-align:center;color:var(--dim)}
+
+  /* Narrow windows collapse the sidebar to an icon rail. Without this the
+     210px sidebar swallows half a small window and the content is unreadable. */
+  @media (max-width:900px){
+    nav{width:52px}
+    .brand{font-size:0;padding:0 0 12px;text-align:center}
+    .brand::before{content:"DS";font-size:13px;color:var(--accent);letter-spacing:0}
+    .navitem{justify-content:center;padding:11px 0;gap:0;position:relative}
+    .navitem .lbl{display:none}
+    .navitem .ic{font-size:16px}
+    .navsec{font-size:0;padding:8px 0 2px}
+    .navsec::after{content:"";display:block;height:1px;background:var(--line);margin:0 12px}
+    .navfoot{padding:10px 6px 0;text-align:center;font-size:0}
+    .navfoot button{font-size:10px;padding:5px 2px}
+    .badge-n{position:absolute;top:4px;right:6px;margin:0;font-size:9px;padding:0 4px}
+    main{padding:14px}
+    .row2{grid-template-columns:1fr}
+  }
   .spark{background:var(--panel2);border:1px solid var(--line);border-radius:5px}
   .kv{display:flex;gap:26px;flex-wrap:wrap}
   .kv div b{display:block;font-size:19px;font-weight:700;margin-bottom:1px}
@@ -100,16 +118,16 @@
 <nav>
   <div class="brand">DRIFT<span>SENTRY</span></div>
   <div class="navsec">Monitor</div>
-  <div class="navitem on" data-page="overview"><span class="ic">◉</span> Overview</div>
-  <div class="navitem" data-page="graph"><span class="ic">◪</span> Drift graph</div>
-  <div class="navitem" data-page="servers"><span class="ic">▤</span> Servers</div>
-  <div class="navitem" data-page="alerts"><span class="ic">⚠</span> Alerts <span id="alertN"></span></div>
+  <div class="navitem on" data-page="overview"><span class="ic">◉</span> <span class="lbl">Overview</span></div>
+  <div class="navitem" data-page="graph"><span class="ic">◪</span> <span class="lbl">Drift graph</span></div>
+  <div class="navitem" data-page="servers"><span class="ic">▤</span> <span class="lbl">Servers</span></div>
+  <div class="navitem" data-page="alerts"><span class="ic">⚠</span> <span class="lbl">Alerts</span><span id="alertN"></span></div>
   <div class="navsec">Connect</div>
-  <div class="navitem" data-page="addserver"><span class="ic">＋</span> Add server</div>
-  <div class="navitem" data-page="client"><span class="ic">⇄</span> MCP clients</div>
+  <div class="navitem" data-page="addserver"><span class="ic">＋</span> <span class="lbl">Add server</span></div>
+  <div class="navitem" data-page="client"><span class="ic">⇄</span> <span class="lbl">MCP clients</span></div>
   <div class="navsec">Setup</div>
-  <div class="navitem" data-page="calibrate"><span class="ic">◎</span> Calibration</div>
-  <div class="navitem" data-page="activity"><span class="ic">≡</span> Activity</div>
+  <div class="navitem" data-page="calibrate"><span class="ic">◎</span> <span class="lbl">Calibration</span></div>
+  <div class="navitem" data-page="activity"><span class="ic">≡</span> <span class="lbl">Activity</span></div>
   <div class="navfoot">
     <div><span class="dot" id="dot"></span> <span id="live">monitoring</span></div>
     <div style="margin-top:6px"><button id="pause" style="width:100%">Pause</button></div>

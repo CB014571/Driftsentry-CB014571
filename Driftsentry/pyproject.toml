@@ -12,6 +12,11 @@ authors = [{ name = "Shevon Fernando" }]
 license = { text = "MIT" }
 
 # Kept in sync with requirements.txt; requirements.lock holds exact pins.
+#
+# psutil, fastapi and pywebview were imported by the code but declared nowhere,
+# so `pip install .` produced an installation whose sandbox monitor was silently
+# disabled and whose `ui` command raised ImportError. Declared here now: a
+# dependency the code imports is a dependency, whatever the roadmap called it.
 dependencies = [
     "mcp==1.28.1",
     "chromadb==1.5.9",
@@ -19,6 +24,20 @@ dependencies = [
     "httpx==0.28.1",
     "typer==0.27.0",
     "rich==15.0.0",
+    "psutil==7.2.2",
+    "fastapi==0.140.13",
+    "pywebview==6.2.1",
+]
+
+[project.optional-dependencies]
+# Test framework. Not needed to run DriftSentry, required to change it safely.
+dev = [
+    "pytest==9.1.1",
+]
+# The evaluation harness only. Kept out of the runtime set so nothing in the
+# detection path can ever depend on it.
+eval = [
+    "pytest==9.1.1",
 ]
 
 [project.scripts]

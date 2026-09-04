@@ -145,6 +145,7 @@ class SandboxMonitor:
                     log.debug("cannot attach to pid %s: %s", candidate, exc)
             self.available = bool(self._procs)
 
+        self._own: set[str] | None = None   # handles inherited from us
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
         self._seen_hosts: set[str] = set()
@@ -161,9 +162,34 @@ class SandboxMonitor:
                 continue
         return out
 
+    def _own_handles(self) -> set[str]:
+        """Files THIS process has open, which a launched child inherits.
+
+        A child process inherits its parent's open handles, so anything
+        DriftSentry itself holds - its own log file, a redirected stdout, a
+        store it has open - is reported by psutil as being open in the server
+        too. Attributing those to the server is simply wrong: the server never
+        opened them, and they produce a permanent new_file_access alert on a
+        perfectly honest server.
+
+        This was found live, with a benign server alarming every cycle on the
+        detector's own log file.
+        """
+        if self._own is not None:
+            return self._own
+        own: set[str] = set()
+        try:
+            for handle in psutil.Process().open_files():
+                own.add(os.path.normpath(handle.path))
+        except Exception:  # pragma: no cover - best effort
+            pass
+        self._own = own
+        return own
+
     def _collect(self) -> tuple[set[str], set[str]]:
         hosts: set[str] = set()
         files: set[str] = set()
+        inherited = self._own_handles()
         for proc in self._processes():
             try:
                 for conn in proc.net_connections(kind="inet"):
@@ -184,8 +210,9 @@ class SandboxMonitor:
                 pass
             try:
                 for handle in proc.open_files():
-                    if not _is_noise(handle.path):
-                        files.add(os.path.normpath(handle.path))
+                    path = os.path.normpath(handle.path)
+                    if not _is_noise(path) and path not in inherited:
+                        files.add(path)
             except Exception:
                 pass
         return hosts, files

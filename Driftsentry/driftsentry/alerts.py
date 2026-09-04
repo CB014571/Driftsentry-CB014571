@@ -62,6 +62,10 @@ _CAUSE_SPECIFICITY = [
     "rule:credential_shaped_output",
     "rule:instruction_shaped_output",
     "rule:new_file_access",
+    # More specific than plain drift: it says the tool used to be exactly
+    # reproducible and no longer is, which is a concrete thing to show a user.
+    "field_drift",
+    "determinism_break",
     "behavioural_drift",
     "structural_change",
     "error_behaviour",
@@ -326,6 +330,9 @@ def _cause_sentence(cause: str, tool: str, signal_detail: str) -> str:
         "rule:credential_shaped_output": f"'{tool}' returned key- or token-shaped strings it never returned at baseline.",
         "rule:instruction_shaped_output": f"'{tool}' returned text aimed at the AI assistant rather than at you.",
         "rule:new_file_access": f"'{tool}' opened files it never touched at baseline.",
+        "field_drift": f"'{tool}' changed a security-relevant value in its response - an account, recipient, address or status - while the rest of the answer stayed the same.",
+        "determinism_break": f"'{tool}' always returned exactly the same answer to this input when it was "
+                             f"approved, and now returns something different.",
         "structural_change": f"'{tool}' returned a response whose structure differs from every shape seen at baseline.",
         "behavioural_drift": f"'{tool}' now behaves measurably differently from its approved baseline.",
     }.get(cause)

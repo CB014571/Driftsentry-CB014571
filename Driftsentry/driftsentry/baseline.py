@@ -40,6 +40,9 @@ from driftsentry.fingerprint import (
 )
 from driftsentry.hashing import tools_definition_hash
 from driftsentry.probes import Probe, ProbeGenerator, SafetyPolicy, classify_tool_safety
+from driftsentry.families import summarize_family
+from driftsentry.fielddrift import FieldProfile, compare as compare_fields
+from driftsentry.redact import echo_ratio, redact
 from driftsentry.rules import content_flags
 from driftsentry.sandbox import Observation, SandboxMonitor
 
@@ -113,11 +116,37 @@ async def capture_baseline(
     backend_name: str = "auto",
     safety_policy: SafetyPolicy = "default",
     monitor_sandbox: bool = True,
+    probe_mode: str = "fixed",
+    key: bytes | None = None,
 ) -> ServerBaseline:
-    """Capture a full behavioural baseline for one stdio MCP server."""
+    """Capture a full behavioural baseline for one stdio MCP server.
+
+    ``probe_mode="keyed"`` draws probe values from a secret key instead of the
+    fixed pool, and records a per-template *family* baseline alongside the
+    per-probe ones, so later verification can use values this server has never
+    seen. ``"fixed"`` is unchanged and remains the control condition.
+    """
     embedder = backend or get_backend(backend_name)
-    generator = ProbeGenerator(seed=seed)
     params = StdioServerParameters(command=command, args=args, cwd=cwd, env=env)
+
+    keyed = probe_mode == "keyed"
+    if keyed:
+        from driftsentry import keys as key_store
+        from driftsentry.probe_generator import (
+            GENERATOR_VERSION,
+            KeyedProbeGenerator,
+            UnsupportedSchema,
+        )
+
+        probe_key = key or key_store.get_or_create(server)
+        generator = KeyedProbeGenerator(probe_key, cycle=0)
+        key_identifier = key_store.key_id(probe_key)
+    else:
+        generator = ProbeGenerator(seed=seed)
+        probe_key = None
+        key_identifier = ""
+        GENERATOR_VERSION = ""            # noqa: N806 - only used in keyed mode
+        UnsupportedSchema = ()            # noqa: N806 - never raised in fixed mode
 
     import psutil  # local import; only needed to spot the child process
 
@@ -127,6 +156,7 @@ async def capture_baseline(
         before = set()
 
     tool_baselines: list[ToolBaseline] = []
+    families: list[Any] = []
 
     async with stdio_client(params) as (read, write):
         async with ClientSession(read, write) as session:
@@ -155,8 +185,24 @@ async def capture_baseline(
                     )
                     continue
 
-                probes: list[Probe] = generator.generate(server, definition, count=n_probes)
+                try:
+                    probes: list[Probe] = generator.generate(server, definition, count=n_probes)
+                except UnsupportedSchema as exc:
+                    # Refuse rather than improvise. A probe built from a
+                    # misunderstood schema gets rejected by the server, and that
+                    # rejection is then learned as the tool's normal behaviour -
+                    # a baseline that is quietly worthless.
+                    log.warning("tool %r: NOT probed (%s)", name, exc)
+                    tool_baselines.append(ToolBaseline(
+                        tool=name, safety=safety,
+                        safety_reason=f"schema not supported by the keyed generator: {exc}",
+                        probed=False,
+                    ))
+                    continue
+
                 probe_baselines = []
+                samples_by_instance: list[list[ProbeSample]] = []
+                echo_ratios: list[float] = []
                 for probe in probes:
                     payloads: list[dict[str, Any]] = []
                     latencies: list[float] = []
@@ -168,8 +214,18 @@ async def capture_baseline(
                         observations.append(observation)
 
                     normalized = [normalize_result(p) for p in payloads]
+                    # In keyed mode the probe's own arguments are stripped out of
+                    # the response before embedding. Many tools echo their input,
+                    # so without this the vector would be dominated by which
+                    # value we happened to send - the detector would be measuring
+                    # its own probe generator instead of the tool.
+                    if keyed:
+                        texts = [redact(n.text, probe.args) for n in normalized]
+                        echo_ratios.extend(echo_ratio(n.text, probe.args) for n in normalized)
+                    else:
+                        texts = [n.text for n in normalized]
                     # One batched embedding call per probe keeps remote backends fast.
-                    vectors = embedder.embed([n.text for n in normalized])
+                    vectors = embedder.embed(texts)
 
                     samples = [
                         ProbeSample(
@@ -181,12 +237,30 @@ async def capture_baseline(
                             # Recorded so the security rules stay differential:
                             # whatever this tool normally emits can never alarm.
                             content_flags=content_flags(norm.text),
+                            raw=payload_i,
                         )
-                        for vec, norm, lat, obs in zip(vectors, normalized, latencies, observations)
+                        for vec, norm, lat, obs, payload_i in
+                        zip(vectors, normalized, latencies, observations, payloads)
                     ]
+                    samples_by_instance.append(samples)
                     probe_baselines.append(
                         summarize_probe(probe.probe_id, probe.template_id, probe.args, samples)
                     )
+
+                if keyed:
+                    family = summarize_family(
+                        family_id=probes[0].template_id,
+                        tool=name,
+                        field_grammars=dict(probes[0].choices),
+                        instances=probe_baselines,
+                        samples_by_instance=samples_by_instance,
+                        echo_ratio=(sum(echo_ratios) / len(echo_ratios)) if echo_ratios else 0.0,
+                        generator_version=GENERATOR_VERSION,
+                        key_id=key_identifier,
+                        cycle=0,
+                    )
+                    families.append(family)
+                    log.info("tool %r: family %s", name, family.describe())
 
                 band_span = ", ".join(f"{p.band:.4f}" for p in probe_baselines)
                 log.info("tool %r: %d probes x %d samples, bands [%s]", name, len(probes), n_samples, band_span)
@@ -212,6 +286,11 @@ async def capture_baseline(
         n_samples=n_samples,
         captured_at=_now(),
         launch={"command": command, "args": list(args), "cwd": cwd},
+        schema_version=2 if keyed else 1,
+        probe_mode=probe_mode,
+        key_id=key_identifier,
+        generator_version=GENERATOR_VERSION if keyed else "",
+        families=families,
     )
 
 
@@ -244,6 +323,19 @@ class ProbeCheck:
     observed_excerpt: str = ""
     baseline_excerpt: str = ""
     became_error: bool = False
+    # A probe whose baseline never varied by a character has now returned
+    # something different. For such a probe this is a far stronger statement
+    # than any distance, because its benign variance was genuinely zero.
+    determinism_break: bool = False
+    # How much the embedding signal can be trusted for this probe's family, 0-1.
+    # 1.0 for the exact-probe path, where like is compared with like. Lower for a
+    # keyed family whose answers genuinely differ between inputs, and the scorer
+    # scales the behavioural signal by it rather than pretending otherwise.
+    comparability: float = 1.0
+    # Worst weighted per-field change, 0-1. Catches the security-critical
+    # edit an embedding is blind to: one digit of an account number.
+    field_drift: float = 0.0
+    field_changes: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -267,6 +359,92 @@ class ReprobeReport:
         return max((c.ratio for c in self.checks), default=0.0)
 
 
+async def _reprobe_keyed(
+    session: ClientSession,
+    baseline: ServerBaseline,
+    embedder: EmbeddingBackend,
+    monitor: SandboxMonitor | None,
+    *,
+    samples_per_probe: int,
+    cycle: int,
+    key: bytes | None,
+) -> list[ProbeCheck]:
+    """Verify with freshly generated values, against family baselines."""
+    from driftsentry import keys as key_store
+    from driftsentry.families import compare_to_family
+    from driftsentry.probe_generator import KeyedProbeGenerator, UnsupportedSchema
+
+    probe_key = key or key_store.get(baseline.server)
+    if probe_key is None:
+        raise ValueError(
+            f"baseline for {baseline.server!r} was captured with keyed probes, but "
+            "its key is no longer in the key store; re-baseline the server"
+        )
+
+    generator = KeyedProbeGenerator(probe_key, cycle=cycle)
+    definitions = {d["name"]: d for d in baseline.tool_definitions}
+    checks: list[ProbeCheck] = []
+
+    for tool in baseline.tools:
+        if not tool.probed:
+            continue
+        family = baseline.family_for(tool.tool)
+        definition = definitions.get(tool.tool)
+        if family is None or definition is None:
+            log.warning("no family baseline for %r; skipping", tool.tool)
+            continue
+
+        try:
+            probes = generator.generate(
+                baseline.server, definition, count=family.n_instances, cycle=cycle
+            )
+        except UnsupportedSchema as exc:  # pragma: no cover - caught at capture time
+            log.warning("tool %r: cannot generate probes (%s)", tool.tool, exc)
+            continue
+
+        for probe in probes:
+            payloads, observations = [], []
+            for _ in range(samples_per_probe):
+                payload, _latency, observation = await _call_once(
+                    session, tool.tool, probe.args, monitor
+                )
+                payloads.append(payload)
+                observations.append(observation)
+
+            normalized = [normalize_result(p) for p in payloads]
+            # Same redaction as at capture time, or the comparison is meaningless.
+            vectors = embedder.embed([redact(n.text, probe.args) for n in normalized])
+
+            samples = [
+                ProbeSample(
+                    embedding=vec, normalized=norm, latency_ms=0.0,
+                    hosts=obs.hosts, files=obs.files,
+                    content_flags=content_flags(norm.text),
+                )
+                for vec, norm, obs in zip(vectors, normalized, observations)
+            ]
+            measured = compare_to_family(family, samples)
+            checks.append(ProbeCheck(
+                tool=tool.tool,
+                probe_id=probe.probe_id,
+                distance=measured["distance"],
+                band=measured["band"],
+                ratio=measured["ratio"],
+                within_band=measured["within_band"],
+                shape_known=measured["shape_known"],
+                new_hosts=measured["new_hosts"],
+                new_files=measured["new_files"],
+                new_content_flags=measured["new_content_flags"],
+                observed_shape_hash=measured["observed_shape_hash"],
+                observed_excerpt=measured["observed_excerpt"],
+                baseline_excerpt=measured["baseline_excerpt"],
+                became_error=measured["became_error"],
+                determinism_break=measured["determinism_break"],
+                comparability=measured["comparability"],
+            ))
+    return checks
+
+
 async def reprobe(
     baseline: ServerBaseline,
     command: str,
@@ -277,12 +455,21 @@ async def reprobe(
     samples_per_probe: int = 1,
     backend: EmbeddingBackend | None = None,
     monitor_sandbox: bool = True,
+    cycle: int = 1,
+    key: bytes | None = None,
 ) -> ReprobeReport:
     """Replay a stored baseline's probes against a live server and measure drift.
 
     Deliberately a *measurement*, not a verdict: it reports each probe's distance
     relative to its benign band. Combining that with the hash and security-rule
     signals into a single calibrated score with a threshold is Phase 4's job.
+
+    For a baseline captured with ``probe_mode="keyed"`` the stored arguments are
+    NOT replayed. Fresh values are generated for this ``cycle`` and compared
+    against the template family's behavioural distribution instead. Replaying
+    stored values would defeat the entire mechanism: the server saw them while it
+    was being baselined, so it can recognise them however unpredictable they were
+    when first chosen.
     """
     spec, dim = baseline.embedding_spec()
     embedder = backend or get_backend(spec, dim=dim)
@@ -314,6 +501,19 @@ async def reprobe(
             observed_definitions = [t.model_dump(mode="json") for t in listed.tools]
             observed_hash = tools_definition_hash(observed_definitions)
 
+            if baseline.probe_mode == "keyed":
+                checks.extend(await _reprobe_keyed(
+                    session, baseline, embedder, monitor,
+                    samples_per_probe=samples_per_probe, cycle=cycle, key=key,
+                ))
+                return ReprobeReport(
+                    server=baseline.server,
+                    baseline_definition_hash=baseline.definition_hash,
+                    observed_definition_hash=observed_hash,
+                    checks=checks,
+                    embedding_backend=embedder.name,
+                )
+
             for tool in baseline.tools:
                 if not tool.probed:
                     continue
@@ -335,6 +535,16 @@ async def reprobe(
                     known_shapes = set(probe.shape_hashes)
                     shape_known = all(n.shape_hash in known_shapes for n in normalized)
 
+                    # Exact-equality check, only for probes that earned it by
+                    # being perfectly stable at baseline. Cheap, and it closes
+                    # the gap where a deterministic tool could be altered by less
+                    # than the calibrated threshold allows.
+                    known_texts = set(probe.text_hashes)
+                    determinism_break = (
+                        probe.is_deterministic()
+                        and any(n.text_hash not in known_texts for n in normalized)
+                    )
+
                     seen_hosts = {h for o in observations for h in o.hosts}
                     seen_files = {f for o in observations for f in o.files}
 
@@ -353,6 +563,14 @@ async def reprobe(
                     )
                     worst_norm = normalized[worst_i]
 
+                    profiles = {k: FieldProfile.from_dict(v)
+                                for k, v in (probe.field_profiles or {}).items()}
+                    field_drift, field_changes = (
+                        max((compare_fields(profiles, pay) for pay in payloads),
+                            key=lambda r: r[0])
+                        if profiles else (0.0, [])
+                    )
+
                     checks.append(
                         ProbeCheck(
                             tool=tool.tool,
@@ -369,6 +587,9 @@ async def reprobe(
                             observed_excerpt=worst_norm.text[:300],
                             baseline_excerpt=probe.excerpt,
                             became_error=any(n.is_error for n in normalized) and probe.error_rate == 0.0,
+                            determinism_break=determinism_break,
+                            field_drift=field_drift,
+                            field_changes=[c.describe() for c in field_changes[:5]],
                         )
                     )
 

@@ -1,0 +1,1013 @@
+scenario                  probes   outcome             score  ground truth
+--------------------------------------------------------------------------------------------
+scenario: F:\fyp project\Driftsentry\.eval_workspace_keyed\cmp-content-injection-L4-s5\attacker\scenario.json  [benign]
+2026-08-22 18:10:37,648 [attacker] INFO scenario: mode=benign family=content-injection level=L1 probe_aware=False
+2026-08-22 18:10:37,666 [attacker] INFO Processing request of type ListToolsRequest
+2026-08-22 18:10:38,102 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:10:39,155 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:10:40,168 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:10:41,149 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:10:42,120 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:10:43,035 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:10:44,022 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:10:44,973 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:10:46,016 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:10:46,939 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:10:47,803 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:10:48,767 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:10:49,783 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:10:50,754 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:10:51,750 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:10:52,705 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:10:53,697 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:10:54,649 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:10:55,671 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:10:56,605 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:10:57,529 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:10:58,515 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:10:59,426 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:00,287 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:01,211 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:02,164 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:03,151 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:04,124 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:05,108 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:06,105 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:07,089 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:08,073 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:09,124 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:10,037 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:10,909 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:11,922 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:13,034 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:13,923 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:14,922 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:15,884 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:16,897 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:17,816 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:18,786 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:19,736 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:20,686 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:21,714 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:22,695 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:23,711 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:24,784 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:25,743 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:26,617 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:27,553 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:28,524 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:29,492 [attacker] INFO Processing request of type CallToolRequest
+scenario: F:\fyp project\Driftsentry\.eval_workspace_keyed\cmp-content-injection-L4-s5\attacker\scenario.json  [content-injection/L4]
+2026-08-22 18:11:32,412 [attacker] INFO scenario: mode=rug-pull family=content-injection level=L4 probe_aware=True
+2026-08-22 18:11:32,427 [attacker] INFO Processing request of type ListToolsRequest
+2026-08-22 18:11:32,801 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:32,803 [attacker] INFO call 1: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:11:33,699 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:33,699 [attacker] INFO call 2: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:11:34,628 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:34,637 [attacker] INFO call 3: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:11:35,596 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:35,597 [attacker] INFO call 4: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:11:36,468 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:36,469 [attacker] INFO call 5: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:11:37,349 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:37,360 [attacker] INFO call 6: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:11:38,284 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:38,285 [attacker] INFO call 7: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:11:39,288 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:39,289 [attacker] INFO call 8: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:11:40,304 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:40,304 [attacker] INFO call 9: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:11:41,222 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:41,223 [attacker] INFO call 10: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:11:42,104 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:42,105 [attacker] INFO call 11: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:11:43,008 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:43,008 [attacker] INFO call 12: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:11:43,941 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:43,955 [attacker] INFO call 13: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:11:44,837 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:44,837 [attacker] INFO call 14: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:11:45,730 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:45,730 [attacker] INFO call 15: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:11:46,613 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:46,614 [attacker] INFO call 16: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:11:47,519 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:47,520 [attacker] INFO call 17: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:11:48,452 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:48,453 [attacker] INFO call 18: benign this call (input resembles a detector probe; staying benign)
+scenario: F:\fyp project\Driftsentry\.eval_workspace_keyed\cmp-content-injection-L4-s5\attacker\scenario.json  [content-injection/L4]
+2026-08-22 18:11:49,815 [attacker] INFO scenario: mode=rug-pull family=content-injection level=L4 probe_aware=True
+2026-08-22 18:11:49,830 [attacker] INFO Processing request of type ListToolsRequest
+2026-08-22 18:11:50,241 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:50,242 [attacker] INFO call 1: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:11:51,172 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:51,173 [attacker] INFO call 2: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:11:52,079 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:52,080 [attacker] INFO call 3: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:11:52,999 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:53,000 [attacker] INFO call 4: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:11:53,964 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:53,964 [attacker] INFO call 5: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:11:54,907 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:54,908 [attacker] INFO call 6: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:11:55,896 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:55,897 [attacker] INFO call 7: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:11:56,766 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:56,767 [attacker] INFO call 8: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:11:57,632 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:57,632 [attacker] INFO call 9: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:11:58,477 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:58,478 [attacker] INFO call 10: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:11:59,315 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:11:59,316 [attacker] INFO call 11: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:12:00,233 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:00,233 [attacker] INFO call 12: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:12:01,121 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:01,121 [attacker] INFO call 13: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:12:01,935 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:01,935 [attacker] INFO call 14: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:12:02,886 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:02,887 [attacker] INFO call 15: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:12:03,712 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:03,712 [attacker] INFO call 16: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:12:04,602 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:04,615 [attacker] INFO call 17: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:12:05,422 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:05,422 [attacker] INFO call 18: benign this call (input resembles a detector probe; staying benign)
+scenario: F:\fyp project\Driftsentry\.eval_workspace_keyed\cmp-content-injection-L4-s5\attacker\scenario.json  [content-injection/L4]
+2026-08-22 18:12:06,831 [attacker] INFO scenario: mode=rug-pull family=content-injection level=L4 probe_aware=True
+2026-08-22 18:12:06,846 [attacker] INFO Processing request of type ListToolsRequest
+2026-08-22 18:12:07,220 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:07,221 [attacker] INFO call 1: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:12:08,169 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:08,170 [attacker] INFO call 2: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:12:09,070 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:09,071 [attacker] INFO call 3: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:12:09,968 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:09,969 [attacker] INFO call 4: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:12:10,813 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:10,814 [attacker] INFO call 5: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:12:11,764 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:11,765 [attacker] INFO call 6: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:12:12,642 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:12,642 [attacker] INFO call 7: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:12:13,611 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:13,611 [attacker] INFO call 8: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:12:14,471 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:14,472 [attacker] INFO call 9: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:12:15,308 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:15,309 [attacker] INFO call 10: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:12:16,209 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:16,210 [attacker] INFO call 11: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:12:17,124 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:17,124 [attacker] INFO call 12: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:12:18,039 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:18,039 [attacker] INFO call 13: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:12:18,932 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:18,932 [attacker] INFO call 14: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:12:19,753 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:19,754 [attacker] INFO call 15: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:12:20,701 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:20,701 [attacker] INFO call 16: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:12:21,539 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:21,539 [attacker] INFO call 17: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:12:22,499 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:22,500 [attacker] INFO call 18: benign this call (input resembles a detector probe; staying benign)
+content-injection/L4      fixed    never_triggered     0.063  held back on 54 probe-shaped input(s)  [-]
+scenario: F:\fyp project\Driftsentry\.eval_workspace_keyed\cmp-content-injection-L4-s5\attacker\scenario.json  [benign]
+2026-08-22 18:12:30,574 [attacker] INFO scenario: mode=benign family=content-injection level=L1 probe_aware=False
+2026-08-22 18:12:30,590 [attacker] INFO Processing request of type ListToolsRequest
+2026-08-22 18:12:30,970 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:31,852 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:32,719 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:33,565 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:34,438 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:35,384 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:36,291 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:37,091 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:38,076 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:38,933 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:39,722 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:40,454 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:41,364 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:42,331 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:43,202 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:44,098 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:44,966 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:45,765 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:46,677 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:47,555 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:48,457 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:49,293 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:50,201 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:51,000 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:51,913 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:52,840 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:53,648 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:54,523 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:55,387 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:56,338 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:57,239 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:58,091 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:58,876 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:12:59,615 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:00,453 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:01,339 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:02,196 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:03,025 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:03,880 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:04,822 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:05,598 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:06,488 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:07,432 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:08,327 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:09,306 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:10,134 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:11,035 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:11,949 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:12,939 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:13,702 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:14,535 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:15,503 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:16,367 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:17,273 [attacker] INFO Processing request of type CallToolRequest
+scenario: F:\fyp project\Driftsentry\.eval_workspace_keyed\cmp-content-injection-L4-s5\attacker\scenario.json  [content-injection/L4]
+2026-08-22 18:13:20,067 [attacker] INFO scenario: mode=rug-pull family=content-injection level=L4 probe_aware=True
+2026-08-22 18:13:20,083 [attacker] INFO Processing request of type ListToolsRequest
+2026-08-22 18:13:20,454 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:20,455 [attacker] INFO call 1: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:13:21,311 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:21,312 [attacker] INFO call 2: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:13:22,179 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:22,179 [attacker] INFO call 3: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:13:23,014 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:23,015 [attacker] INFO call 4: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:13:23,921 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:23,921 [attacker] INFO call 5: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:13:24,702 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:24,702 [attacker] INFO call 6: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:13:25,610 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:25,610 [attacker] INFO call 7: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:13:26,405 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:26,417 [attacker] INFO call 8: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:13:27,320 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:27,320 [attacker] INFO call 9: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:13:28,128 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:28,129 [attacker] INFO call 10: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:13:29,066 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:29,080 [attacker] INFO call 11: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:13:29,936 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:29,937 [attacker] INFO call 12: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:13:30,752 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:30,753 [attacker] INFO call 13: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:13:31,602 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:31,603 [attacker] INFO call 14: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:13:32,518 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:32,518 [attacker] INFO call 15: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:13:33,361 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:33,362 [attacker] INFO call 16: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:13:34,241 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:34,242 [attacker] INFO call 17: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:13:35,089 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:35,089 [attacker] INFO call 18: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+content-injection/L4      keyed    detected            2.966  fired: inject  [behavioural_drift]
+scenario: F:\fyp project\Driftsentry\.eval_workspace_keyed\cmp-silent-tamper-L4-s5\attacker\scenario.json  [benign]
+2026-08-22 18:13:43,119 [attacker] INFO scenario: mode=benign family=content-injection level=L1 probe_aware=False
+2026-08-22 18:13:43,136 [attacker] INFO Processing request of type ListToolsRequest
+2026-08-22 18:13:43,535 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:44,443 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:45,352 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:46,262 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:47,159 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:48,059 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:48,999 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:49,934 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:50,780 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:51,726 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:52,575 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:53,508 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:54,476 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:55,385 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:56,349 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:57,255 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:58,240 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:13:59,093 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:00,067 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:00,956 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:01,829 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:02,802 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:03,666 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:04,667 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:05,542 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:06,414 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:07,375 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:08,222 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:09,221 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:10,148 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:11,104 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:12,022 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:12,965 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:13,956 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:14,925 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:15,889 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:16,880 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:17,800 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:18,793 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:19,794 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:20,757 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:21,741 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:22,835 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:23,746 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:24,678 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:25,599 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:26,588 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:27,463 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:28,487 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:29,390 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:30,356 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:31,370 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:32,328 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:33,257 [attacker] INFO Processing request of type CallToolRequest
+scenario: F:\fyp project\Driftsentry\.eval_workspace_keyed\cmp-silent-tamper-L4-s5\attacker\scenario.json  [silent-tamper/L4]
+2026-08-22 18:14:36,218 [attacker] INFO scenario: mode=rug-pull family=silent-tamper level=L4 probe_aware=True
+2026-08-22 18:14:36,234 [attacker] INFO Processing request of type ListToolsRequest
+2026-08-22 18:14:36,635 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:36,636 [attacker] INFO call 1: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:14:37,597 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:37,597 [attacker] INFO call 2: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:14:38,547 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:38,548 [attacker] INFO call 3: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:14:39,604 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:39,605 [attacker] INFO call 4: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:14:40,657 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:40,658 [attacker] INFO call 5: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:14:41,569 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:41,570 [attacker] INFO call 6: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:14:42,526 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:42,527 [attacker] INFO call 7: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:14:43,485 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:43,485 [attacker] INFO call 8: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:14:44,427 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:44,428 [attacker] INFO call 9: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:14:45,354 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:45,355 [attacker] INFO call 10: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:14:46,386 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:46,387 [attacker] INFO call 11: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:14:47,259 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:47,260 [attacker] INFO call 12: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:14:48,298 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:48,300 [attacker] INFO call 13: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:14:49,205 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:49,205 [attacker] INFO call 14: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:14:50,115 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:50,116 [attacker] INFO call 15: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:14:51,074 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:51,075 [attacker] INFO call 16: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:14:52,047 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:52,047 [attacker] INFO call 17: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:14:53,005 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:53,006 [attacker] INFO call 18: benign this call (input resembles a detector probe; staying benign)
+scenario: F:\fyp project\Driftsentry\.eval_workspace_keyed\cmp-silent-tamper-L4-s5\attacker\scenario.json  [silent-tamper/L4]
+2026-08-22 18:14:55,562 [attacker] INFO scenario: mode=rug-pull family=silent-tamper level=L4 probe_aware=True
+2026-08-22 18:14:55,578 [attacker] INFO Processing request of type ListToolsRequest
+2026-08-22 18:14:55,990 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:55,990 [attacker] INFO call 1: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:14:56,903 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:56,904 [attacker] INFO call 2: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:14:57,889 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:57,890 [attacker] INFO call 3: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:14:58,823 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:58,824 [attacker] INFO call 4: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:14:59,758 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:14:59,758 [attacker] INFO call 5: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:15:00,758 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:00,758 [attacker] INFO call 6: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:15:01,728 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:01,728 [attacker] INFO call 7: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:15:02,596 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:02,596 [attacker] INFO call 8: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:15:03,579 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:03,580 [attacker] INFO call 9: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:15:04,506 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:04,506 [attacker] INFO call 10: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:15:05,472 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:05,473 [attacker] INFO call 11: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:15:06,474 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:06,475 [attacker] INFO call 12: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:15:07,370 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:07,370 [attacker] INFO call 13: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:15:08,318 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:08,319 [attacker] INFO call 14: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:15:09,288 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:09,289 [attacker] INFO call 15: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:15:10,204 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:10,204 [attacker] INFO call 16: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:15:11,148 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:11,148 [attacker] INFO call 17: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:15:12,036 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:12,037 [attacker] INFO call 18: benign this call (input resembles a detector probe; staying benign)
+scenario: F:\fyp project\Driftsentry\.eval_workspace_keyed\cmp-silent-tamper-L4-s5\attacker\scenario.json  [silent-tamper/L4]
+2026-08-22 18:15:13,595 [attacker] INFO scenario: mode=rug-pull family=silent-tamper level=L4 probe_aware=True
+2026-08-22 18:15:13,611 [attacker] INFO Processing request of type ListToolsRequest
+2026-08-22 18:15:14,016 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:14,017 [attacker] INFO call 1: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:15:14,940 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:14,941 [attacker] INFO call 2: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:15:15,905 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:15,905 [attacker] INFO call 3: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:15:16,853 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:16,854 [attacker] INFO call 4: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:15:17,834 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:17,835 [attacker] INFO call 5: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:15:18,781 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:18,781 [attacker] INFO call 6: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:15:19,689 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:19,690 [attacker] INFO call 7: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:15:20,704 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:20,705 [attacker] INFO call 8: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:15:21,684 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:21,685 [attacker] INFO call 9: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:15:22,543 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:22,544 [attacker] INFO call 10: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:15:23,502 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:23,503 [attacker] INFO call 11: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:15:24,493 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:24,493 [attacker] INFO call 12: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:15:25,367 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:25,367 [attacker] INFO call 13: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:15:26,294 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:26,295 [attacker] INFO call 14: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:15:27,270 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:27,271 [attacker] INFO call 15: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:15:28,300 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:28,300 [attacker] INFO call 16: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:15:29,251 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:29,251 [attacker] INFO call 17: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:15:30,154 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:30,154 [attacker] INFO call 18: benign this call (input resembles a detector probe; staying benign)
+silent-tamper/L4          fixed    never_triggered     0.087  held back on 54 probe-shaped input(s)  [-]
+scenario: F:\fyp project\Driftsentry\.eval_workspace_keyed\cmp-silent-tamper-L4-s5\attacker\scenario.json  [benign]
+2026-08-22 18:15:38,299 [attacker] INFO scenario: mode=benign family=content-injection level=L1 probe_aware=False
+2026-08-22 18:15:38,316 [attacker] INFO Processing request of type ListToolsRequest
+2026-08-22 18:15:38,744 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:39,683 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:40,655 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:41,633 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:42,541 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:43,470 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:44,535 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:45,438 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:46,433 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:47,338 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:48,233 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:49,173 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:50,208 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:51,044 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:51,942 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:52,861 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:53,839 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:54,708 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:55,679 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:56,581 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:57,568 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:58,501 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:15:59,465 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:00,385 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:01,347 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:02,301 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:03,234 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:04,228 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:05,055 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:05,955 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:06,877 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:07,726 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:08,550 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:09,351 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:10,153 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:10,989 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:11,832 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:12,629 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:13,480 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:14,327 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:15,193 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:16,028 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:17,013 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:17,900 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:18,854 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:19,766 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:20,545 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:21,411 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:22,404 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:23,321 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:24,247 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:25,086 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:25,920 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:26,779 [attacker] INFO Processing request of type CallToolRequest
+scenario: F:\fyp project\Driftsentry\.eval_workspace_keyed\cmp-silent-tamper-L4-s5\attacker\scenario.json  [silent-tamper/L4]
+2026-08-22 18:16:29,620 [attacker] INFO scenario: mode=rug-pull family=silent-tamper level=L4 probe_aware=True
+2026-08-22 18:16:29,636 [attacker] INFO Processing request of type ListToolsRequest
+2026-08-22 18:16:30,096 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:30,097 [attacker] INFO call 1: ATTACK fired (silent-tamper) - a detail in the response was altered
+2026-08-22 18:16:31,025 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:31,026 [attacker] INFO call 2: ATTACK fired (silent-tamper) - a detail in the response was altered
+2026-08-22 18:16:31,907 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:31,907 [attacker] INFO call 3: ATTACK fired (silent-tamper) - a detail in the response was altered
+2026-08-22 18:16:32,814 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:32,814 [attacker] INFO call 4: ATTACK fired (silent-tamper) - a detail in the response was altered
+2026-08-22 18:16:33,767 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:33,768 [attacker] INFO call 5: ATTACK fired (silent-tamper) - a detail in the response was altered
+2026-08-22 18:16:34,631 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:34,633 [attacker] INFO call 6: ATTACK fired (silent-tamper) - a detail in the response was altered
+2026-08-22 18:16:35,531 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:35,532 [attacker] INFO call 7: ATTACK fired (silent-tamper) - a detail in the response was altered
+2026-08-22 18:16:36,516 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:36,516 [attacker] INFO call 8: ATTACK fired (silent-tamper) - a detail in the response was altered
+2026-08-22 18:16:37,924 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:37,925 [attacker] INFO call 9: ATTACK fired (silent-tamper) - a detail in the response was altered
+2026-08-22 18:16:38,883 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:38,884 [attacker] INFO call 10: ATTACK fired (silent-tamper) - a detail in the response was altered
+2026-08-22 18:16:39,810 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:39,823 [attacker] INFO call 11: ATTACK fired (silent-tamper) - a detail in the response was altered
+2026-08-22 18:16:40,681 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:40,682 [attacker] INFO call 12: ATTACK fired (silent-tamper) - a detail in the response was altered
+2026-08-22 18:16:41,741 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:41,742 [attacker] INFO call 13: ATTACK fired (silent-tamper) - a detail in the response was altered
+2026-08-22 18:16:42,590 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:42,590 [attacker] INFO call 14: ATTACK fired (silent-tamper) - a detail in the response was altered
+2026-08-22 18:16:43,550 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:43,551 [attacker] INFO call 15: ATTACK fired (silent-tamper) - a detail in the response was altered
+2026-08-22 18:16:44,581 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:44,581 [attacker] INFO call 16: ATTACK fired (silent-tamper) - a detail in the response was altered
+2026-08-22 18:16:45,461 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:45,461 [attacker] INFO call 17: ATTACK fired (silent-tamper) - a detail in the response was altered
+2026-08-22 18:16:46,370 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:46,371 [attacker] INFO call 18: ATTACK fired (silent-tamper) - a detail in the response was altered
+silent-tamper/L4          keyed    detected            2.228  fired: tamper  [behavioural_drift]
+scenario: F:\fyp project\Driftsentry\.eval_workspace_keyed\cmp-exfiltration-L4-s5\attacker\scenario.json  [benign]
+2026-08-22 18:16:54,474 [attacker] INFO scenario: mode=benign family=content-injection level=L1 probe_aware=False
+2026-08-22 18:16:54,491 [attacker] INFO Processing request of type ListToolsRequest
+2026-08-22 18:16:54,863 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:55,709 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:56,595 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:57,444 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:58,276 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:16:59,157 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:00,120 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:01,058 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:01,975 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:02,811 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:03,671 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:04,591 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:05,447 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:06,313 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:07,201 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:08,090 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:08,967 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:09,831 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:10,715 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:11,635 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:12,434 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:13,285 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:14,094 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:14,955 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:15,928 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:16,701 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:17,570 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:18,551 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:19,386 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:20,317 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:21,328 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:22,171 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:23,096 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:24,004 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:24,886 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:25,769 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:26,762 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:27,589 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:28,537 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:29,508 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:30,347 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:31,307 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:32,357 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:33,235 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:34,147 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:35,079 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:36,005 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:36,923 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:37,880 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:38,807 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:39,781 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:40,616 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:41,573 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:42,596 [attacker] INFO Processing request of type CallToolRequest
+scenario: F:\fyp project\Driftsentry\.eval_workspace_keyed\cmp-exfiltration-L4-s5\attacker\scenario.json  [exfiltration/L4]
+2026-08-22 18:17:45,496 [attacker] INFO scenario: mode=rug-pull family=exfiltration level=L4 probe_aware=True
+2026-08-22 18:17:45,513 [attacker] INFO Processing request of type ListToolsRequest
+2026-08-22 18:17:45,997 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:45,998 [attacker] INFO call 1: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:17:46,884 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:46,884 [attacker] INFO call 2: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:17:47,922 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:47,923 [attacker] INFO call 3: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:17:48,855 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:48,856 [attacker] INFO call 4: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:17:49,757 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:49,758 [attacker] INFO call 5: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:17:50,703 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:50,703 [attacker] INFO call 6: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:17:51,677 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:51,678 [attacker] INFO call 7: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:17:52,639 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:52,640 [attacker] INFO call 8: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:17:53,651 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:53,651 [attacker] INFO call 9: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:17:54,633 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:54,633 [attacker] INFO call 10: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:17:55,529 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:55,529 [attacker] INFO call 11: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:17:56,594 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:56,595 [attacker] INFO call 12: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:17:57,461 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:57,475 [attacker] INFO call 13: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:17:58,414 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:58,414 [attacker] INFO call 14: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:17:59,394 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:17:59,395 [attacker] INFO call 15: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:18:00,376 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:00,377 [attacker] INFO call 16: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:18:01,343 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:01,344 [attacker] INFO call 17: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:18:02,371 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:02,371 [attacker] INFO call 18: benign this call (input resembles a detector probe; staying benign)
+scenario: F:\fyp project\Driftsentry\.eval_workspace_keyed\cmp-exfiltration-L4-s5\attacker\scenario.json  [exfiltration/L4]
+2026-08-22 18:18:04,837 [attacker] INFO scenario: mode=rug-pull family=exfiltration level=L4 probe_aware=True
+2026-08-22 18:18:04,854 [attacker] INFO Processing request of type ListToolsRequest
+2026-08-22 18:18:05,333 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:05,334 [attacker] INFO call 1: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:18:06,288 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:06,289 [attacker] INFO call 2: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:18:07,369 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:07,370 [attacker] INFO call 3: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:18:08,421 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:08,422 [attacker] INFO call 4: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:18:09,439 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:09,439 [attacker] INFO call 5: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:18:10,360 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:10,361 [attacker] INFO call 6: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:18:11,439 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:11,440 [attacker] INFO call 7: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:18:12,473 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:12,473 [attacker] INFO call 8: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:18:13,489 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:13,489 [attacker] INFO call 9: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:18:14,569 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:14,570 [attacker] INFO call 10: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:18:15,575 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:15,575 [attacker] INFO call 11: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:18:16,736 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:16,736 [attacker] INFO call 12: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:18:17,607 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:17,607 [attacker] INFO call 13: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:18:18,571 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:18,571 [attacker] INFO call 14: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:18:19,500 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:19,501 [attacker] INFO call 15: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:18:20,402 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:20,403 [attacker] INFO call 16: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:18:21,331 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:21,332 [attacker] INFO call 17: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:18:22,169 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:22,169 [attacker] INFO call 18: benign this call (input resembles a detector probe; staying benign)
+scenario: F:\fyp project\Driftsentry\.eval_workspace_keyed\cmp-exfiltration-L4-s5\attacker\scenario.json  [exfiltration/L4]
+2026-08-22 18:18:23,748 [attacker] INFO scenario: mode=rug-pull family=exfiltration level=L4 probe_aware=True
+2026-08-22 18:18:23,765 [attacker] INFO Processing request of type ListToolsRequest
+2026-08-22 18:18:24,184 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:24,185 [attacker] INFO call 1: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:18:25,105 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:25,105 [attacker] INFO call 2: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:18:26,108 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:26,108 [attacker] INFO call 3: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:18:27,107 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:27,108 [attacker] INFO call 4: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:18:28,091 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:28,092 [attacker] INFO call 5: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:18:28,970 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:28,971 [attacker] INFO call 6: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:18:29,930 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:29,931 [attacker] INFO call 7: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:18:30,843 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:30,844 [attacker] INFO call 8: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:18:31,872 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:31,873 [attacker] INFO call 9: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:18:32,739 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:32,740 [attacker] INFO call 10: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:18:33,691 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:33,692 [attacker] INFO call 11: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:18:34,646 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:34,647 [attacker] INFO call 12: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:18:35,709 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:35,710 [attacker] INFO call 13: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:18:36,647 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:36,648 [attacker] INFO call 14: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:18:37,612 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:37,613 [attacker] INFO call 15: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:18:38,579 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:38,580 [attacker] INFO call 16: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:18:39,532 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:39,533 [attacker] INFO call 17: benign this call (input resembles a detector probe; staying benign)
+2026-08-22 18:18:40,505 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:40,506 [attacker] INFO call 18: benign this call (input resembles a detector probe; staying benign)
+exfiltration/L4           fixed    never_triggered     0.074  held back on 54 probe-shaped input(s)  [-]
+scenario: F:\fyp project\Driftsentry\.eval_workspace_keyed\cmp-exfiltration-L4-s5\attacker\scenario.json  [benign]
+2026-08-22 18:18:48,577 [attacker] INFO scenario: mode=benign family=content-injection level=L1 probe_aware=False
+2026-08-22 18:18:48,593 [attacker] INFO Processing request of type ListToolsRequest
+2026-08-22 18:18:49,079 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:50,039 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:50,989 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:51,973 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:53,013 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:53,934 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:54,950 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:55,962 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:56,898 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:57,828 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:58,790 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:18:59,764 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:00,817 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:01,689 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:02,636 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:03,607 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:04,543 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:05,485 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:06,472 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:07,427 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:08,339 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:09,267 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:10,225 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:11,198 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:12,230 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:13,172 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:14,144 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:15,139 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:16,069 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:16,981 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:18,019 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:18,895 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:19,941 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:20,891 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:21,831 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:22,876 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:23,844 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:24,867 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:25,873 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:26,951 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:27,846 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:28,812 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:29,776 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:30,678 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:31,587 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:32,567 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:33,407 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:34,293 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:35,245 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:36,247 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:37,049 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:37,985 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:38,856 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:39,706 [attacker] INFO Processing request of type CallToolRequest
+scenario: F:\fyp project\Driftsentry\.eval_workspace_keyed\cmp-exfiltration-L4-s5\attacker\scenario.json  [exfiltration/L4]
+2026-08-22 18:19:42,555 [attacker] INFO scenario: mode=rug-pull family=exfiltration level=L4 probe_aware=True
+2026-08-22 18:19:42,571 [attacker] INFO Processing request of type ListToolsRequest
+2026-08-22 18:19:43,021 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:43,023 [attacker] INFO call 1: ATTACK fired (exfiltration) - response copied to local sink; decoy secrets read
+2026-08-22 18:19:43,979 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:43,980 [attacker] INFO call 2: ATTACK fired (exfiltration) - response copied to local sink; decoy secrets read
+2026-08-22 18:19:45,080 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:45,081 [attacker] INFO call 3: ATTACK fired (exfiltration) - response copied to local sink; decoy secrets read
+2026-08-22 18:19:45,995 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:45,996 [attacker] INFO call 4: ATTACK fired (exfiltration) - response copied to local sink; decoy secrets read
+2026-08-22 18:19:47,091 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:47,092 [attacker] INFO call 5: ATTACK fired (exfiltration) - response copied to local sink; decoy secrets read
+2026-08-22 18:19:47,936 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:47,936 [attacker] INFO call 6: ATTACK fired (exfiltration) - response copied to local sink; decoy secrets read
+2026-08-22 18:19:48,865 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:48,879 [attacker] INFO call 7: ATTACK fired (exfiltration) - response copied to local sink; decoy secrets read
+2026-08-22 18:19:49,855 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:49,857 [attacker] INFO call 8: ATTACK fired (exfiltration) - response copied to local sink; decoy secrets read
+2026-08-22 18:19:50,870 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:50,871 [attacker] INFO call 9: ATTACK fired (exfiltration) - response copied to local sink; decoy secrets read
+2026-08-22 18:19:51,988 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:52,002 [attacker] INFO call 10: ATTACK fired (exfiltration) - response copied to local sink; decoy secrets read
+2026-08-22 18:19:52,935 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:52,936 [attacker] INFO call 11: ATTACK fired (exfiltration) - response copied to local sink; decoy secrets read
+2026-08-22 18:19:53,923 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:53,924 [attacker] INFO call 12: ATTACK fired (exfiltration) - response copied to local sink; decoy secrets read
+2026-08-22 18:19:54,811 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:54,812 [attacker] INFO call 13: ATTACK fired (exfiltration) - response copied to local sink; decoy secrets read
+2026-08-22 18:19:55,794 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:55,795 [attacker] INFO call 14: ATTACK fired (exfiltration) - response copied to local sink; decoy secrets read
+2026-08-22 18:19:56,787 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:56,787 [attacker] INFO call 15: ATTACK fired (exfiltration) - response copied to local sink; decoy secrets read
+2026-08-22 18:19:57,717 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:57,718 [attacker] INFO call 16: ATTACK fired (exfiltration) - response copied to local sink; decoy secrets read
+2026-08-22 18:19:58,646 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:58,647 [attacker] INFO call 17: ATTACK fired (exfiltration) - response copied to local sink; decoy secrets read
+2026-08-22 18:19:59,647 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:19:59,648 [attacker] INFO call 18: ATTACK fired (exfiltration) - response copied to local sink; decoy secrets read
+exfiltration/L4           keyed    detected            1.100  fired: exfiltrate  [rule:new_file_access]
+scenario: F:\fyp project\Driftsentry\.eval_workspace_keyed\cmp-content-injection-L1-s5\attacker\scenario.json  [benign]
+2026-08-22 18:20:07,908 [attacker] INFO scenario: mode=benign family=content-injection level=L1 probe_aware=False
+2026-08-22 18:20:07,925 [attacker] INFO Processing request of type ListToolsRequest
+2026-08-22 18:20:08,387 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:09,367 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:10,306 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:11,231 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:12,136 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:13,103 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:14,186 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:15,165 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:16,089 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:17,031 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:17,998 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:18,926 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:19,900 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:20,839 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:21,767 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:22,720 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:23,662 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:24,687 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:25,654 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:26,606 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:27,557 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:28,495 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:29,413 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:30,378 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:31,328 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:32,378 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:33,391 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:34,407 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:35,357 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:36,333 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:37,292 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:38,258 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:39,217 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:40,170 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:41,146 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:42,147 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:43,113 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:44,046 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:45,084 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:45,988 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:47,086 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:48,034 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:49,119 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:49,974 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:51,006 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:51,883 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:52,849 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:53,805 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:54,798 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:55,808 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:56,730 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:57,642 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:58,628 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:20:59,486 [attacker] INFO Processing request of type CallToolRequest
+scenario: F:\fyp project\Driftsentry\.eval_workspace_keyed\cmp-content-injection-L1-s5\attacker\scenario.json  [content-injection/L1]
+2026-08-22 18:21:02,321 [attacker] INFO scenario: mode=rug-pull family=content-injection level=L1 probe_aware=False
+2026-08-22 18:21:02,337 [attacker] INFO Processing request of type ListToolsRequest
+2026-08-22 18:21:02,762 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:02,764 [attacker] INFO call 1: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:21:03,794 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:03,794 [attacker] INFO call 2: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:21:04,691 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:04,692 [attacker] INFO call 3: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:21:05,677 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:05,678 [attacker] INFO call 4: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:21:06,626 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:06,626 [attacker] INFO call 5: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:21:07,539 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:07,539 [attacker] INFO call 6: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:21:08,390 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:08,391 [attacker] INFO call 7: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:21:09,353 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:09,354 [attacker] INFO call 8: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:21:10,283 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:10,283 [attacker] INFO call 9: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:21:11,202 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:11,203 [attacker] INFO call 10: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:21:12,162 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:12,175 [attacker] INFO call 11: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:21:13,152 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:13,153 [attacker] INFO call 12: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:21:14,058 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:14,059 [attacker] INFO call 13: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:21:15,014 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:15,015 [attacker] INFO call 14: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:21:15,947 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:15,948 [attacker] INFO call 15: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:21:16,881 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:16,882 [attacker] INFO call 16: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:21:17,935 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:17,935 [attacker] INFO call 17: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:21:18,918 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:18,919 [attacker] INFO call 18: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+content-injection/L1      fixed    detected            2.061  fired: inject  [behavioural_drift]
+scenario: F:\fyp project\Driftsentry\.eval_workspace_keyed\cmp-content-injection-L1-s5\attacker\scenario.json  [benign]
+2026-08-22 18:21:29,106 [attacker] INFO scenario: mode=benign family=content-injection level=L1 probe_aware=False
+2026-08-22 18:21:29,122 [attacker] INFO Processing request of type ListToolsRequest
+2026-08-22 18:21:29,602 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:30,435 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:31,323 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:32,324 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:33,197 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:34,138 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:35,103 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:35,995 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:36,884 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:37,812 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:38,760 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:39,731 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:40,793 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:41,682 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:42,630 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:43,614 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:44,484 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:45,441 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:46,408 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:47,384 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:48,373 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:49,217 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:50,333 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:51,476 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:52,593 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:53,518 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:54,555 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:55,457 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:56,352 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:57,307 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:58,338 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:21:59,303 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:22:00,214 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:22:01,139 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:22:02,147 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:22:03,065 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:22:04,034 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:22:04,980 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:22:05,900 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:22:06,863 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:22:07,803 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:22:08,831 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:22:09,716 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:22:10,652 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:22:11,573 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:22:12,496 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:22:13,482 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:22:14,361 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:22:15,309 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:22:16,189 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:22:17,088 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:22:17,974 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:22:18,983 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:22:19,797 [attacker] INFO Processing request of type CallToolRequest
+scenario: F:\fyp project\Driftsentry\.eval_workspace_keyed\cmp-content-injection-L1-s5\attacker\scenario.json  [content-injection/L1]
+2026-08-22 18:22:22,828 [attacker] INFO scenario: mode=rug-pull family=content-injection level=L1 probe_aware=False
+2026-08-22 18:22:22,845 [attacker] INFO Processing request of type ListToolsRequest
+2026-08-22 18:22:23,281 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:22:23,282 [attacker] INFO call 1: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:22:24,318 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:22:24,318 [attacker] INFO call 2: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:22:25,346 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:22:25,346 [attacker] INFO call 3: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:22:26,394 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:22:26,395 [attacker] INFO call 4: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:22:27,434 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:22:27,435 [attacker] INFO call 5: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:22:28,447 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:22:28,448 [attacker] INFO call 6: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:22:29,486 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:22:29,487 [attacker] INFO call 7: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:22:30,529 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:22:30,529 [attacker] INFO call 8: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:22:31,558 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:22:31,558 [attacker] INFO call 9: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:22:32,584 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:22:32,585 [attacker] INFO call 10: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:22:33,554 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:22:33,568 [attacker] INFO call 11: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:22:34,496 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:22:34,497 [attacker] INFO call 12: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:22:35,521 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:22:35,521 [attacker] INFO call 13: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:22:36,443 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:22:36,444 [attacker] INFO call 14: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:22:37,368 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:22:37,368 [attacker] INFO call 15: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:22:38,301 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:22:38,301 [attacker] INFO call 16: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:22:39,234 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:22:39,234 [attacker] INFO call 17: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+2026-08-22 18:22:40,156 [attacker] INFO Processing request of type CallToolRequest
+2026-08-22 18:22:40,156 [attacker] INFO call 18: ATTACK fired (content-injection) - instruction-shaped payload appended to the response
+content-injection/L1      keyed    detected            2.966  fired: inject  [behavioural_drift]
+COMPARISON DONE
