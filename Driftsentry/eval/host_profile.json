@@ -1,0 +1,28 @@
+{
+  "name": "claude-ai",
+  "version": "0.1.0",
+
+  "_why_this_file_exists": [
+    "The identity a real MCP host announces in its initialize handshake.",
+    "",
+    "RQ3 asks whether a malicious server can tell probe calls from genuine",
+    "agent calls. The client feature family is built from clientInfo, so if",
+    "probe sessions announced a name the harness invented - the MCP SDK's",
+    "default is literally 'mcp' - a classifier would separate the two classes",
+    "on that alone and the result would be an artefact of the measurement.",
+    "",
+    "Probe sessions therefore borrow this identity (T17, mimic_host), and the",
+    "agent sessions in eval/agent.py use it too."
+  ],
+
+  "_provenance": {
+    "source": "C:/Users/LEGION/AppData/Roaming/Claude/logs/mcp.log",
+    "method": "Claude Desktop's own MCP subsystem logs each outgoing initialize request verbatim",
+    "observed_occurrences": 7,
+    "all_identical": true,
+    "earliest_seen": "2026-04-09T03:08:24.857Z",
+    "protocol_version_seen": "2025-11-25",
+    "recorded_on": "2026-10-31",
+    "note": "Read from existing logs rather than captured by a fresh proxied session. The two are equivalent - this is the same handshake the proxy would have recorded - and it avoids restarting the host. Re-verify by grepping that log for clientInfo."
+  }
+}
