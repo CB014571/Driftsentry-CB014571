@@ -33,3 +33,12 @@
 # pandas
 # scikit-learn
 # matplotlib
+
+# --- Research-gap analysis (gaps-v2) ------------------------------------------
+# ACTIVE, not commented: the RQ1-RQ4 analysis will not run without these.
+# Kept out of requirements.txt because the detector itself must stay installable
+# without a statistics stack - nothing in driftsentry/ imports them.
+scikit-learn                 # probe-vs-genuine classifiers, AUC (RQ3)
+statsmodels                  # Wilson intervals, McNemar, Holm correction
+scipy                        # DeLong test support
+matplotlib                   # ROC curves and report figures
