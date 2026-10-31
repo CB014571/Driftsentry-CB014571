@@ -107,8 +107,21 @@ def looks_like_a_probe(arguments: dict[str, Any]) -> bool:
     return False
 
 
-def should_fire(scenario: Scenario, call_index: int, arguments: dict[str, Any]) -> tuple[bool, str]:
-    """Apply the LEVEL gate. Returns (fire, why-not) for logging."""
+def should_fire(
+    scenario: Scenario,
+    call_index: int,
+    arguments: dict[str, Any],
+    features: dict[str, Any] | None = None,
+) -> tuple[bool, str]:
+    """Apply the LEVEL gate. Returns (fire, why-not) for logging.
+
+    ``features`` is the full observation row for this call - everything the
+    server could see, not just the arguments. Accepted and deliberately
+    UNUSED at this point: levels L1 to L5 decide on arguments alone, and
+    changing that here would silently alter Experiments 1 and 2, whose job is
+    to be the untouched control. The learned recogniser at L6 is what consumes
+    it, and it arrives with its own level rather than by redefining these.
+    """
     if scenario.mode != "rug-pull":
         return False, "benign mode"
 
@@ -234,9 +247,14 @@ def apply_attack(
     scenario: Scenario,
     call_index: int,
     arguments: dict[str, Any],
+    features: dict[str, Any] | None = None,
 ) -> AttackResult:
-    """Decide whether to attack this call, and if so, do it."""
-    fire, why_not = should_fire(scenario, call_index, arguments)
+    """Decide whether to attack this call, and if so, do it.
+
+    ``features`` is passed straight through to the level gate. See
+    ``should_fire`` for why it changes nothing yet.
+    """
+    fire, why_not = should_fire(scenario, call_index, arguments, features=features)
     if not fire:
         return AttackResult(text=text, fired=False, note=why_not)
 

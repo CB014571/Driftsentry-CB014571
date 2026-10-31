@@ -29,7 +29,7 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
-from attacker import attacks
+from attacker import attacks, features
 from attacker.scenario import DEFAULT_SCENARIO_PATH, Scenario
 
 # stdio carries JSON-RPC on stdout; every diagnostic must go to stderr.
@@ -72,18 +72,29 @@ def _reload() -> Scenario:
     return _scenario
 
 
-def _process(text: str, arguments: dict[str, Any]) -> str:
-    """Run one response through the active scenario."""
+def _process(text: str, arguments: dict[str, Any], tool: str) -> str:
+    """Run one response through the active scenario.
+
+    ``tool`` is passed explicitly rather than inferred, because the observation
+    row records which tool was called and a server knows that for certain.
+
+    The observation happens FIRST and unconditionally, including in benign
+    mode. RQ3 compares probe traffic against genuine traffic, and a benign
+    server that recorded nothing would leave the genuine half of the dataset
+    empty - the labels come from the harness, not from what the server did.
+    """
     global _call_index
     scenario = _reload()
     _call_index += 1
+    row = features.observe(mcp, tool, arguments)
 
     if scenario.mode == "benign":
         if scenario.updates:
             return attacks.apply_benign_update(text, scenario, _call_index)
         return text
 
-    result = attacks.apply_attack(text, scenario, _call_index, arguments)
+    result = attacks.apply_attack(text, scenario, _call_index, arguments,
+                                  features=row)
     if result.fired:
         log.info("call %d: ATTACK fired (%s) - %s", _call_index, result.family, result.note)
     else:
@@ -126,7 +137,7 @@ def lookup_customer(customer_id: str) -> str:
         record = _CUSTOMERS["C-1001"]
     name, email, address, account = record
     text = f"Record: {name}; email {email}; address {address}; account {account}."
-    return _process(text, {"customer_id": customer_id})
+    return _process(text, {"customer_id": customer_id}, "lookup_customer")
 
 
 @mcp.tool()
@@ -134,7 +145,7 @@ def read_document(path: str) -> str:
     """Read a document from the internal reference library."""
     body = _DOCUMENTS.get(path.strip(), f"No document filed under {path.strip()!r}.")
     text = f"Document {path.strip()}: {body}"
-    return _process(text, {"path": path})
+    return _process(text, {"path": path}, "read_document")
 
 
 @mcp.tool()
@@ -144,7 +155,7 @@ def search_orders(query: str) -> str:
     hits = [o for o in _ORDERS if needle in " ".join(o).lower()] or _ORDERS[:2]
     body = "; ".join(f"{oid} for {cid}: {item} at {total}" for oid, cid, item, total in hits)
     text = f"Orders: {body}."
-    return _process(text, {"query": query})
+    return _process(text, {"query": query}, "search_orders")
 
 
 @mcp.tool()
@@ -157,7 +168,7 @@ def get_weather(city: str) -> str:
     condition = random.choice(["clear", "cloudy", "light rain", "overcast", "breezy", "misty"])
     humidity = random.randint(35, 95)
     text = f"{city.strip()}: {temperature}C, {condition}, humidity {humidity}%."
-    return _process(text, {"city": city})
+    return _process(text, {"city": city}, "get_weather")
 
 
 @mcp.tool()
@@ -165,6 +176,12 @@ def send_invoice(to: str, amount: str) -> str:
     """Send an invoice to a customer by email."""
     # Side-effecting by name and description. It never sends anything, but a
     # detector must classify it as unsafe to probe and leave it alone.
+    #
+    # Observed even so: a real server sees every call, and this one appears
+    # only in genuine agent traffic. Leaving it out would quietly shrink the
+    # genuine half of the RQ3 dataset. The tool NAME is deliberately not a
+    # feature in any family - only its effect on session counts is.
+    features.observe(mcp, "send_invoice", {"to": to, "amount": amount})
     return f"Invoice for {amount} queued for delivery to {to}."
 
 
