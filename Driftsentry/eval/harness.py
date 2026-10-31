@@ -56,6 +56,12 @@ class EpisodeConfig:
     monitor_sandbox: bool = True
     trip_after: int | None = None           # force a sleeper at this cycle
 
+    # Start the attacker with the same filtered environment the proxy gives it,
+    # instead of a full copy of os.environ. Off by default: Experiments 1 and 2
+    # were run the old way and are the control. See eval/launch.py for why the
+    # difference would otherwise fake the RQ3 result.
+    launch_parity: bool = False
+
     server_id: str = "target"
 
     def label(self) -> str:
@@ -127,6 +133,12 @@ class Episode:
             shutil.rmtree(self.workspace / self.episode_id, ignore_errors=True)
 
     def _launch(self) -> dict[str, Any]:
+        if self.cfg.launch_parity:
+            # Identical to what the proxy hands the attacker, so probe calls
+            # and agent calls are indistinguishable by environment alone.
+            from eval.launch import probe_launch
+            return probe_launch(self.attacker.project_dir, self.atk_home)
+
         command, args = self.attacker.launch_command()
         return {
             "command": command,

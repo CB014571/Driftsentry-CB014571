@@ -41,6 +41,9 @@ class SweepSpec:
     samples_per_probe: int = 2
     threshold_ratio: float | None = None
     partition: str = "development"
+    # See eval/launch.py. Off by default so Experiments 1 and 2 keep starting
+    # the attacker exactly as they did when they were run.
+    launch_parity: bool = False
 
 
 def _configs(spec: SweepSpec) -> list[EpisodeConfig]:
@@ -60,6 +63,7 @@ def _configs(spec: SweepSpec) -> list[EpisodeConfig]:
         samples_per_probe=spec.samples_per_probe,
         threshold_ratio=spec.threshold_ratio,
         partition=spec.partition,
+        launch_parity=spec.launch_parity,
     )
     out: list[EpisodeConfig] = []
 

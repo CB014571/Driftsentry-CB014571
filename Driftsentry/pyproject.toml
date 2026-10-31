@@ -52,3 +52,13 @@ driftsentry = "driftsentry.__main__:main"
 # server. The two meet only as operating-system processes speaking MCP over
 # stdio, which is the same way DriftSentry meets any third-party server.
 packages = ["driftsentry", "eval"]
+
+[tool.pytest.ini_options]
+# `live` marks tests that start real processes - the attacker, and the proxy as
+# a subprocess. They are the only way to verify launch parity, because the
+# thing under test is what a child process actually inherits, which cannot be
+# mocked without assuming the answer. Run the fast suite with
+# `-m "not live"`; the default is to run everything.
+markers = [
+    "live: starts real server processes (slow, but measures rather than mocks)",
+]
