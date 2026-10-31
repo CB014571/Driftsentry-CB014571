@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
 import logging
 import sys
 from pathlib import Path
@@ -83,6 +84,64 @@ def _cmd_run(ns: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_collect(ns: argparse.Namespace) -> int:
+    """Collect the RQ3 dataset, then build and describe it."""
+    _quiet()
+    from eval.agent import probe_models
+    from eval.collect import collect
+    from eval.rq3_dataset import build, describe
+
+    models = [m.strip() for m in ns.models.split(",") if m.strip()]
+    if not models:
+        print("error: --models is required, e.g. --models llama3.1:8b,qwen2.5:7b",
+              file=sys.stderr)
+        return 2
+
+    # Fail before an hour of collection rather than after it.
+    available = asyncio.run(probe_models())
+    if not available:
+        print("error: Ollama is not responding on localhost:11434. The genuine "
+              "half of this dataset needs a real model choosing real tool calls.",
+              file=sys.stderr)
+        return 2
+    missing = [m for m in models if m not in available]
+    if missing:
+        print(f"error: not pulled: {', '.join(missing)}", file=sys.stderr)
+        print(f"       available: {', '.join(available)}", file=sys.stderr)
+        return 2
+
+    out_dir = Path(ns.out)
+    print(f"models   : {', '.join(models)}")
+    print(f"sessions : {ns.sessions} agent sessions, each followed by one probe cycle")
+    print(f"out      : {out_dir}")
+    print()
+
+    summary = collect(ns.attacker, out_dir, Path(ns.workspace) / "rq3",
+                      ns.sessions, models,
+                      n_probes=ns.n_probes, n_samples=ns.n_samples)
+    print()
+    print(f"windows      : {summary['genuine_windows']} genuine, "
+          f"{summary['probe_windows']} probe")
+    print(f"feature rows : {summary['feature_rows']}")
+    if summary["errors"]:
+        print(f"errors       : {len(summary['errors'])}")
+        for line in summary["errors"][:5]:
+            print(f"  {line}")
+
+    print()
+    built = build(out_dir)
+    print(f"dataset      : {built['rows']} labelled rows "
+          f"({built['genuine_rows']} genuine, {built['probe_rows']} probe) "
+          f"across {built['groups']} sessions")
+    print(f"dropped      : {built['unlabelled_dropped']} between sessions, "
+          f"{built['pre_baseline_dropped']} from baselining")
+    shape = describe(out_dir / "dataset.jsonl")
+    print(f"calls/session: {shape['min_calls_per_group']}-{shape['max_calls_per_group']}")
+    print(f"tools seen   : {', '.join(shape['tools'])}")
+    print(f"clients seen : {', '.join(shape['clients'])}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="eval", description="DriftSentry evaluation harness")
     parser.add_argument("--attacker", default=str(DEFAULT_ATTACKER),
@@ -104,6 +163,17 @@ def main(argv: list[str] | None = None) -> int:
                      help="explicit drift-ratio threshold; omit to use the stored calibration")
     run.add_argument("--quick", action="store_true", help="tiny sweep, for checking the pipeline")
     run.set_defaults(func=_cmd_run)
+
+    collect_p = sub.add_parser("collect", help="collect the RQ3 probe-vs-genuine dataset")
+    collect_p.add_argument("--sessions", type=int, default=4,
+                           help="agent sessions, each followed by one probe cycle")
+    collect_p.add_argument("--models", required=True,
+                           help="comma-separated Ollama models, e.g. llama3.1:8b,qwen2.5:7b")
+    collect_p.add_argument("--out", default=str(DEFAULT_RESULTS / "rq3"),
+                           help="where the dataset is written")
+    collect_p.add_argument("--n-probes", type=int, default=3)
+    collect_p.add_argument("--n-samples", type=int, default=6)
+    collect_p.set_defaults(func=_cmd_collect)
 
     ns = parser.parse_args(argv)
     return ns.func(ns)
