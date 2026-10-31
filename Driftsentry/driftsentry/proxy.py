@@ -31,6 +31,7 @@ from __future__ import annotations
 import json
 import logging
 import sys
+import uuid
 from datetime import datetime, timezone
 from functools import partial
 from pathlib import Path
@@ -86,7 +87,18 @@ class ProxyLogger:
 
     def __init__(self, server_name: str, passive: Any | None = None) -> None:
         self.server_name = server_name
+        # One id per proxy process, stamped on every record. The log is
+        # append-only and shared by every run against this server, so without
+        # it two interleaved sessions are indistinguishable after the fact -
+        # and RQ3 labels traffic by session, not by call.
+        self.session_id = uuid.uuid4().hex[:12]
         self.path: Path = logs_dir() / f"{server_name}.jsonl"
+        # Passive verdict, rewritten as findings arrive rather than written
+        # once at shutdown. Measured reason: a client that disconnects causes
+        # the MCP SDK to TERMINATE this process, so the shutdown handler does
+        # not run and the verdict is simply lost. An experiment that reads the
+        # passive result cannot depend on a clean exit it does not control.
+        self.passive_path: Path = logs_dir() / f"{server_name}.passive.json"
         self._fh = self.path.open("a", encoding="utf-8")
         # request id -> (method, tool_name); lets us name responses.
         self._pending: dict[Any, tuple[str, str | None]] = {}
@@ -95,6 +107,30 @@ class ProxyLogger:
         # wrapped so that a defect there cannot reach the forwarding path.
         self._passive = passive
 
+    def passive_snapshot(self) -> dict[str, Any] | None:
+        """Current passive verdict, or None when nothing is monitoring."""
+        if self._passive is None:
+            return None
+        return {
+            "server": self.server_name,
+            "session": self.session_id,
+            "ts": datetime.now(timezone.utc).isoformat(),
+            "summary": self._passive.summary(),
+            "findings": [f.to_dict() for f in self._passive.findings()],
+        }
+
+    def _write_passive_snapshot(self) -> None:
+        """Overwrite the sidecar. Small, bounded, and safe to lose a race on."""
+        snap = self.passive_snapshot()
+        if snap is None:
+            return
+        try:
+            tmp = self.passive_path.with_suffix(".json.tmp")
+            tmp.write_text(json.dumps(snap, default=str, indent=2), encoding="utf-8")
+            tmp.replace(self.passive_path)
+        except Exception as exc:  # pragma: no cover - never break forwarding
+            log.debug("could not write passive snapshot: %s", exc)
+
     def close(self) -> None:
         try:
             self._fh.close()
@@ -102,7 +138,8 @@ class ProxyLogger:
             pass
 
     def _emit(self, record: dict[str, Any]) -> None:
-        record = {"ts": datetime.now(timezone.utc).isoformat(), "server": self.server_name, **record}
+        record = {"ts": datetime.now(timezone.utc).isoformat(),
+                  "server": self.server_name, "session": self.session_id, **record}
         self._fh.write(json.dumps(record, default=str) + "\n")
         self._fh.flush()
         # Human-readable summary on stderr.
@@ -137,8 +174,18 @@ class ProxyLogger:
                     self._pending[rec["id"]] = (method, tool)
                     if self._passive is not None:
                         self._passive.on_request(rec["id"], tool, params.get("arguments") or {})
-            elif kind == "request":
-                self._pending[rec["id"]] = (method, None)
+            else:
+                if method == "initialize" and isinstance(params, dict):
+                    # Who the server thinks it is talking to. Name and version
+                    # only: the rest of the handshake carries capabilities we
+                    # have no reason to record, and nothing here may ever hold
+                    # an environment value.
+                    info = params.get("clientInfo") or {}
+                    if isinstance(info, dict):
+                        rec["client"] = {"name": info.get("name"),
+                                         "version": info.get("version")}
+                if kind == "request":
+                    self._pending[rec["id"]] = (method, None)
 
         else:  # response or error — correlate back to the originating request
             rid = getattr(root, "id", None)
@@ -169,6 +216,7 @@ class ProxyLogger:
                     # which is exactly where the injection family puts it.
                     if self._passive is not None and isinstance(result, dict):
                         self._passive.on_response(rid, result)
+                        self._write_passive_snapshot()
 
         self._emit(rec)
 
@@ -330,11 +378,28 @@ async def run_stdio_proxy(
                     )
                     tg.start_soon(_pump, server_read, client_write, "s2c", plog, tg.cancel_scope)
     finally:
-        plog.close()
+        # The summary record goes in BEFORE the handle closes. Until now the
+        # passive result existed only as stderr lines, which no experiment can
+        # read; RQ2 scores passive monitoring against the same episodes as the
+        # other detectors, so it has to survive in the log as data.
         if monitor is not None:
             summary = monitor.summary()
+            # Best effort only. On a normal client disconnect the SDK
+            # terminates this process and nothing below here runs, which is
+            # why the sidecar is refreshed per call and is what readers use.
+            try:
+                plog._write_passive_snapshot()
+                plog._emit({
+                    "dir": "internal",
+                    "kind": "passive_summary",
+                    "summary": summary,
+                    "findings": [f.to_dict() for f in monitor.findings()],
+                })
+            except Exception as exc:  # pragma: no cover - never break shutdown
+                log.debug("could not write passive summary: %s", exc)
             log.info("passive: %d call(s) observed, %d finding(s), %d high severity",
                      summary["calls_seen"], summary["findings"], summary["high_severity"])
             for finding in monitor.findings():
                 log.warning("passive finding: %s/%s - %s", finding.tool, finding.kind, finding.detail)
+        plog.close()
         log.info("proxy for %r stopped", server_name)
