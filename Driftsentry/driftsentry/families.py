@@ -141,18 +141,42 @@ def summarize_family(
 ) -> TemplateFamilyBaseline:
     """Aggregate several baselined instances into one family baseline.
 
-    The band is built from leave-one-out distances between *instance centroids*,
-    not between samples of one instance. That is the quantity that matters here:
-    how far a value the model has never seen tends to fall from the family's
-    centre. Building it from within-instance noise would produce a band that is
-    far too tight for cross-input comparison and would alarm on the first honest
-    probe.
+    Two different spreads are measured here, and keeping them apart is the
+    whole point of this function.
+
+    The BAND is leave-one-out over every individual sample, against the family
+    centroid. It has to be, because that is exactly the quantity
+    ``compare_to_family`` later measures: the distance of the worst single
+    sample. Building the band from the spread of instance CENTROIDS instead -
+    which this did until it was measured - compares the scatter of individual
+    responses against the scatter of averages. For a tool with genuine
+    randomness the second is far smaller than the first, so the ratio exceeds
+    1 by construction and the tool alarms on every honest cycle.
+
+    The symptom that found it: over 120 verification cycles against a server
+    that was benign throughout, get_weather scored between 1.549 and 3.000 -
+    a 100% false-alarm rate - with a band of 0.0173 against real variation of
+    0.06. Raising samples_per_probe made it worse, not better, because
+    ``max()`` over more samples finds a more extreme one while the band stayed
+    a property of the averages.
+
+    This is the same rule ``fingerprint.summarize_probe`` already used for the
+    exact-probe path. The family path had diverged from it.
+
+    COMPARABILITY still comes from the centroid spread, and should. It asks a
+    different question - how much the input affects the answer, after
+    redaction - and the mean distance between instance centroids is the right
+    estimate of that.
     """
     instance_centroids = [i.centroid for i in instances]
     centroid = centroid_of(instance_centroids)
 
-    if len(instance_centroids) >= 2:
-        distances = leave_one_out_distances(instance_centroids)
+    all_samples = [s for group in samples_by_instance for s in group]
+
+    # Band: out-of-sample scatter of individual responses.
+    sample_embeddings = [s.embedding for s in all_samples]
+    if len(sample_embeddings) >= 2:
+        distances = leave_one_out_distances(sample_embeddings)
     else:
         distances = [0.0]
 
@@ -161,13 +185,17 @@ def summarize_family(
     dist_max = float(max(distances))
     band = max(dist_max, dist_mean + BAND_SIGMA * dist_std, MIN_BAND)
 
-    # Comparability: how alike the family's answers are across different inputs.
+    # Comparability: how alike the family's answers are across different INPUTS.
     # 1.0 means the input does not affect the answer at all (after redaction);
     # 0.0 means two benign answers are as far apart as anything could be, so the
-    # embedding signal says nothing for this tool.
-    comparability = max(0.0, min(1.0, 1.0 - dist_mean))
-
-    all_samples = [s for group in samples_by_instance for s in group]
+    # embedding signal says nothing for this tool. Measured between instance
+    # centroids, where per-sample noise has already been averaged out.
+    if len(instance_centroids) >= 2:
+        centroid_spread = float(statistics.fmean(
+            leave_one_out_distances(instance_centroids)))
+    else:
+        centroid_spread = 0.0
+    comparability = max(0.0, min(1.0, 1.0 - centroid_spread))
     chars = [s.normalized.n_chars for s in all_samples]
 
     return TemplateFamilyBaseline(
