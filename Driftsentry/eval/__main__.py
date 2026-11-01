@@ -104,11 +104,25 @@ def _cmd_collect(ns: argparse.Namespace) -> int:
               "half of this dataset needs a real model choosing real tool calls.",
               file=sys.stderr)
         return 2
-    missing = [m for m in models if m not in available]
+    # Ollama registers an untagged pull as "<name>:latest" and treats the two
+    # spellings as one model, so the check has to as well. Matching the raw
+    # string rejected "mistral-nemo" against a pulled "mistral-nemo:latest",
+    # which is a real model being called by its real name.
+    def _resolve(name: str) -> str | None:
+        for candidate in (name, f"{name}:latest", name.removesuffix(":latest")):
+            if candidate in available:
+                return candidate
+        return None
+
+    resolved, missing = [], []
+    for name in models:
+        match = _resolve(name)
+        (missing, resolved)[match is not None].append(match or name)
     if missing:
         print(f"error: not pulled: {', '.join(missing)}", file=sys.stderr)
         print(f"       available: {', '.join(available)}", file=sys.stderr)
         return 2
+    models = resolved
 
     out_dir = Path(ns.out)
     print(f"models   : {', '.join(models)}")
