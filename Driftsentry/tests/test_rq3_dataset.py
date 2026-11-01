@@ -207,3 +207,48 @@ def test_describe_reports_the_shape_for_the_checkpoint(tmp_path):
         "tools": ["get_weather", "lookup_customer", "read_document"],
         "clients": ["claude-ai"],
     }
+
+
+# --------------------------------------------------------------------------- #
+# Durability
+#
+# A 120-session collection was interrupted at session 79. The attacker's
+# feature rows were on disk, but the labels were held in memory and written
+# only at the end, so every one was lost and the run was unusable. Labels
+# could not be reconstructed from row counts either: that would make "number
+# of calls in the process" the label, and testing whether the session family
+# separates would then be circular.
+# --------------------------------------------------------------------------- #
+def test_windows_are_on_disk_before_the_collection_ends(tmp_path):
+    from eval.collect import GENUINE, PROBE, Collector
+
+    collector = Collector(tmp_path / "atk-project", tmp_path / "out",
+                          tmp_path / "ws")
+    collector.out_dir.mkdir(parents=True, exist_ok=True)
+    collector.windows_path.unlink(missing_ok=True)
+
+    collector._window(GENUINE, 10.0, 12.0, task="t01")
+    collector._window(PROBE, 13.0, 25.0, cycle=1)
+
+    # No finish(), no clean shutdown - the process "died" here.
+    assert collector.windows_path.is_file()
+    written = [json.loads(l) for l in
+               collector.windows_path.read_text(encoding="utf-8").splitlines() if l.strip()]
+    assert len(written) == 2
+    assert [w["label"] for w in written] == [GENUINE, PROBE]
+    assert written[0]["task"] == "t01" and written[1]["cycle"] == 1
+
+
+def test_a_new_run_does_not_inherit_the_previous_run_s_windows(tmp_path):
+    """Stale labels joined to fresh rows would mislabel silently."""
+    from eval.collect import GENUINE, Collector
+
+    collector = Collector(tmp_path / "atk-project", tmp_path / "out",
+                          tmp_path / "ws")
+    collector.out_dir.mkdir(parents=True, exist_ok=True)
+    collector._window(GENUINE, 1.0, 2.0, task="old")
+    assert collector.windows_path.is_file()
+
+    collector.prepare()          # a fresh run starts here
+    assert not collector.windows_path.exists(), \
+        "prepare() must clear windows from an earlier run"

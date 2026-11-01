@@ -69,6 +69,12 @@ class Collector:
         self.ds_home = self.workspace / "driftsentry"
         self.atk_home = self.workspace / "attacker"
         self.windows: list[dict[str, Any]] = []
+        # Appended to as each session closes, not written in finish().
+        # Learned the hard way: a run that held its labels in memory and was
+        # interrupted at session 79 of 120 lost every one of them. The
+        # attacker's feature rows survive on disk regardless, but rows without
+        # windows cannot be labelled, so the whole run was unusable.
+        self.windows_path = self.out_dir / "windows.jsonl"
 
     # -- setup --------------------------------------------------------------
     def prepare(self) -> None:
@@ -76,6 +82,9 @@ class Collector:
         shutil.rmtree(self.workspace, ignore_errors=True)
         for path in (self.ds_home, self.atk_home, self.out_dir):
             path.mkdir(parents=True, exist_ok=True)
+        # A fresh windows file, so a previous run's labels can never be joined
+        # to this run's rows.
+        self.windows_path.unlink(missing_ok=True)
         os.environ["DRIFTSENTRY_HOME"] = str(self.ds_home)
         os.environ["ATTACKER_HOME"] = str(self.atk_home)
 
@@ -91,7 +100,14 @@ class Collector:
         session's first call, which is worse than losing a row: a mislabelled
         row is indistinguishable from a real signal.
         """
-        self.windows.append({"label": label, "start": start, "end": end, **detail})
+        window = {"label": label, "start": start, "end": end, **detail}
+        self.windows.append(window)
+        try:
+            with self.windows_path.open("a", encoding="utf-8") as handle:
+                handle.write(json.dumps(window) + "\n")
+                handle.flush()
+        except Exception as exc:  # pragma: no cover - never lose a session
+            print(f"warning: could not append window: {exc}")
 
     # -- the two kinds of traffic -------------------------------------------
     async def agent_session(self, task: dict, model: str, style: str,
@@ -176,12 +192,12 @@ class Collector:
         return self.finish(baseline_cutoff, errors)
 
     def finish(self, baseline_cutoff: float, errors: list[str]) -> dict[str, Any]:
-        """Write the windows and copy the attacker's rows out of the sink."""
-        windows_path = self.out_dir / "windows.jsonl"
-        with windows_path.open("w", encoding="utf-8") as handle:
-            for window in self.windows:
-                handle.write(json.dumps(window) + "\n")
+        """Copy the attacker's rows out of the sink and summarise.
 
+        windows.jsonl is NOT written here: every session appended its own line
+        as it closed. Rewriting it from memory would undo that, and a run
+        interrupted before reaching this point would lose its labels again.
+        """
         copied = 0
         if self.features_log.is_file():
             shutil.copy2(self.features_log, self.out_dir / "features.jsonl")
