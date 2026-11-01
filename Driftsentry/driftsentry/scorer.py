@@ -262,6 +262,7 @@ def score_report(
     threshold_ratio: float,
     calibration_source: str = "provisional",
     mode: str = "full",
+    per_tool: dict[str, float] | None = None,
 ) -> DriftReport:
     """Score a re-probe measurement into a verdict.
 
@@ -323,7 +324,15 @@ def score_report(
             # -- signal 2: behavioural drift, scaled by this tool's own variance
             # Dividing by the calibrated threshold puts a noisy tool and a
             # deterministic one on the same scale: both alert at 1.0.
-            raw_behavioural = check.ratio / threshold_ratio if threshold_ratio > 0 else 0.0
+            # A tool with its own calibrated threshold is judged by that one.
+            # The global number is set by the noisiest tool in the calibration
+            # set, so a deterministic tool is otherwise held to a bar raised
+            # for a weather feed. Default None keeps the old behaviour exactly,
+            # which is what the golden tests and Experiments 1-2 rely on.
+            tool_threshold = threshold_ratio
+            if per_tool:
+                tool_threshold = per_tool.get(check.tool, threshold_ratio)
+            raw_behavioural = check.ratio / tool_threshold if tool_threshold > 0 else 0.0
             # Scale by how comparable this family's responses actually are.
             #
             # For the exact-probe path this is 1.0 and nothing changes. For a
@@ -340,13 +349,13 @@ def score_report(
                 severity=_severity_for(behavioural),
                 detail=(
                     f"response drift {check.distance:.4f} against a benign band of "
-                    f"{check.band:.4f} (ratio {check.ratio:.2f}, alert at {threshold_ratio:.2f})"
+                    f"{check.band:.4f} (ratio {check.ratio:.2f}, alert at {tool_threshold:.2f})"
                 ),
                 evidence={
                     "distance": check.distance,
                     "band": check.band,
                     "ratio": check.ratio,
-                    "threshold_ratio": threshold_ratio,
+                    "threshold_ratio": tool_threshold,
                     "uncapped_score": raw_behavioural,
                     "baseline_excerpt": check.baseline_excerpt,
                     "observed_excerpt": check.observed_excerpt,

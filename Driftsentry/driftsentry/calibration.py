@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import json
 import logging
+import hashlib
 import statistics
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
@@ -240,3 +241,119 @@ def calibrate_from_ratios(
         warnings=warnings,
     )
     return calibration
+
+# --------------------------------------------------------------------------- #
+# Per-tool thresholds (RQ1 / H1)
+#
+# One global threshold has to cover every tool on every server, so it is set
+# by the noisiest thing in the calibration set. A deterministic tool whose
+# benign drift never exceeds 0.01 is then judged by a bar raised for a weather
+# feed, and a real change in it goes unnoticed; the weather feed meanwhile
+# still alarms on an honest upgrade. H1 asks whether splitting that bar per
+# tool halves the false alarms without costing detection.
+#
+# Where a tool's own threshold comes from matters more than how it is
+# computed. It comes from THAT TOOL'S OWN BENIGN RUNS BEFORE THE UPGRADE -
+# which in real use are the runs at approval time. It never comes from runs
+# after the upgrade being judged, because that is the thing under test.
+# The calibration SERVERS only fix the rule: quantile, margin, and the
+# minimum observations below which a tool falls back to the global number.
+# --------------------------------------------------------------------------- #
+MIN_OBS_PER_TOOL = 8
+
+
+def fit_per_tool(
+    rows: Sequence[dict],
+    *,
+    global_threshold: float,
+    margin: float = DEFAULT_MARGIN,
+    target_far: float = DEFAULT_TARGET_FAR,
+    min_obs: int = MIN_OBS_PER_TOOL,
+) -> dict[str, Any]:
+    """A threshold per tool, from that tool's own benign ratios.
+
+    ``rows`` are mappings with at least ``tool`` and ``ratio``. Tools with
+    fewer than ``min_obs`` observations keep the global threshold: a quantile
+    from three points is an extrapolation dressed as a measurement, and a
+    per-tool bar fitted to noise would be worse than the shared one.
+    """
+    by_tool: dict[str, list[float]] = {}
+    for row in rows:
+        tool = row.get("tool")
+        ratio = row.get("ratio")
+        if tool is None or ratio is None:
+            continue
+        by_tool.setdefault(str(tool), []).append(float(ratio))
+
+    thresholds: dict[str, float] = {}
+    provenance: dict[str, dict[str, Any]] = {}
+    for tool, ratios in sorted(by_tool.items()):
+        ordered = sorted(ratios)
+        if len(ordered) < min_obs:
+            thresholds[tool] = global_threshold
+            provenance[tool] = {"n": len(ordered), "source": "global_fallback",
+                                "threshold": global_threshold}
+            continue
+        operating_point = _quantile(ordered, 1.0 - target_far)
+        threshold = max(operating_point * margin, MIN_THRESHOLD)
+        thresholds[tool] = threshold
+        provenance[tool] = {
+            "n": len(ordered),
+            "source": "per_tool",
+            "threshold": threshold,
+            "operating_point": operating_point,
+            "max_benign_ratio": ordered[-1],
+            "mean_benign_ratio": float(statistics.fmean(ordered)),
+        }
+
+    return {
+        "thresholds": thresholds,
+        "provenance": provenance,
+        "rule": {"quantile": 1.0 - target_far, "margin": margin,
+                 "floor": MIN_THRESHOLD, "min_obs": min_obs},
+        "global_threshold": global_threshold,
+        "n_tools": len(thresholds),
+        "n_per_tool": sum(1 for v in provenance.values() if v["source"] == "per_tool"),
+    }
+
+
+# --------------------------------------------------------------------------- #
+# Freezing
+#
+# The methodology promises thresholds were fixed before any test data was
+# scored. A promise in prose is not auditable; a hash is. freeze() records the
+# content digest and the moment, and verify_frozen() refuses a file that has
+# been edited since - including by a well-meaning re-fit.
+# --------------------------------------------------------------------------- #
+def _canonical(obj: Any) -> bytes:
+    return json.dumps(obj, sort_keys=True, separators=(",", ":"),
+                      default=str).encode("utf-8")
+
+
+def freeze(obj: dict, path: str | Path) -> dict:
+    """Write ``obj`` with a digest of its body and the time it was fixed."""
+    body = {k: v for k, v in obj.items() if not k.startswith("_")}
+    sealed = dict(body)
+    sealed["_sha256"] = hashlib.sha256(_canonical(body)).hexdigest()
+    sealed["_frozen_at"] = datetime.now(timezone.utc).isoformat()
+    target = Path(path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(json.dumps(sealed, indent=2, default=str), encoding="utf-8")
+    return sealed
+
+
+def verify_frozen(path: str | Path) -> dict:
+    """Load a frozen file, refusing it if the body no longer matches its hash."""
+    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    recorded = data.get("_sha256")
+    if not recorded:
+        raise ValueError(f"{path} carries no _sha256; it was never frozen")
+    body = {k: v for k, v in data.items() if not k.startswith("_")}
+    actual = hashlib.sha256(_canonical(body)).hexdigest()
+    if actual != recorded:
+        raise ValueError(
+            f"{path} has changed since it was frozen at {data.get('_frozen_at')}. "
+            f"Recorded {recorded[:16]}, found {actual[:16]}. A threshold edited "
+            f"after test data was scored invalidates every result that used it."
+        )
+    return data
