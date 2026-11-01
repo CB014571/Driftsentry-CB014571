@@ -12,16 +12,26 @@ Why the checks here are assertions and not warnings
     anything ambiguous fails the build rather than being quietly dropped.
 
 The grouping rule
-    ``group`` is the attacker's pid, not the row index. Calls inside one server
-    process are not independent - they share a client, a working directory, a
-    session counter and a process age - so a split that put some calls from a
-    session in train and others in test would leak, and every AUC would be
-    inflated. GroupKFold on pid is what prevents that.
+    ``group`` is one process INSTANCE. Calls inside one server process are not
+    independent - they share a client, a working directory, a session counter
+    and a process age - so a split that put some calls from a session in train
+    and others in test would leak, and every AUC would be inflated.
 
-    This also means a pid must belong to exactly ONE window. A process serving
-    both genuine and probe traffic could not be assigned a single label, and
-    because sessions run strictly in sequence that should never happen. The
-    check exists to prove it did not.
+    A pid alone is not that identity. Windows recycles process ids, and a
+    240-session collection spawns short-lived processes fast enough for it to
+    happen: in the first full run, 9 of 226 pids were reused by a later
+    process, twice with over a thousand seconds between them. Grouping on the
+    raw pid merged those into one group and made it look as though a single
+    process had served both genuine and probe traffic.
+
+    The identity used instead is (pid, process start), where the start is
+    recovered exactly as ``t - proc_age_s`` - features.py derives both from a
+    single time.time() call, so the subtraction is lossless rather than
+    approximate.
+
+    A process instance must still belong to exactly ONE window, and that check
+    is kept: with recycling accounted for, a mixed group now means genuinely
+    overlapping sessions, which would be a real defect.
 """
 from __future__ import annotations
 
@@ -40,6 +50,19 @@ class LabelError(RuntimeError):
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
     return [json.loads(line) for line in
             path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
+def process_key(row: dict[str, Any]) -> str:
+    """Identity of the process instance that served this call.
+
+    A pid is reused; a pid plus the moment that process started is not.
+    """
+    pid = row.get("pid")
+    age = row.get("proc_age_s")
+    t = row.get("t")
+    if age is None or t is None:
+        return f"{pid}:unknown"
+    return f"{pid}:{t - age!r}"
 
 
 def _window_for(t: float, windows: list[dict[str, Any]]) -> list[int]:
@@ -97,8 +120,8 @@ def build(
             continue
 
         window = windows[hits[0]]
-        rows.append({**row, "label": window["label"], "group": row["pid"],
-                     "window": hits[0]})
+        rows.append({**row, "label": window["label"],
+                     "group": process_key(row), "window": hits[0]})
 
     if ambiguous:
         raise LabelError(
@@ -132,25 +155,26 @@ def build(
 
 
 def _check_pid_purity(rows: list[dict[str, Any]]) -> None:
-    """Every process must have served exactly one kind of traffic.
+    """Every process instance must have served exactly one kind of traffic.
 
-    Sessions run one at a time, so a pid seeing both labels means either the
-    collector overlapped them or the operating system recycled a pid between
-    sessions. Either way the group is not a valid unit to split on, and
-    GroupKFold would mix labels within a fold.
+    Sessions run one at a time, so a group seeing both labels means the
+    collector overlapped them - GroupKFold would then mix labels within a
+    fold. Recycled pids used to trigger this falsely; the group key now
+    includes the process start, so a failure here is a real one.
     """
     by_pid: dict[Any, set[int]] = defaultdict(set)
     for row in rows:
         by_pid[row["group"]].add(row["label"])
 
-    impure = {pid: sorted(labels) for pid, labels in by_pid.items() if len(labels) > 1}
+    impure = {key: sorted(labels) for key, labels in by_pid.items() if len(labels) > 1}
     if impure:
         raise LabelError(
-            f"{len(impure)} process id(s) served BOTH genuine and probe traffic: "
-            f"{dict(list(impure.items())[:3])}. Grouping on pid is what stops a "
-            f"session leaking across a train/test split, so a mixed group makes "
-            f"every AUC untrustworthy. Likely causes: overlapping sessions, or a "
-            f"recycled pid between runs."
+            f"{len(impure)} process instance(s) served BOTH genuine and probe "
+            f"traffic: {dict(list(impure.items())[:3])}. Grouping on the process "
+            f"is what stops a session leaking across a train/test split, so a "
+            f"mixed group makes every AUC untrustworthy. Process-id recycling is "
+            f"already accounted for by keying on (pid, start), so this means the "
+            f"sessions genuinely overlapped - they must run strictly in sequence."
         )
 
 

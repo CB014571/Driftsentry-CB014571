@@ -36,13 +36,16 @@ def _write(tmp_path, features, windows, collection=None):
     return tmp_path
 
 
-def _row(t, pid, **extra):
+def _row(t, pid, start=None, **extra):
+    """One observation. ``start`` is when that process began; rows sharing a
+    pid AND a start are one process instance, which is the grouping unit."""
     base = {"t": t, "pid": pid, "tool": "lookup_customer",
             "args": {"customer_id": "C-1001"}, "client_name": "claude-ai",
             "client_version": "0.1.0", "env_count": 13, "has_home": True,
             "cwd": "/x", "parent_name": "", "parent_argc": None,
             "calls_before": 0, "distinct_tools_before": 0,
-            "proc_age_s": 0.5, "gap_s": None}
+            "proc_age_s": t - (start if start is not None else t - 0.5),
+            "gap_s": None}
     base.update(extra)
     return base
 
@@ -53,7 +56,8 @@ def _row(t, pid, **extra):
 def test_rows_are_labelled_from_the_window_that_contains_them(tmp_path):
     summary = build(_write(
         tmp_path,
-        features=[_row(10.0, 100), _row(10.5, 100), _row(20.0, 200)],
+        features=[_row(10.0, 100, start=9.5), _row(10.5, 100, start=9.5),
+                  _row(20.0, 200, start=19.5)],
         windows=[{"label": GENUINE, "start": 9.0, "end": 12.0, "task": "t01"},
                  {"label": PROBE, "start": 19.0, "end": 22.0, "cycle": 1}],
     ))
@@ -67,12 +71,15 @@ def test_group_is_the_process_not_the_row(tmp_path):
     """Calls inside one process share a client, a cwd and a session counter."""
     build(_write(
         tmp_path,
-        features=[_row(10.0, 100), _row(10.5, 100), _row(11.0, 100)],
+        features=[_row(10.0, 100, start=9.5), _row(10.5, 100, start=9.5),
+                  _row(11.0, 100, start=9.5)],
         windows=[{"label": GENUINE, "start": 9.0, "end": 12.0}],
     ))
     rows = [json.loads(l) for l in
             (tmp_path / "dataset.jsonl").read_text(encoding="utf-8").splitlines()]
-    assert {r["group"] for r in rows} == {100}
+    # One group, and it is the process instance rather than the bare pid.
+    assert len({r["group"] for r in rows}) == 1
+    assert all(str(r["group"]).startswith("100:") for r in rows)
     assert all(r["label"] == GENUINE for r in rows)
 
 
@@ -103,10 +110,11 @@ def test_overlapping_windows_fail_the_build(tmp_path):
 
 def test_a_process_serving_both_labels_fails_the_build(tmp_path):
     """A mixed group would leak a session across a train/test split."""
-    with pytest.raises(LabelError, match="BOTH genuine and probe"):
+    with pytest.raises(LabelError, match="genuinely overlapped"):
         build(_write(
             tmp_path,
-            features=[_row(10.0, 100), _row(20.0, 100)],   # same pid, two windows
+            # One process instance (same pid AND start) spanning two windows.
+            features=[_row(10.0, 100, start=9.5), _row(20.0, 100, start=9.5)],
             windows=[{"label": GENUINE, "start": 9.0, "end": 12.0},
                      {"label": PROBE, "start": 19.0, "end": 22.0}],
         ))
@@ -194,9 +202,9 @@ def test_windows_are_not_widened_to_catch_stragglers(tmp_path):
 def test_describe_reports_the_shape_for_the_checkpoint(tmp_path):
     build(_write(
         tmp_path,
-        features=[_row(10.0, 100, tool="lookup_customer"),
-                  _row(10.5, 100, tool="read_document"),
-                  _row(20.0, 200, tool="get_weather")],
+        features=[_row(10.0, 100, start=9.5, tool="lookup_customer"),
+                  _row(10.5, 100, start=9.5, tool="read_document"),
+                  _row(20.0, 200, start=19.5, tool="get_weather")],
         windows=[{"label": GENUINE, "start": 9.0, "end": 12.0},
                  {"label": PROBE, "start": 19.0, "end": 22.0}],
     ))
@@ -252,3 +260,66 @@ def test_a_new_run_does_not_inherit_the_previous_run_s_windows(tmp_path):
     collector.prepare()          # a fresh run starts here
     assert not collector.windows_path.exists(), \
         "prepare() must clear windows from an earlier run"
+
+
+# --------------------------------------------------------------------------- #
+# Process identity
+#
+# Windows recycles process ids. A 240-session collection spawns short-lived
+# processes fast enough for it to happen - 9 of 226 pids were reused in the
+# first full run, twice with over a thousand seconds between them. Grouping on
+# the raw pid merged those into one group and reported a mixed-label process
+# that never existed.
+# --------------------------------------------------------------------------- #
+def test_a_recycled_pid_is_two_processes_not_one(tmp_path):
+    """The false failure that stopped a completed 120-session collection."""
+    summary = build(_write(
+        tmp_path,
+        features=[
+            # pid 4242 serving genuine traffic, process started at t=9.5
+            dict(_row(10.0, 4242), proc_age_s=0.5),
+            # the SAME pid, reused 1000s later by a probe cycle
+            dict(_row(1010.0, 4242), proc_age_s=0.5),
+        ],
+        windows=[{"label": GENUINE, "start": 9.0, "end": 12.0},
+                 {"label": PROBE, "start": 1009.0, "end": 1012.0}],
+    ))
+    assert summary["rows"] == 2
+    assert summary["groups"] == 2, "a recycled pid must not merge two processes"
+
+
+def test_calls_from_one_process_stay_in_one_group(tmp_path):
+    """The property the grouping exists for, which must still hold."""
+    build(_write(
+        tmp_path,
+        features=[dict(_row(10.0, 77), proc_age_s=0.1),
+                  dict(_row(10.5, 77), proc_age_s=0.6),
+                  dict(_row(11.0, 77), proc_age_s=1.1)],
+        windows=[{"label": GENUINE, "start": 9.0, "end": 12.0}],
+    ))
+    rows = [json.loads(l) for l in
+            (tmp_path / "dataset.jsonl").read_text(encoding="utf-8").splitlines()]
+    assert len({r["group"] for r in rows}) == 1, "one process is one group"
+
+
+def test_genuinely_overlapping_sessions_still_fail(tmp_path):
+    """Recycling is excused; a real overlap must not be."""
+    with pytest.raises(LabelError, match="genuinely overlapped"):
+        build(_write(
+            tmp_path,
+            features=[dict(_row(10.0, 55), proc_age_s=0.5),
+                      dict(_row(20.0, 55), proc_age_s=10.5)],   # same process
+            windows=[{"label": GENUINE, "start": 9.0, "end": 12.0},
+                     {"label": PROBE, "start": 19.0, "end": 22.0}],
+        ))
+
+
+def test_process_start_is_recovered_exactly(tmp_path):
+    """features.py derives t and proc_age_s from one time.time() call."""
+    from eval.rq3_dataset import process_key
+
+    a = process_key({"pid": 1, "t": 1000.25, "proc_age_s": 0.25})
+    b = process_key({"pid": 1, "t": 1005.25, "proc_age_s": 5.25})
+    assert a == b, "the same process must key identically at any age"
+    c = process_key({"pid": 1, "t": 2000.0, "proc_age_s": 0.0})
+    assert c != a, "a later process reusing the pid must key differently"
