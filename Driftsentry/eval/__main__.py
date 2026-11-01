@@ -156,6 +156,24 @@ def _cmd_collect(ns: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_rq3(ns: argparse.Namespace) -> int:
+    """Which feature family lets a server recognise a probe?"""
+    _quiet()
+    from eval.rq3_distinguish import analyse, report
+
+    data = Path(ns.data)
+    if not data.is_file():
+        print(f"error: no dataset at {data}. Run `eval collect` first.", file=sys.stderr)
+        return 2
+
+    summary = analyse(data, ns.attacker, out_dir=ns.out or data.parent,
+                      n_boot=ns.boot, seed=ns.seed)
+    print(report(summary))
+    print()
+    print(f"  recognisers and ROC points written beside {data.parent}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="eval", description="DriftSentry evaluation harness")
     parser.add_argument("--attacker", default=str(DEFAULT_ATTACKER),
@@ -188,6 +206,13 @@ def main(argv: list[str] | None = None) -> int:
     collect_p.add_argument("--n-probes", type=int, default=3)
     collect_p.add_argument("--n-samples", type=int, default=6)
     collect_p.set_defaults(func=_cmd_collect)
+
+    rq3 = sub.add_parser("rq3", help="which family distinguishes probes from genuine calls")
+    rq3.add_argument("--data", default=str(DEFAULT_RESULTS / "rq3" / "dataset.jsonl"))
+    rq3.add_argument("--out", default=None, help="where analysis output goes")
+    rq3.add_argument("--boot", type=int, default=2000, help="bootstrap resamples")
+    rq3.add_argument("--seed", type=int, default=0)
+    rq3.set_defaults(func=_cmd_rq3)
 
     ns = parser.parse_args(argv)
     return ns.func(ns)
