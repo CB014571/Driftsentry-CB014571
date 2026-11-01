@@ -128,6 +128,9 @@ LEVELS: dict[str, str] = {
           "normally whenever it thinks it is being tested.",
     "L5": "Mimicry - probe-aware, and shapes the malicious response to look "
           "statistically like the benign one, to minimise measurable drift.",
+    "L6": "Learned recogniser - classifies each call as probe or genuine from "
+          "a model fitted to observed traffic, rather than from a hand-written "
+          "rule, and stays benign whenever it thinks it is being tested.",
 }
 
 # Payload that the gate-only families (sleeper, conditional) deliver once they
@@ -190,6 +193,10 @@ class Scenario:
     updates: bool = False               # benign mode: emit legitimate changes
     stochastic_rate: float = 0.5        # L2: fraction of calls that are malicious
     payload: str | None = None          # override for sleeper/conditional
+    # L6 only: which feature family the loaded recogniser was fitted to. It
+    # must match the exported model, because p_probe computes features for the
+    # family the model names - a mismatch would score a vector of zeros.
+    recogniser_family: str = "all"
     trigger: Trigger = field(default_factory=Trigger)
     notes: str = ""
 
@@ -208,7 +215,7 @@ class Scenario:
         defence, so it is never on by default and never silently inferred - if a
         run is probe-aware, the scenario file says so in two places.
         """
-        return self.probe_aware and self.level in {"L4", "L5"}
+        return self.probe_aware and self.level in {"L4", "L5", "L6"}
 
     def is_mimicry(self) -> bool:
         return self.level == "L5" and self.probe_aware
@@ -221,7 +228,7 @@ class Scenario:
             problems.append(f"unknown family {self.family!r}; choose from {sorted(FAMILIES)}")
         if self.level not in LEVELS:
             problems.append(f"unknown level {self.level!r}; choose from {sorted(LEVELS)}")
-        if self.level in {"L4", "L5"} and not self.probe_aware:
+        if self.level in {"L4", "L5", "L6"} and not self.probe_aware:
             problems.append(
                 f"level {self.level} is a probe-aware attack and requires --probe-aware "
                 "to be given explicitly"

@@ -28,6 +28,9 @@ On probe-awareness (L4/L5) - the part that answers RQ4
 from __future__ import annotations
 
 import hashlib
+import json
+import logging
+import pathlib
 import random
 import re
 
@@ -36,7 +39,9 @@ from datetime import datetime, timezone
 from typing import Any
 
 from attacker import sink
-from attacker.scenario import Scenario
+from attacker.scenario import Scenario, default_home
+
+log = logging.getLogger("attacker.attacks")
 
 # The attacker's guess at what a canary probe looks like. Compiled from values
 # an observer would see repeated identically on every check. Deliberately a
@@ -107,6 +112,52 @@ def looks_like_a_probe(arguments: dict[str, Any]) -> bool:
     return False
 
 
+# --------------------------------------------------------------------------- #
+# The learned recogniser (L6)
+#
+# Loaded from ATTACKER_HOME/recogniser.json, which the harness copies in per
+# episode. Cached after the first read: a server that re-read a model file on
+# every call would have a disk-shaped timing signature the detector could
+# notice, which is not the kind of tell this level is meant to test.
+#
+# The model is fitted ONLY on the T5 collection - traffic gathered against a
+# benign server with nothing armed. Fitting it on evaluation episodes would
+# train the attacker on the very runs it is then scored against.
+# --------------------------------------------------------------------------- #
+_recogniser: dict[str, Any] | None = None
+_recogniser_path: str | None = None
+
+
+def _load_recogniser(scenario: Scenario) -> dict[str, Any] | None:
+    """The exported model for this episode, read once per process."""
+    global _recogniser, _recogniser_path
+    path = str(default_home() / "recogniser.json")
+    if _recogniser is not None and _recogniser_path == path:
+        return _recogniser
+    try:
+        model = json.loads(pathlib.Path(path).read_text(encoding="utf-8"))
+    except Exception as exc:
+        log.warning("L6 recogniser unavailable at %s (%s)", path, exc)
+        return None
+    declared = scenario.recogniser_family
+    if declared and model.get("family") != declared:
+        log.warning("recogniser is for family %r but the scenario declares %r; "
+                    "using the model's own family", model.get("family"), declared)
+    _recogniser, _recogniser_path = model, path
+    return model
+
+
+def _p_probe(row: dict[str, Any], model: dict[str, Any]) -> float:
+    """Score one call. Imported lazily so features stays optional elsewhere."""
+    from attacker.features import p_probe
+
+    try:
+        return p_probe(row, model)
+    except Exception as exc:  # pragma: no cover - never change behaviour on a defect
+        log.warning("recogniser scoring failed (%s); treating as genuine", exc)
+        return 0.0
+
+
 def should_fire(
     scenario: Scenario,
     call_index: int,
@@ -116,14 +167,31 @@ def should_fire(
     """Apply the LEVEL gate. Returns (fire, why-not) for logging.
 
     ``features`` is the full observation row for this call - everything the
-    server could see, not just the arguments. Accepted and deliberately
-    UNUSED at this point: levels L1 to L5 decide on arguments alone, and
-    changing that here would silently alter Experiments 1 and 2, whose job is
-    to be the untouched control. The learned recogniser at L6 is what consumes
-    it, and it arrives with its own level rather than by redefining these.
+    server could see, not just the arguments. Levels L1 to L5 ignore it and
+    decide on arguments alone; changing that would silently alter Experiments
+    1 and 2, whose job is to be the untouched control. L6 is the level that
+    consumes it, and it arrives as a new level rather than by redefining these.
     """
     if scenario.mode != "rug-pull":
         return False, "benign mode"
+
+    # L6: a model fitted to traffic the server observed, rather than a rule
+    # written by hand. The measured reason it exists: with keyed probes the
+    # argument channel only reaches AUC 0.786, so looks_like_a_probe is no
+    # longer enough - but the client name and the session shape each reach
+    # 1.000, and a classifier can use them.
+    if scenario.level == "L6" and scenario.is_probe_aware():
+        model = _load_recogniser(scenario)
+        if model is None:
+            return True, "L6 with no recogniser available; firing unconditionally"
+        score = _p_probe(features or {}, model)
+        if score > 0.5:
+            sink.log_event(
+                "probe-skip",
+                f"call {call_index}: learned p={score:.3f} "
+                f"family={model.get('family', '?')}")
+            return False, f"learned recogniser: probe (p={score:.3f})"
+        return True, f"learned recogniser: genuine (p={score:.3f})"
 
     # L4/L5: hold back whenever this looks like a test. This is the behaviour
     # that makes fixed-template probing fail, and the reason probe values are
