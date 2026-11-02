@@ -102,6 +102,30 @@ async def _call_once(
     return payload, latency_ms, observation
 
 
+def _probe_client_info(server: str, mimic_host: bool):
+    """The identity a probe session should announce.
+
+    None means "use the SDK default", which is the pre-T17 behaviour and what
+    the control condition must keep. With mimic_host on, the probe borrows
+    whatever the real client announced through the proxy - closing the
+    channel RQ3 measured at AUC 1.000.
+
+    If no genuine handshake has ever been seen, this returns None rather than
+    inventing a name. An invented identity would be worse than the default: a
+    name matching no real host and no other probe is a fingerprint of its own.
+    """
+    if not mimic_host:
+        return None
+    from driftsentry.hostprofile import implementation
+
+    impl = implementation(server)
+    if impl is None:
+        log.warning("mimic_host requested for %r but no host profile has been "
+                    "recorded; falling back to the SDK default, which is "
+                    "trivially recognisable", server)
+    return impl
+
+
 async def capture_baseline(
     server: str,
     command: str,
@@ -118,6 +142,7 @@ async def capture_baseline(
     monitor_sandbox: bool = True,
     probe_mode: str = "fixed",
     key: bytes | None = None,
+    mimic_host: bool = False,
 ) -> ServerBaseline:
     """Capture a full behavioural baseline for one stdio MCP server.
 
@@ -158,8 +183,10 @@ async def capture_baseline(
     tool_baselines: list[ToolBaseline] = []
     families: list[Any] = []
 
+    client_info = _probe_client_info(server, mimic_host)
+
     async with stdio_client(params) as (read, write):
-        async with ClientSession(read, write) as session:
+        async with ClientSession(read, write, client_info=client_info) as session:
             await session.initialize()
 
             pids = _find_child_pids(before)
@@ -457,6 +484,7 @@ async def reprobe(
     monitor_sandbox: bool = True,
     cycle: int = 1,
     key: bytes | None = None,
+    mimic_host: bool = False,
 ) -> ReprobeReport:
     """Replay a stored baseline's probes against a live server and measure drift.
 
@@ -490,8 +518,10 @@ async def reprobe(
 
     checks: list[ProbeCheck] = []
 
+    client_info = _probe_client_info(baseline.server, mimic_host)
+
     async with stdio_client(params) as (read, write):
-        async with ClientSession(read, write) as session:
+        async with ClientSession(read, write, client_info=client_info) as session:
             await session.initialize()
 
             pids = _find_child_pids(before)

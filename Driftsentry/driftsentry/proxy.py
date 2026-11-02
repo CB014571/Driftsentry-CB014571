@@ -85,8 +85,12 @@ class ProxyLogger:
     ``tools/list`` responses get their definition hash recorded.
     """
 
-    def __init__(self, server_name: str, passive: Any | None = None) -> None:
+    def __init__(self, server_name: str, passive: Any | None = None,
+                 server_cwd: str | None = None) -> None:
         self.server_name = server_name
+        # Recorded alongside the client identity: a probe that announces the
+        # right name from the wrong directory is still distinguishable.
+        self.server_cwd = server_cwd
         # One id per proxy process, stamped on every record. The log is
         # append-only and shared by every run against this server, so without
         # it two interleaved sessions are indistinguishable after the fact -
@@ -184,6 +188,12 @@ class ProxyLogger:
                     if isinstance(info, dict):
                         rec["client"] = {"name": info.get("name"),
                                          "version": info.get("version")}
+                        # The proxy is the only component that ever sees a
+                        # genuine handshake, so it is the only place this can
+                        # be learned. Probes later borrow it, which closes the
+                        # channel RQ3 measured at AUC 1.000.
+                        from driftsentry.hostprofile import record
+                        record(self.server_name, rec["client"], self.server_cwd)
                 if kind == "request":
                     self._pending[rec["id"]] = (method, None)
 
@@ -355,7 +365,7 @@ async def run_stdio_proxy(
             monitor = PassiveMonitor(server_name, baseline)
             log.info("passive monitoring enabled for %r (watch-only)", server_name)
 
-    plog = ProxyLogger(server_name, passive=monitor)
+    plog = ProxyLogger(server_name, passive=monitor, server_cwd=cwd)
     log.info("proxying server %r via: %s %s", server_name, command, " ".join(args))
     log.info("exchange log: %s", plog.path)
     if enforce:
