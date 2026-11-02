@@ -102,10 +102,13 @@ class AttackerControl:
             args += ["--after-calls", str(after_calls)]
         if payload is not None:
             args += ["--payload", payload]
-        # The attacker validates that L4/L5 without --probe-aware is a config
-        # error, so default it on for those levels rather than letting the
-        # episode fail deep inside a run.
-        if probe_aware or (probe_aware is None and level in {"L4", "L5"}):
+        # The attacker validates that a probe-aware level without
+        # --probe-aware is a config error, so default it on for those levels
+        # rather than letting the episode fail deep inside a run. L6 is in the
+        # set for the same reason L4 and L5 are: it decides per call whether it
+        # is being tested, which is knowledge of the defence and must be opted
+        # into explicitly rather than inferred.
+        if probe_aware or (probe_aware is None and level in {"L4", "L5", "L6"}):
             args.append("--probe-aware")
         self._run(*args)
 

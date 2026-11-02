@@ -12,6 +12,7 @@ which holds the acme baseline the write-up cites - is never touched.
 from __future__ import annotations
 
 import asyncio
+import logging
 import os
 import shutil
 import time
@@ -29,6 +30,8 @@ try:
 except Exception:  # pragma: no cover
     _PROC = None
 
+
+log = logging.getLogger("eval.harness")
 
 DETECTOR_VERSION = "0.1.0"
 
@@ -61,6 +64,24 @@ class EpisodeConfig:
     # were run the old way and are the control. See eval/launch.py for why the
     # difference would otherwise fake the RQ3 result.
     launch_parity: bool = False
+
+    # Replay recorded genuine agent traffic after each verification cycle.
+    # Needed by any level that decides per call whether it is being tested:
+    # with probes only, an L6 attacker never fires, every episode classifies
+    # as never_triggered, and recall is undefined exactly where the question
+    # is. Also what gives passive monitoring anything to observe.
+    replay_sessions: int = 0
+
+    # Path to an exported recogniser, copied into the attacker's home so an
+    # L6 episode can load it. The model must come from the T5 collection,
+    # never from evaluation episodes, or the attacker is trained on the runs
+    # it is then scored against.
+    recogniser: str | None = None
+
+    # Replay sessions that never touch these tools. Supports the case where
+    # an attack targets a tool the agent does not use: probing reaches it,
+    # passive monitoring cannot, and that difference is the measurement.
+    avoid_tools: tuple[str, ...] = ()
 
     server_id: str = "target"
 
@@ -124,6 +145,14 @@ class Episode:
         os.environ["DRIFTSENTRY_HOME"] = str(self.ds_home)
         os.environ["ATTACKER_HOME"] = str(self.atk_home)
 
+        if self.cfg.recogniser:
+            source = Path(self.cfg.recogniser)
+            if not source.is_file():
+                raise FileNotFoundError(
+                    f"recogniser {source} not found; an L6 episode without one "
+                    f"fires unconditionally and would not measure evasion")
+            shutil.copy2(source, self.atk_home / "recogniser.json")
+
     def _cleanup(self) -> None:
         try:
             self.attacker.reset()
@@ -149,6 +178,37 @@ class Episode:
             # episode's events to one shared log and destroy the ground truth.
             "env": self.attacker.env(),
         }
+
+    async def _replay(self, launch: dict[str, Any], cycle: int) -> list[dict]:
+        """Send recorded genuine sessions through the proxy, if asked."""
+        if not self.cfg.replay_sessions:
+            return []
+        from eval.agent import load_host_profile
+        from eval.launch import agent_launch
+        from eval.replay import choose_sessions, load_sessions, replay_session
+
+        sessions = load_sessions()
+        if not sessions:
+            log.warning("replay requested but no genuine corpus was found; "
+                        "run `eval collect` first")
+            return []
+
+        client_info, _ = load_host_profile()
+        picked = choose_sessions(sessions, self.cfg.replay_sessions,
+                                 seed=self.cfg.seed * 1000 + cycle,
+                                 avoid_tools=set(self.cfg.avoid_tools or ()))
+        # Through the proxy, so the traffic looks like a real client's and
+        # passive monitoring sees it.
+        proxied = agent_launch(self.attacker.project_dir, self.atk_home,
+                               self.ds_home, self.cfg.server_id, passive=True)
+        out: list[dict] = []
+        for calls in picked:
+            try:
+                out.extend(await replay_session(calls, proxied,
+                                                client_info=client_info))
+            except Exception as exc:
+                log.warning("replay session failed: %s", exc)
+        return out
 
     # -- the run ------------------------------------------------------------
     async def run(self) -> EpisodeResult:
@@ -215,6 +275,13 @@ class Episode:
                     key=probe_key,
                 )
                 duration = time.perf_counter() - t0
+
+                # Genuine traffic AFTER the probes, so the attacker has had
+                # its chance to recognise them and hold back first. An L6
+                # attacker that skipped every probe fires here instead, which
+                # is what makes the episode a missed detection rather than
+                # one where nothing happened.
+                replayed = await self._replay(launch, cycle)
 
                 detected = report.verdict == "alert"
                 row = ExperimentRow(

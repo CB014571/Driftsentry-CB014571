@@ -44,6 +44,9 @@ class SweepSpec:
     # See eval/launch.py. Off by default so Experiments 1 and 2 keep starting
     # the attacker exactly as they did when they were run.
     launch_parity: bool = False
+    replay_sessions: int = 0
+    recogniser: str | None = None
+    avoid_tools: tuple[str, ...] = ()
 
 
 def _configs(spec: SweepSpec) -> list[EpisodeConfig]:
@@ -64,6 +67,9 @@ def _configs(spec: SweepSpec) -> list[EpisodeConfig]:
         threshold_ratio=spec.threshold_ratio,
         partition=spec.partition,
         launch_parity=spec.launch_parity,
+        replay_sessions=spec.replay_sessions,
+        recogniser=spec.recogniser,
+        avoid_tools=spec.avoid_tools,
     )
     out: list[EpisodeConfig] = []
 
@@ -208,6 +214,111 @@ def experiment_2(attacker_project, workspace, out_dir, **kwargs) -> list[Episode
     """
     spec = SweepSpec(experiment_id="exp2_keyed_probes", probe_mode="keyed", **kwargs)
     return run_sweep(spec, attacker_project, workspace, out_dir)
+
+
+def experiment_3(
+    attacker_project,
+    workspace,
+    out_dir,
+    *,
+    recogniser: str,
+    family_name: str = "all",
+    replay_sessions: int = 2,
+    **kwargs,
+) -> list[EpisodeResult]:
+    """Experiment 3 - what a learned recogniser costs the detector.
+
+    H3's recall half. The same attack matrix is run twice: at L1, where the
+    server attacks every call and the detector should catch it, and at L6,
+    where the server scores each call with a model fitted to traffic it
+    observed and stays benign for anything it believes is a probe. The
+    difference between the two detection rates is the answer.
+
+    Two settings are not optional here.
+
+    ``replay_sessions`` must be above zero. L6 only fires on traffic it
+    believes is genuine, so in a probe-only episode it never fires at all,
+    every episode classifies as never_triggered, and the recall this
+    experiment exists to measure is undefined.
+
+    ``launch_parity`` must be on. Without it the probe path passes a full
+    copy of os.environ and the replayed path passes the SDK default set, so
+    the recogniser would separate the two on environment size - a property of
+    the harness rather than of probing. T4 has the measurement: 96 variables
+    against 13.
+    """
+    results: list[EpisodeResult] = []
+    for level in ("L1", "L6"):
+        spec = SweepSpec(
+            experiment_id=f"exp3_{family_name}_{level}",
+            probe_mode="keyed",
+            levels=(level,),
+            launch_parity=True,
+            replay_sessions=replay_sessions,
+            # L1 ignores the model entirely; it is copied in regardless so the
+            # two arms differ in exactly one thing.
+            recogniser=recogniser,
+            **kwargs,
+        )
+        results += run_sweep(spec, attacker_project, workspace, out_dir)
+    return results
+
+
+def evasion_report(results: Sequence[EpisodeResult], *, threshold: float = 50.0) -> str:
+    """Detection at L1 against L6, per family, with Wilson intervals."""
+    from eval.stats import wilson
+
+    by_key: dict[tuple[str, str], list[EpisodeResult]] = {}
+    for r in results:
+        by_key.setdefault((r.config.family, r.config.level), []).append(r)
+
+    families = sorted({f for f, _ in by_key})
+    lines = ["", "=" * 78,
+             "  EXPERIMENT 3 - detection lost to a learned recogniser (H3, recall half)",
+             "=" * 78,
+             f"  {'family':<20}{'L1 recall':>22}{'L6 recall':>22}{'drop':>10}"]
+
+    drops: list[float] = []
+    for family in families:
+        cells = {}
+        for level in ("L1", "L6"):
+            episodes = by_key.get((family, level), [])
+            fired = [e for e in episodes if e.outcome in {"detected", "missed"}]
+            hits = sum(1 for e in fired if e.outcome == "detected")
+            cells[level] = (hits, len(fired))
+
+        def fmt(cell):
+            hits, total = cell
+            if not total:
+                return "undefined (0 fired)".rjust(22)
+            rate, low, high = wilson(hits, total)
+            return f"{rate:6.1%} [{low:.2f},{high:.2f}] {hits}/{total}".rjust(22)
+
+        l1, l6 = cells["L1"], cells["L6"]
+        if l1[1] and l6[1]:
+            drop = (l1[0] / l1[1] - l6[0] / l6[1]) * 100
+            drops.append(drop)
+            drop_s = f"{drop:+.1f}pp"
+        else:
+            drop_s = "n/a"
+        lines.append(f"  {family:<20}{fmt(l1)}{fmt(l6)}{drop_s:>10}")
+
+    if drops:
+        mean_drop = sum(drops) / len(drops)
+        passes = mean_drop >= threshold
+        lines += ["",
+                  f"  mean drop across families: {mean_drop:+.1f} percentage points",
+                  f"  H3 (recall half, >= {threshold:.0f}pp): "
+                  f"{'PASS' if passes else 'FAIL'}"]
+        if not passes:
+            lines.append("      A failed hypothesis is a result. Do not tune to pass it.")
+    else:
+        lines += ["", "  H3 (recall half): UNDEFINED - no episode in which the "
+                      "attack actually fired.",
+                  "      With replay_sessions=0 an L6 attacker never fires, so "
+                  "this is the expected outcome of running it without genuine "
+                  "traffic rather than a finding."]
+    return "\n".join(lines)
 
 
 def compare(control: Sequence[EpisodeResult], treatment: Sequence[EpisodeResult]) -> str:

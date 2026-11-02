@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import json
 import logging
 import sys
 from pathlib import Path
@@ -47,6 +48,37 @@ def _cmd_selftest(ns: argparse.Namespace) -> int:
 def _cmd_run(ns: argparse.Namespace) -> int:
     _quiet()
     from eval.experiments import SweepSpec, run_sweep, summarise
+
+    if ns.experiment == 3:
+        from eval.experiments import evasion_report, experiment_3
+
+        if not ns.recogniser:
+            print("error: --recogniser is required for experiment 3. Train one "
+                  "with `eval rq3` first.", file=sys.stderr)
+            return 2
+        model = Path(ns.recogniser)
+        if not model.is_file():
+            print(f"error: no recogniser at {model}", file=sys.stderr)
+            return 2
+        family_name = json.loads(model.read_text(encoding="utf-8")).get("family", "all")
+
+        extra: dict = {"seeds": tuple(range(1, ns.seeds + 1)),
+                       "cycles": ns.cycles, "threshold_ratio": ns.threshold}
+        if ns.quick:
+            extra.update(families=("content-injection", "exfiltration"),
+                         seeds=(1,), cycles=2, n_probes=2, n_samples=4,
+                         benign_seeds=(101,), benign_update_seeds=())
+
+        print(f"experiment : 3, L1 against L6")
+        print(f"recogniser : {model.name}  (family {family_name})")
+        print(f"replay     : {ns.replay} genuine session(s) per cycle")
+        print()
+        results = experiment_3(ns.attacker, ns.workspace, ns.results,
+                               recogniser=str(model), family_name=family_name,
+                               replay_sessions=ns.replay, **extra)
+        print(summarise(results))
+        print(evasion_report(results))
+        return 0
 
     probe_mode = "keyed" if ns.experiment == 2 else "fixed"
     tag = "keyed_probes" if ns.experiment == 2 else "fixed_probes"
@@ -188,7 +220,11 @@ def main(argv: list[str] | None = None) -> int:
     st.set_defaults(func=_cmd_selftest)
 
     run = sub.add_parser("run", help="run an experiment")
-    run.add_argument("--experiment", type=int, required=True, choices=[1, 2])
+    run.add_argument("--experiment", type=int, required=True, choices=[1, 2, 3])
+    run.add_argument("--recogniser", default=None,
+                     help="experiment 3: path to an exported recogniser JSON")
+    run.add_argument("--replay", type=int, default=2,
+                     help="experiment 3: genuine sessions replayed per cycle")
     run.add_argument("--seeds", type=int, default=3, help="seeds per cell (default 3)")
     run.add_argument("--cycles", type=int, default=4, help="verification cycles per episode")
     run.add_argument("--threshold", type=float, default=None,
