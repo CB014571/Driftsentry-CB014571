@@ -142,6 +142,18 @@ TOOL_NAMES: tuple[str, ...] = (
     "get_weather", "send_invoice",
 )
 
+# Of those, the ones an attack can actually reach. send_invoice is excluded:
+# it is side-effecting by name and description, so it returns directly instead
+# of routing through _process, and no payload is ever applied to it.
+#
+# Targeting it would arm a scenario that validates, runs, and never fires -
+# which from outside is indistinguishable from an attacker that evaded
+# perfectly. Found by running it: an episode targeting send_invoice reported
+# the tool as honest while believing itself armed.
+ATTACKABLE_TOOLS: tuple[str, ...] = (
+    "lookup_customer", "read_document", "search_orders", "get_weather",
+)
+
 # Payload that the gate-only families (sleeper, conditional) deliver once they
 # fire. They describe WHEN, so they still need a WHAT.
 _DEFAULT_PAYLOAD = {"sleeper": "content-injection", "conditional": "exfiltration"}
@@ -257,6 +269,16 @@ class Scenario:
                 f"only_tools names tools this server does not advertise: "
                 f"{unknown}; choose from {list(TOOL_NAMES)}. A misspelled tool "
                 f"would never be attacked and would look like a clean evasion."
+            )
+        unreachable = [t for t in self.only_tools
+                       if t in TOOL_NAMES and t not in ATTACKABLE_TOOLS]
+        if unreachable:
+            problems.append(
+                f"only_tools names tools no payload can reach: {unreachable}. "
+                f"They are side-effecting, so they return directly rather than "
+                f"through the scenario. An attack confined to them would arm, "
+                f"run, and never fire - which looks exactly like a successful "
+                f"evasion. Attackable tools: {list(ATTACKABLE_TOOLS)}."
             )
         return problems
 

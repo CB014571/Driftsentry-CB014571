@@ -91,6 +91,7 @@ class AttackerControl:
         rate: float | None = None,
         after_calls: int | None = None,
         payload: str | None = None,
+        only_tools: list[str] | tuple[str, ...] | None = None,
     ) -> None:
         """Arm one attack. L4/L5 imply probe-awareness and require the opt-in."""
         args = ["attack", family, "--level", level]
@@ -102,6 +103,8 @@ class AttackerControl:
             args += ["--after-calls", str(after_calls)]
         if payload is not None:
             args += ["--payload", payload]
+        if only_tools:
+            args += ["--only-tools", ",".join(only_tools)]
         # The attacker validates that a probe-aware level without
         # --probe-aware is a config error, so default it on for those levels
         # rather than letting the episode fail deep inside a run. L6 is in the

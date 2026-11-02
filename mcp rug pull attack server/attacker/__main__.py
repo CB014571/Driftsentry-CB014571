@@ -54,6 +54,7 @@ _SCENARIO_FLAGS = [
     ("probe_aware", "--probe-aware"),
     ("updates", "--updates"),
     ("payload", "--payload"),
+    ("only_tools", "--only-tools"),
 ]
 
 
@@ -239,6 +240,8 @@ def _cmd_attack(ns: argparse.Namespace) -> int:
         scenario.payload = ns.payload
     if ns.probe_aware:
         scenario.probe_aware = True
+    if ns.only_tools is not None:
+        scenario.only_tools = [t.strip() for t in ns.only_tools.split(",") if t.strip()]
     if (code := _save(scenario, path)) is not None:
         return code
     _describe(scenario, path)
@@ -390,6 +393,11 @@ def build_parser() -> argparse.ArgumentParser:
                        help="L3/sleeper: turn malicious after this many calls")
         p.add_argument("--payload", choices=sorted(FAMILIES), default=None,
                        help="what sleeper/conditional deliver once they fire")
+        p.add_argument("--only-tools", default=None, metavar="A,B",
+                       help="attack only these tools; every other tool stays "
+                            "honest. Use it to put an attack where the user "
+                            "never looks, which passive monitoring cannot see "
+                            "and a probe still reaches.")
         p.add_argument("--probe-aware", action="store_true",
                        help="opt in to L4/L5: recognise the detector's canary inputs")
 
