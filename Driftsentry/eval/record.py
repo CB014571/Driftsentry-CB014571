@@ -84,6 +84,17 @@ class ExperimentRow:
     family_d: float = 0.0                   # surface integrity
     family_e: float = 0.0                   # adaptive evasion
 
+    # -- the three detectors, scored on the SAME episode (RQ2 / H2) --------
+    #
+    # Separate booleans rather than one verdict, because H2 compares detectors
+    # that saw identical traffic. Running them as three experiments would make
+    # the comparison unpaired, discard the pairing McNemar needs, and let a
+    # real difference be missed.
+    hash_detected: bool = False      # definition changed: what mcp-scan sees
+    passive_detected: bool = False   # a frozen rule over passive findings
+    full_detected: bool = False      # the full scorer's verdict
+    passive_available: bool = False  # distinguishes "saw nothing" from "did not run"
+
     # -- timing / cost -----------------------------------------------------
     verification_cycle: int = 0
     calls_to_detection: int = 0
@@ -91,6 +102,9 @@ class ExperimentRow:
     execution_duration: float = 0.0
     cpu_pct: float = 0.0
     rss_mb: float = 0.0
+    proxy_latency_ms: float = 0.0    # mean per replayed call, through the proxy
+    cycle_seconds: float = 0.0       # wall clock for one verification cycle
+    replayed_calls: int = 0
 
     # -- provenance --------------------------------------------------------
     detector_version: str = ""

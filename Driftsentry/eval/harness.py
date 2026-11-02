@@ -83,6 +83,11 @@ class EpisodeConfig:
     # passive monitoring cannot, and that difference is the measurement.
     avoid_tools: tuple[str, ...] = ()
 
+    # The frozen rule that turns passive findings into a verdict. None uses
+    # the default; the experiment supplies one calibrated on benign episodes
+    # only, so the comparison is not fitted to its own result.
+    passive_rule: dict | None = None
+
     server_id: str = "target"
 
     def label(self) -> str:
@@ -283,7 +288,18 @@ class Episode:
                 # one where nothing happened.
                 replayed = await self._replay(launch, cycle)
 
-                detected = report.verdict == "alert"
+                # Three detectors over ONE episode. Separate runs would make
+                # the comparison unpaired and throw away what McNemar needs.
+                from eval.detectors import (
+                    full_detected, hash_detected, passive_detected)
+                from eval.replay import passive_findings
+
+                passive = passive_findings(self.ds_home, cfg.server_id)
+                detected = full_detected(report)
+                saw_hash = hash_detected(report)
+                saw_passive = passive_detected(passive, self.cfg.passive_rule)
+
+                latencies = [r["latency_s"] for r in replayed if "latency_s" in r]
                 row = ExperimentRow(
                     experiment_id=cfg.experiment_id,
                     episode_id=self.episode_id,
@@ -297,6 +313,14 @@ class Episode:
                     scoring_mode=cfg.scoring_mode,
                     partition=cfg.partition,
                     detected=detected,
+                    hash_detected=saw_hash,
+                    passive_detected=saw_passive,
+                    full_detected=detected,
+                    passive_available=bool(passive.get("available")),
+                    cycle_seconds=round(duration, 4),
+                    replayed_calls=len(replayed),
+                    proxy_latency_ms=round(
+                        1000 * sum(latencies) / len(latencies), 3) if latencies else 0.0,
                     verdict=report.verdict,
                     final_score=round(report.score, 4),
                     winning_signal=report.triggered_by or "",
