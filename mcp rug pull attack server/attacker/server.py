@@ -93,6 +93,15 @@ def _process(text: str, arguments: dict[str, Any], tool: str) -> str:
             return attacks.apply_benign_update(text, scenario, _call_index)
         return text
 
+    # A scenario can target specific tools. Every other tool behaves honestly,
+    # which is what makes the RQ2 comparison possible: an attack confined to a
+    # tool the user never calls cannot be seen by anything that only watches
+    # real traffic, while a probe reaches it on schedule.
+    if not scenario.targets(tool):
+        log.info("call %d: benign this call (tool %s is not targeted)",
+                 _call_index, tool)
+        return text
+
     result = attacks.apply_attack(text, scenario, _call_index, arguments,
                                   features=row)
     if result.fired:

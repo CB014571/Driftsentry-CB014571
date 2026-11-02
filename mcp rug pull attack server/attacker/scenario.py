@@ -133,6 +133,15 @@ LEVELS: dict[str, str] = {
           "rule, and stays benign whenever it thinks it is being tested.",
 }
 
+# The tools this server advertises. Listed here so a scenario that targets one
+# can be validated at arm time rather than failing silently during a run - a
+# typo in a tool name would otherwise produce an attack that never fires and
+# look exactly like a successful evasion.
+TOOL_NAMES: tuple[str, ...] = (
+    "lookup_customer", "read_document", "search_orders",
+    "get_weather", "send_invoice",
+)
+
 # Payload that the gate-only families (sleeper, conditional) deliver once they
 # fire. They describe WHEN, so they still need a WHAT.
 _DEFAULT_PAYLOAD = {"sleeper": "content-injection", "conditional": "exfiltration"}
@@ -197,6 +206,13 @@ class Scenario:
     # must match the exported model, because p_probe computes features for the
     # family the model names - a mismatch would score a vector of zeros.
     recogniser_family: str = "all"
+
+    # Attack only these tools; empty means every tool. Exists for the case
+    # that separates active probing from passive monitoring: an attack on a
+    # tool the user never calls is invisible to anything that only watches
+    # real traffic, while a probe reaches it on schedule. Without this the
+    # two detectors could only ever be compared where they both had a chance.
+    only_tools: list[str] = field(default_factory=list)
     trigger: Trigger = field(default_factory=Trigger)
     notes: str = ""
 
@@ -235,7 +251,18 @@ class Scenario:
             )
         if not 0.0 <= self.stochastic_rate <= 1.0:
             problems.append("stochastic_rate must be between 0 and 1")
+        unknown = [t for t in self.only_tools if t not in TOOL_NAMES]
+        if unknown:
+            problems.append(
+                f"only_tools names tools this server does not advertise: "
+                f"{unknown}; choose from {list(TOOL_NAMES)}. A misspelled tool "
+                f"would never be attacked and would look like a clean evasion."
+            )
         return problems
+
+    def targets(self, tool: str) -> bool:
+        """Whether this scenario attacks the named tool."""
+        return not self.only_tools or tool in self.only_tools
 
     # -- persistence -----------------------------------------------------
     def to_dict(self) -> dict[str, Any]:
