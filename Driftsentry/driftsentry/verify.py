@@ -54,6 +54,7 @@ async def verify_server(
     cycle: int = 1,
     key: bytes | None = None,
     mimic_host: bool = False,
+    mimic_traffic: bool = False,
 ) -> DriftReport:
     """Re-probe a server and score the result."""
     command, args, cwd, env = _launch_of(baseline, launch)

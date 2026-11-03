@@ -23,6 +23,8 @@ from __future__ import annotations
 
 import logging
 import time
+
+import anyio
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any
@@ -395,8 +397,15 @@ async def _reprobe_keyed(
     samples_per_probe: int,
     cycle: int,
     key: bytes | None,
+    mimic_traffic: bool = False,
 ) -> list[ProbeCheck]:
-    """Verify with freshly generated values, against family baselines."""
+    """Verify with freshly generated values, against family baselines.
+
+    ``mimic_traffic`` paces the calls. RQ3 measured timing at AUC 0.951 and
+    session at 0.983 once the client name is borrowed, and both come from
+    probing being faster and burstier than a user. Pauses are drawn from the
+    server's own observed gaps, keyed on the cycle so a run stays replayable.
+    """
     from driftsentry import keys as key_store
     from driftsentry.families import compare_to_family
     from driftsentry.probe_generator import KeyedProbeGenerator, UnsupportedSchema
@@ -411,6 +420,18 @@ async def _reprobe_keyed(
     generator = KeyedProbeGenerator(probe_key, cycle=cycle)
     definitions = {d["name"]: d for d in baseline.tool_definitions}
     checks: list[ProbeCheck] = []
+
+    profile = None
+    if mimic_traffic:
+        from driftsentry.traffic import load as load_traffic
+
+        profile = load_traffic(baseline.server)
+        if profile is None or not profile.usable:
+            log.warning("mimic_traffic requested for %r but no usable traffic "
+                        "profile exists; probing at full speed, which RQ3 "
+                        "measured at AUC 0.951 on timing alone", baseline.server)
+            profile = None
+    call_index = 0
 
     for tool in baseline.tools:
         if not tool.probed:
@@ -432,6 +453,14 @@ async def _reprobe_keyed(
         for probe in probes:
             payloads, observations = [], []
             for _ in range(samples_per_probe):
+                if profile is not None:
+                    from driftsentry.camouflage import gap_from_profile
+
+                    pause = gap_from_profile(probe_key, baseline.server, cycle,
+                                             call_index, profile)
+                    if pause > 0:
+                        await anyio.sleep(min(pause, 10.0))
+                call_index += 1
                 payload, _latency, observation = await _call_once(
                     session, tool.tool, probe.args, monitor
                 )
@@ -485,6 +514,7 @@ async def reprobe(
     cycle: int = 1,
     key: bytes | None = None,
     mimic_host: bool = False,
+    mimic_traffic: bool = False,
 ) -> ReprobeReport:
     """Replay a stored baseline's probes against a live server and measure drift.
 
