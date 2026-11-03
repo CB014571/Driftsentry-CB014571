@@ -197,3 +197,53 @@ def test_a_missing_recogniser_fails_the_episode_loudly(tmp_path):
 
     with pytest.raises(FileNotFoundError, match="recogniser"):
         episode._prepare()
+
+
+# --------------------------------------------------------------------------- #
+# Pacing
+#
+# The first call of a genuine session arrives with the attacker process
+# already 3.105 seconds old, because the model spent that long deciding. A
+# probe cycle's first call arrives at 0.022 seconds. proc_age_s is the single
+# feature the session recogniser keys on.
+#
+# Replaying calls the instant the process starts gives them proc_age_s of
+# about 0.02, so replayed GENUINE traffic looks like probe traffic. A first
+# run without pacing reported that a recogniser with AUC 1.000 achieved no
+# evasion - an artefact of the replay, not a property of the signal.
+# --------------------------------------------------------------------------- #
+def test_sessions_carry_the_pacing_that_produced_them(tmp_path):
+    path = _corpus(tmp_path, [
+        dict(_row("a", "lookup_customer", {"id": "1"}, 100.0), proc_age_s=3.1, gap_s=None),
+        dict(_row("a", "get_weather", {"city": "Leeds"}, 101.0), proc_age_s=4.2, gap_s=1.1),
+    ])
+    session = load_sessions(path)[0]
+    assert session[0]["proc_age_s"] == 3.1
+    assert session[1]["gap_s"] == 1.1
+
+
+def test_pacing_is_optional_but_on_by_default():
+    import inspect
+
+    from eval.replay import replay_session
+
+    params = inspect.signature(replay_session).parameters
+    assert params["pace"].default is True
+    assert params["max_wait_s"].default == 15.0
+
+
+def test_a_recorded_pause_of_minutes_is_capped(tmp_path):
+    """A user who walked away must not stall the sweep."""
+    import inspect
+
+    from eval.replay import replay_session
+
+    source = inspect.getsource(replay_session)
+    assert "min(float(wanted), max_wait_s)" in source
+
+
+def test_missing_pacing_does_not_block_the_call(tmp_path):
+    """Older corpora have no proc_age_s; they should replay, just unpaced."""
+    path = _corpus(tmp_path, [_row("a", "lookup_customer", {"id": "1"}, 100.0)])
+    session = load_sessions(path)[0]
+    assert session[0].get("proc_age_s") is None

@@ -34,6 +34,8 @@ from __future__ import annotations
 
 import json
 import random
+
+import anyio
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -65,13 +67,20 @@ def load_sessions(corpus: str | Path | None = None) -> list[list[dict[str, Any]]
         tool, args = row.get("tool"), row.get("args")
         if not tool or not isinstance(args, dict):
             continue
-        by_session[row.get("group")].append(
-            {"tool": tool, "args": args, "t": row.get("t", 0.0)})
+        by_session[row.get("group")].append({
+            "tool": tool, "args": args, "t": row.get("t", 0.0),
+            # Pacing, not content. A session whose calls arrive instantly
+            # looks like a probe cycle however genuine its arguments are.
+            "proc_age_s": row.get("proc_age_s"),
+            "gap_s": row.get("gap_s"),
+        })
 
     sessions = []
     for calls in by_session.values():
         calls.sort(key=lambda c: c["t"])
-        sessions.append([{"tool": c["tool"], "args": c["args"]} for c in calls])
+        sessions.append([{"tool": c["tool"], "args": c["args"],
+                          "proc_age_s": c.get("proc_age_s"),
+                          "gap_s": c.get("gap_s")} for c in calls])
     # Deterministic order, so an episode seed selects the same sessions.
     sessions.sort(key=lambda s: (len(s), json.dumps(s, sort_keys=True)))
     return sessions
@@ -105,12 +114,31 @@ async def replay_session(
     *,
     client_info: dict[str, str],
     timeout: float = 60.0,
+    pace: bool = True,
+    max_wait_s: float = 15.0,
 ) -> list[dict[str, Any]]:
     """Send one recorded session through the proxy, as the agent would have.
 
-    Returns one record per call. A failed call is recorded rather than raised:
-    the traffic still reached the server, which is what the attacker saw and
-    what passive monitoring observed.
+    PACING IS PART OF THE TRAFFIC, not a detail of how it is sent.
+
+    Measured: the first call of a genuine session arrives with the attacker
+    process already 3.105 seconds old, because the model spent that long
+    deciding to call it. A probe cycle's first call arrives at 0.022 seconds.
+    That single feature - proc_age_s - is what the session recogniser keys on.
+
+    Replaying calls the instant the process starts gives them proc_age_s of
+    about 0.02, so replayed GENUINE traffic looks exactly like probe traffic
+    to anything that reads process age or timing. A first attempt without
+    this reported that a recogniser with AUC 1.000 achieved no evasion, which
+    was an artefact of the replay rather than a property of the signal.
+
+    So the recorded delay before the first call is reproduced, and the
+    recorded gaps between later calls with it. Capped, because a recorded
+    pause of minutes is a user who walked away and would stall the sweep.
+
+    Returns one record per call. A failed call is recorded rather than
+    raised: the traffic still reached the server, which is what the attacker
+    saw and what passive monitoring observed.
     """
     import time
 
@@ -126,7 +154,15 @@ async def replay_session(
         async with ClientSession(read, write, client_info=types.Implementation(
                 name=client_info["name"], version=client_info["version"])) as session:
             await session.initialize()
-            for call in calls:
+            for index, call in enumerate(calls):
+                if pace:
+                    # Before the first call, the age the process had reached
+                    # when the model finally called. Between later calls, the
+                    # gap the model left.
+                    wanted = (call.get("proc_age_s") if index == 0
+                              else call.get("gap_s"))
+                    if wanted:
+                        await anyio.sleep(min(float(wanted), max_wait_s))
                 started = time.perf_counter()
                 try:
                     result = await session.call_tool(call["tool"], call["args"])
