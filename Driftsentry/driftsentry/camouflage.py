@@ -222,3 +222,68 @@ def gap_from_profile(
         return fallback
     rng = _rng(key, "gap", server, cycle, index)
     return float(gaps[rng.randrange(len(gaps))])
+
+
+# --------------------------------------------------------------------------- #
+# Secret subsampling (T19)
+#
+# Keyed generation already stops an attacker predicting a probe it has not
+# seen. It does not stop one REMEMBERING the probes it has. A server that
+# records every value sent to it builds, cycle by cycle, the set of things
+# the detector asks - and once a cycle repeats a value, that value is burned.
+#
+# Subsampling removes the repetition. A bank of many probes is recorded at
+# approval time; each cycle draws a few, keyed. The attacker sees only what
+# was drawn, and the draw for any future cycle is unpredictable without the
+# key.
+#
+# The honest limit: a bank is finite. An attacker that survives long enough
+# sees all of it. What subsampling buys is the number of cycles before that
+# happens, and `exposure_after` states it rather than leaving it implied.
+# --------------------------------------------------------------------------- #
+DEFAULT_BANK = 64
+DEFAULT_DRAW = 3
+
+
+def subsample(
+    key: bytes,
+    server: str,
+    tool: str,
+    cycle: int,
+    bank_size: int,
+    draw: int = DEFAULT_DRAW,
+) -> list[int]:
+    """Which probes from the bank this cycle uses.
+
+    Indices, sorted, without replacement. Keyed on the cycle, so a run is
+    replayable from its key and an attacker without the key cannot narrow
+    down the next draw from the last one.
+    """
+    if bank_size <= 0 or draw <= 0:
+        return []
+    take = min(draw, bank_size)
+    rng = _rng(key, "subsample", server, tool, cycle)
+    return sorted(rng.sample(range(bank_size), take))
+
+
+def exposure_after(bank_size: int, draw: int, cycles: int) -> float:
+    """Expected fraction of the bank an attacker has seen after N cycles.
+
+    Each cycle draws independently, so a probe is unseen after `cycles`
+    draws with probability (1 - draw/bank)^cycles. Stated so the write-up can
+    say how long the bank lasts instead of implying it lasts forever.
+    """
+    if bank_size <= 0 or draw <= 0 or cycles <= 0:
+        return 0.0
+    per_cycle_miss = max(0.0, 1.0 - draw / bank_size)
+    return 1.0 - per_cycle_miss ** cycles
+
+
+def cycles_until(bank_size: int, draw: int, fraction: float) -> int:
+    """How many cycles before an attacker has seen `fraction` of the bank."""
+    if not 0.0 < fraction < 1.0 or bank_size <= 0 or draw <= 0:
+        return 0
+    import math
+
+    per_cycle_miss = max(1e-12, 1.0 - draw / bank_size)
+    return max(1, math.ceil(math.log(1.0 - fraction) / math.log(per_cycle_miss)))
