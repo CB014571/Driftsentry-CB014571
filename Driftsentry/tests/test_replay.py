@@ -247,3 +247,64 @@ def test_missing_pacing_does_not_block_the_call(tmp_path):
     path = _corpus(tmp_path, [_row("a", "lookup_customer", {"id": "1"}, 100.0)])
     session = load_sessions(path)[0]
     assert session[0].get("proc_age_s") is None
+
+
+# --------------------------------------------------------------------------- #
+# Episode timeout
+#
+# Without a ceiling, one subprocess that never returns blocks the whole
+# sweep. Observed twice: a 24-episode sweep stopped after an hour with no
+# error, and a later run stalled 83 minutes on one episode before clearing.
+# T20 runs five conditions back to back, so an unbounded episode there costs
+# a night rather than a minute.
+# --------------------------------------------------------------------------- #
+def test_an_episode_has_a_wall_clock_ceiling():
+    from eval.harness import EpisodeConfig
+
+    cfg = EpisodeConfig(experiment_id="x")
+    assert cfg.timeout_s > 0
+    # Generous against the 1.4-minute median, tight against an hour.
+    assert 300 <= cfg.timeout_s <= 900
+
+
+def test_a_timed_out_episode_is_an_error_not_a_silent_gap(tmp_path, monkeypatch):
+    """It must be visible in the results, not merely absent from them."""
+    import asyncio
+
+    from eval import harness
+    from eval.harness import EpisodeConfig, run_episode
+
+    async def never_returns(self):
+        await asyncio.sleep(3600)
+
+    monkeypatch.setattr(harness.Episode, "run", never_returns)
+    monkeypatch.setattr(harness.Episode, "_cleanup", lambda self: None)
+    monkeypatch.setattr(harness.AttackerControl, "discover",
+                        classmethod(lambda cls, *a, **k: type("A", (), {
+                            "project_dir": tmp_path, "python": tmp_path})()))
+
+    cfg = EpisodeConfig(experiment_id="x", timeout_s=0.2)
+    result = run_episode(cfg, tmp_path, tmp_path)
+
+    assert result.outcome == "error"
+    assert "exceeded" in result.error
+    assert result.rows == [], "a timed-out episode contributes no rows"
+
+
+def test_a_normal_episode_is_unaffected_by_the_ceiling(tmp_path, monkeypatch):
+    from eval import harness
+    from eval.harness import EpisodeConfig, EpisodeResult, run_episode
+
+    async def quick(self):
+        out = EpisodeResult(config=self.cfg)
+        out.outcome = "benign_ok"
+        return out
+
+    monkeypatch.setattr(harness.Episode, "run", quick)
+    monkeypatch.setattr(harness.AttackerControl, "discover",
+                        classmethod(lambda cls, *a, **k: type("A", (), {
+                            "project_dir": tmp_path, "python": tmp_path})()))
+
+    result = run_episode(EpisodeConfig(experiment_id="x"), tmp_path, tmp_path)
+    assert result.outcome == "benign_ok"
+    assert result.error is None

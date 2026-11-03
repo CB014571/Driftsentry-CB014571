@@ -88,6 +88,18 @@ class EpisodeConfig:
     # only, so the comparison is not fitted to its own result.
     passive_rule: dict | None = None
 
+    # Wall-clock ceiling for one episode. No ceiling is how a sweep dies:
+    # a subprocess that never returns blocks Episode.run() forever, and the
+    # harness has no way to notice. One hung episode stalled a run for 83
+    # minutes before clearing, and the 24-episode sweep before it simply
+    # stopped after an hour with no error. An episode that exceeds this is
+    # recorded as an error and the sweep moves on, which costs one episode
+    # instead of a night.
+    #
+    # Eight minutes: the observed median is 1.4, and the slowest healthy
+    # episode seen is about 3.
+    timeout_s: float = 480.0
+
     server_id: str = "target"
 
     def label(self) -> str:
@@ -371,6 +383,30 @@ def run_episode(
     workspace: str | Path,
     **kwargs,
 ) -> EpisodeResult:
-    """Synchronous wrapper - one fresh event loop per episode."""
+    """Synchronous wrapper - one fresh event loop per episode.
+
+    The episode is bounded. Without a ceiling a single subprocess that never
+    returns blocks the whole sweep, which is not hypothetical: one episode
+    stalled a run for 83 minutes before clearing, and an earlier 24-episode
+    sweep stopped after an hour with no error at all. A timed-out episode is
+    recorded as an error and the sweep continues.
+    """
     episode = Episode(config, attacker_project, workspace, **kwargs)
-    return asyncio.run(episode.run())
+
+    async def _bounded() -> EpisodeResult:
+        try:
+            return await asyncio.wait_for(episode.run(), timeout=config.timeout_s)
+        except asyncio.TimeoutError:
+            log.warning("episode %s exceeded %.0fs and was abandoned",
+                        episode.episode_id, config.timeout_s)
+            result = EpisodeResult(config=config)
+            result.outcome = "error"
+            result.error = (f"TimeoutError: episode exceeded {config.timeout_s:.0f}s. "
+                            f"The sweep continued; this episode contributes no rows.")
+            try:
+                episode._cleanup()
+            except Exception:
+                pass
+            return result
+
+    return asyncio.run(_bounded())
