@@ -118,6 +118,11 @@ class SessionFingerprint:
     calls_only_probeable_tools: bool = True
     no_interleaved_user_traffic: bool = True
     short_lived_connection: bool = True
+    # Set False once T18's session shaping is on: a cycle is then split into
+    # several sessions whose lengths are drawn from the observed distribution,
+    # instead of one burst of every probe.
+    uniform_session_length: bool = True
+    back_to_back_calls: bool = True
 
     def residual_tells(self) -> list[str]:
         tells = []
@@ -131,8 +136,89 @@ class SessionFingerprint:
             tells.append("no unrelated calls are interleaved with the probes")
         if self.short_lived_connection:
             tells.append("the connection closes immediately after the last probe")
+        if self.uniform_session_length:
+            tells.append("every cycle sends the same number of calls in one session, "
+                         "which RQ3 measured at AUC 1.000")
+        if self.back_to_back_calls:
+            tells.append("probe calls arrive with no pause between them, unlike a "
+                         "model that stops to think")
         return tells
 
     def describe(self) -> str:
         return ("verification remains distinguishable by session structure; "
                 f"{len(self.residual_tells())} residual tell(s)")
+
+# --------------------------------------------------------------------------- #
+# Session shaping (T18)
+#
+# `session` was the worst channel RQ3 found, at AUC 1.000, and it is not about
+# what probes contain. A verification cycle makes every probe inside one
+# process - eighteen calls in about 0.2 seconds - while a genuine agent
+# session makes one to six over several seconds. calls_before above five
+# occurs only in probe traffic, so the split is exact and no amount of value
+# randomisation touches it.
+#
+# The fix is structural: break one cycle into several short sessions, each
+# sized from the distribution real sessions actually follow, and space the
+# calls inside them with gaps drawn from real gaps.
+#
+# What this costs is honest to state. More sessions means more process
+# launches per cycle, so a cycle takes longer and costs more. T20 measures
+# that rather than assuming it is free.
+# --------------------------------------------------------------------------- #
+def session_plan(
+    key: bytes,
+    server: str,
+    cycle: int,
+    total_probes: int,
+    profile: Any | None = None,
+) -> list[int]:
+    """How to split one cycle's probes into separate sessions.
+
+    Returns a list of call counts, one per session, summing to
+    ``total_probes``. With no usable profile this returns a single session -
+    the current behaviour - rather than inventing a shape. A made-up
+    distribution matching neither probes nor users would be a fingerprint of
+    its own, which is the same reasoning as hostprofile.implementation().
+    """
+    if total_probes <= 0:
+        return []
+    if profile is None or not getattr(profile, "usable", False):
+        return [total_probes]
+
+    sizes = [n for n in profile.calls_per_session if n > 0]
+    if not sizes:
+        return [total_probes]
+
+    rng = _rng(key, "sessions", server, cycle)
+    plan: list[int] = []
+    remaining = total_probes
+    while remaining > 0:
+        draw = min(sizes[rng.randrange(len(sizes))], remaining)
+        plan.append(draw)
+        remaining -= draw
+    return plan
+
+
+def gap_from_profile(
+    key: bytes,
+    server: str,
+    cycle: int,
+    index: int,
+    profile: Any | None = None,
+    *,
+    fallback: float = 0.0,
+) -> float:
+    """A pause before the next probe call, drawn from observed gaps.
+
+    Keyed, so a cycle is replayable, and drawn from the real distribution
+    rather than from a parametric guess - a tool whose users pause in a
+    bimodal way is not described by any single mean.
+    """
+    if profile is None or not getattr(profile, "usable", False):
+        return fallback
+    gaps = [g for g in getattr(profile, "gaps_s", []) if g >= 0]
+    if not gaps:
+        return fallback
+    rng = _rng(key, "gap", server, cycle, index)
+    return float(gaps[rng.randrange(len(gaps))])
