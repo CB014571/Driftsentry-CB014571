@@ -2,8 +2,8 @@
   "windows": 240,
   "genuine_windows": 120,
   "probe_windows": 120,
-  "feature_rows": 2383,
-  "baseline_cutoff": 1793536758.457075,
+  "feature_rows": 2379,
+  "baseline_cutoff": 1793681826.0821893,
   "errors": [],
   "out_dir": "eval_results\\rq3"
 }
