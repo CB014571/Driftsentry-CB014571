@@ -323,3 +323,74 @@ def test_process_start_is_recovered_exactly(tmp_path):
     assert a == b, "the same process must key identically at any age"
     c = process_key({"pid": 1, "t": 2000.0, "proc_age_s": 0.0})
     assert c != a, "a later process reusing the pid must key differently"
+
+
+# --------------------------------------------------------------------------- #
+# Results-file schema
+#
+# Seven columns were added to ExperimentRow while an exp3 CSV from an earlier
+# run was still on disk. ResultWriter appends and only writes a header when
+# the file is new, so 56 fields went under a 49-field header and every value
+# past the insertion point shifted one column left. config_hash came out
+# holding "121.2" - a latency. Nothing raised.
+#
+# A results file that silently misaligns is worse than one that fails: the
+# numbers still look like numbers, and they would have reached the write-up.
+# --------------------------------------------------------------------------- #
+def test_appending_under_a_stale_header_is_refused(tmp_path):
+    import csv as _csv
+
+    from eval.record import FIELD_NAMES, ExperimentRow, ResultWriter, SchemaMismatch
+
+    stale = tmp_path / "exp.csv"
+    with stale.open("w", newline="", encoding="utf-8") as fh:
+        _csv.writer(fh).writerow(FIELD_NAMES[:-3])      # an older, shorter schema
+
+    with pytest.raises(SchemaMismatch, match="different schema"):
+        with ResultWriter(tmp_path, "exp"):
+            pass
+
+
+def test_the_old_file_is_kept_not_overwritten(tmp_path):
+    import csv as _csv
+
+    from eval.record import FIELD_NAMES, ResultWriter, SchemaMismatch
+
+    stale = tmp_path / "exp.csv"
+    with stale.open("w", newline="", encoding="utf-8") as fh:
+        w = _csv.writer(fh)
+        w.writerow(FIELD_NAMES[:-3])
+        w.writerow(["keep-me"] * (len(FIELD_NAMES) - 3))
+
+    with pytest.raises(SchemaMismatch):
+        with ResultWriter(tmp_path, "exp"):
+            pass
+
+    retired = list(tmp_path.glob("exp.*.old.csv"))
+    assert retired, "the previous run's rows are still evidence; keep them"
+    assert "keep-me" in retired[0].read_text(encoding="utf-8")
+    assert not stale.exists(), "the mismatched file must not stay in place"
+
+
+def test_a_matching_header_appends_normally(tmp_path):
+    from eval.record import ExperimentRow, ResultWriter, now
+
+    row = ExperimentRow(experiment_id="e", episode_id="ep", timestamp=now())
+    with ResultWriter(tmp_path, "exp") as w:
+        w.append(row)
+    with ResultWriter(tmp_path, "exp") as w:          # same schema, second run
+        w.append(row)
+
+    lines = (tmp_path / "exp.csv").read_text(encoding="utf-8").strip().splitlines()
+    assert len(lines) == 3, "one header and two rows"
+
+
+def test_a_fresh_file_writes_the_current_header(tmp_path):
+    import csv as _csv
+
+    from eval.record import FIELD_NAMES, ResultWriter
+
+    with ResultWriter(tmp_path, "exp"):
+        pass
+    with (tmp_path / "exp.csv").open(newline="", encoding="utf-8") as fh:
+        assert next(_csv.reader(fh)) == FIELD_NAMES

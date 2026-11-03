@@ -29,6 +29,10 @@ from typing import Any
 SCHEMA_VERSION = 1
 
 
+class SchemaMismatch(RuntimeError):
+    """An existing results file does not match the current row definition."""
+
+
 @dataclass
 class ExperimentRow:
     """A single verification cycle within a single episode."""
@@ -206,12 +210,51 @@ class ResultWriter:
 
     def __enter__(self) -> "ResultWriter":
         new_file = not self.csv_path.exists() or self.csv_path.stat().st_size == 0
+        if not new_file:
+            self._require_matching_header()
         self._csv_handle = self.csv_path.open("a", newline="", encoding="utf-8")
         self._writer = csv.DictWriter(self._csv_handle, fieldnames=FIELD_NAMES)
         if new_file:
             self._writer.writeheader()
         self._jsonl_handle = self.jsonl_path.open("a", encoding="utf-8")
         return self
+
+    def _require_matching_header(self) -> None:
+        """Refuse to append rows the existing header cannot describe.
+
+        Measured failure, not a hypothetical. Seven columns were added to
+        ExperimentRow while an exp3 CSV from an earlier run was still on disk.
+        Appending wrote 56 fields under a 49-field header, so every value past
+        the insertion point shifted one column left: config_hash came out
+        holding "121.2", a latency. Nothing raised at the time, and a results
+        file that silently misaligns is worse than one that fails - the
+        numbers still look like numbers.
+
+        The file is rotated rather than overwritten, because the old rows are
+        still evidence of whatever run produced them.
+        """
+        with self.csv_path.open("r", newline="", encoding="utf-8") as handle:
+            existing = next(csv.reader(handle), [])
+        if existing == FIELD_NAMES:
+            return
+
+        missing = [f for f in FIELD_NAMES if f not in existing]
+        extra_cols = [f for f in existing if f not in FIELD_NAMES]
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
+        retired = self.csv_path.with_name(f"{self.csv_path.stem}.{stamp}.old.csv")
+        self.csv_path.rename(retired)
+        if self.jsonl_path.exists():
+            self.jsonl_path.rename(
+                self.jsonl_path.with_name(f"{self.jsonl_path.stem}.{stamp}.old.jsonl"))
+
+        raise SchemaMismatch(
+            f"{self.csv_path.name} was written with a different schema "
+            f"({len(existing)} columns, now {len(FIELD_NAMES)}). "
+            f"Missing: {missing or 'none'}. Unknown: {extra_cols or 'none'}. "
+            f"Appending would have shifted every value past the first new "
+            f"column. The old file has been moved to {retired.name}; re-run to "
+            f"start a clean one."
+        )
 
     def append(self, row: ExperimentRow, extra: dict[str, Any] | None = None) -> None:
         data = row.to_dict()
