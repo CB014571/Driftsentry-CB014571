@@ -56,6 +56,7 @@ class Collector:
         n_probes: int = 3,
         n_samples: int = 6,
         samples_per_probe: int = 2,
+        monitor_sandbox: bool = True,
     ) -> None:
         self.attacker_project = Path(attacker_project).resolve()
         self.out_dir = Path(out_dir)
@@ -65,6 +66,15 @@ class Collector:
         self.n_probes = n_probes
         self.n_samples = n_samples
         self.samples_per_probe = samples_per_probe
+        # Must match what the experiment runs with, and the experiment's
+        # default is True. Collecting with it off made probe calls faster
+        # than the detector actually makes them, so a recogniser fitted to
+        # proc_age_s learned a timing profile that does not occur in
+        # deployment - and then failed against the real thing. Third
+        # artefact of this shape, after launch parity (T4) and replay pacing
+        # (T10): the collection has to match the deployment in every respect
+        # a feature can observe.
+        self.monitor_sandbox = monitor_sandbox
 
         self.ds_home = self.workspace / "driftsentry"
         self.atk_home = self.workspace / "attacker"
@@ -130,7 +140,8 @@ class Collector:
         start = time.time()
         report = await verify_server(baseline, launch=launch,
                                      samples_per_probe=self.samples_per_probe,
-                                     monitor_sandbox=False, cycle=cycle, key=key)
+                                     monitor_sandbox=self.monitor_sandbox,
+                                     cycle=cycle, key=key)
         end = time.time()
         self._window(PROBE, start, end, cycle=cycle)
         return report
@@ -160,7 +171,7 @@ class Collector:
             self.server_id, launch["command"], launch["args"],
             cwd=launch["cwd"], env=launch["env"],
             n_probes=self.n_probes, n_samples=self.n_samples, seed=self.seed,
-            probe_mode="keyed", key=key, monitor_sandbox=False)
+            probe_mode="keyed", key=key, monitor_sandbox=self.monitor_sandbox)
 
         # Baselining is itself probe traffic, but it is NOT labelled. It runs
         # once, with a different sample count from every later cycle, so its
