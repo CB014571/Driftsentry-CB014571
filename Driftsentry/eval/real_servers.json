@@ -1,0 +1,177 @@
+{
+  "_status": "PROPOSAL - NOT YET APPROVED, NOT YET RUN",
+
+  "_what_this_is": [
+    "Candidate real MCP servers for Gap 3: the false-alarm rate of a",
+    "behavioural detector across genuine version upgrades.",
+    "",
+    "All are real packages on PyPI with multiple published releases. Version",
+    "pairs, release dates and licences were read from the PyPI JSON API on",
+    "2026-11-04 and are facts.",
+    "",
+    "Two fields are NOT facts and are marked so on every entry:",
+    "",
+    "  label           benign or benign-security-relevant. This is a reading",
+    "                  of intent from a changelog and it is the label the",
+    "                  false-alarm rate is measured against, so it is the",
+    "                  user's call, not mine. Every entry has it null.",
+    "",
+    "  read_only_tools My guess from each package summary. A tool list cannot",
+    "                  be confirmed without starting the server and calling",
+    "                  tools/list, which needs the permission noted below.",
+    "                  Probing a tool that turns out to write would be a real",
+    "                  side effect on the machine, so these must be confirmed",
+    "                  before any run, not assumed."
+  ],
+
+  "_blocked_on": {
+    "permission": "Installing and running these requires executing third-party code from PyPI. Auto mode refused it as 'Code from External', which is the correct default: Gap 3 means downloading and running roughly twenty unknown MCP servers.",
+    "needed": "Explicit approval to pip-install pinned versions into throwaway virtual environments and start each server over stdio.",
+    "scope_if_granted": "Install only; no network egress beyond PyPI except where a server's own tools reach out, which is why the network-touching candidates are separated below."
+  },
+
+  "_safety_notes": {
+    "probe_values_are_harmless": "The keyed generator emits .invalid hostnames and loopback port 9 (RFC 863 discard), and relative paths only. A fetch server probed this way attempts a request that cannot leave the machine.",
+    "but_some_servers_reach_out": "arxiv and duckduckgo servers send real queries to third-party services when called. The queries are benign, but that is outbound traffic to someone else's infrastructure and should be a deliberate choice rather than a side effect.",
+    "recommended_first_set": "time, calculator, git, sqlite. Purely local, no network, no credentials - enough to prove the pipeline before anything reaches outward."
+  },
+
+  "servers": [
+    {
+      "name": "mcp-server-time",
+      "launcher": "pip", "package": "mcp-server-time",
+      "entry": ["-m", "mcp_server_time"],
+      "old": "2026.8.18", "new": "2026.10.28",
+      "releases": 15, "first_release": "2024-11-29", "last_release": "2026-10-28",
+      "licence": "MIT", "needs_key": false, "network": false,
+      "read_only_tools": ["get_current_time", "convert_time"],
+      "read_only_tools_confirmed": false,
+      "label": null,
+      "changelog": "https://github.com/modelcontextprotocol/servers/commits/main/src/time",
+      "why_shortlisted": "Official Anthropic server. Pure computation, no network, no credentials. The safest thing to prove the pipeline on."
+    },
+    {
+      "name": "mcp-server-calculator",
+      "launcher": "pip", "package": "mcp-server-calculator",
+      "entry": ["-m", "mcp_server_calculator"],
+      "old": "0.1.2", "new": "0.2.1",
+      "releases": 5, "first_release": "2025-03-19", "last_release": "2026-08-08",
+      "licence": "MIT", "needs_key": false, "network": false,
+      "read_only_tools": ["calculate"],
+      "read_only_tools_confirmed": false,
+      "label": null,
+      "changelog": "https://pypi.org/project/mcp-server-calculator/#history",
+      "why_shortlisted": "A minor-to-minor jump across a version boundary, so behaviour plausibly moved. Deterministic output, which makes any drift unambiguous."
+    },
+    {
+      "name": "mcp-server-git",
+      "launcher": "pip", "package": "mcp-server-git",
+      "entry": ["-m", "mcp_server_git"],
+      "old": "2026.8.18", "new": "2026.10.28",
+      "releases": 22, "first_release": "2024-11-21", "last_release": "2026-10-28",
+      "licence": "MIT", "needs_key": false, "network": false,
+      "read_only_tools": ["git_status", "git_diff", "git_log", "git_show"],
+      "read_only_tools_confirmed": false,
+      "label": null,
+      "changelog": "https://github.com/modelcontextprotocol/servers/commits/main/src/git",
+      "why_shortlisted": "Official. Has a clear read/write split, so the read-only subset is meaningful rather than nominal. Needs a throwaway repository to point at.",
+      "caution": "git_add, git_commit and git_reset must never be probed. Confirm the tool list before running."
+    },
+    {
+      "name": "mcp-server-sqlite",
+      "launcher": "pip", "package": "mcp-server-sqlite",
+      "entry": ["-m", "mcp_server_sqlite"],
+      "old": "0.6.2", "new": "2025.4.25",
+      "releases": 12, "first_release": "2024-11-21", "last_release": "2025-04-25",
+      "licence": "see classifiers - confirm before citing", "needs_key": false, "network": false,
+      "network_note": "local database file only",
+      "read_only_tools": ["read_query", "list_tables", "describe_table"],
+      "read_only_tools_confirmed": false,
+      "label": null,
+      "changelog": "https://github.com/modelcontextprotocol/servers/commits/main/src/sqlite",
+      "why_shortlisted": "Crosses a versioning-scheme change (0.6.2 to a date-based scheme), which is exactly the kind of release where behaviour moves.",
+      "caution": "write_query and create_table exist. Point it at a throwaway database."
+    },
+    {
+      "name": "mcp-server-fetch",
+      "launcher": "pip", "package": "mcp-server-fetch",
+      "entry": ["-m", "mcp_server_fetch"],
+      "old": "2026.10.10", "new": "2026.10.28",
+      "releases": 14, "first_release": "2024-11-22", "last_release": "2026-10-28",
+      "licence": "MIT", "needs_key": false, "network": true,
+      "read_only_tools": ["fetch"],
+      "read_only_tools_confirmed": false,
+      "label": null,
+      "changelog": "https://github.com/modelcontextprotocol/servers/commits/main/src/fetch",
+      "why_shortlisted": "Official, and the only shortlisted server whose whole purpose is network access - which makes it the interesting case for the side-effect rules.",
+      "caution": "Probes carry loopback and .invalid targets, so requests cannot leave the machine. Worth confirming that in the first run rather than trusting it."
+    },
+    {
+      "name": "mcp-simple-arxiv",
+      "launcher": "pip", "package": "mcp-simple-arxiv",
+      "entry": ["-m", "mcp_simple_arxiv"],
+      "old": "0.5.0", "new": "0.6.0",
+      "releases": 8, "first_release": "2024-12-07", "last_release": "2026-01-29",
+      "licence": "see classifiers - confirm before citing", "needs_key": false, "network": true,
+      "read_only_tools": ["search_papers", "get_paper_data"],
+      "read_only_tools_confirmed": false,
+      "label": null,
+      "changelog": "https://pypi.org/project/mcp-simple-arxiv/#history",
+      "why_shortlisted": "Third-party rather than official, which matters for external validity - the gap is about the ecosystem, not about Anthropic's own code.",
+      "caution": "Sends real queries to arXiv. Benign, but it is someone else's service and should be a deliberate choice."
+    },
+    {
+      "name": "duckduckgo-mcp-server",
+      "launcher": "pip", "package": "duckduckgo-mcp-server",
+      "entry": ["-m", "duckduckgo_mcp_server"],
+      "old": "0.6.1", "new": "0.7.0",
+      "releases": 9, "first_release": "2025-02-22", "last_release": "2026-09-04",
+      "licence": "see classifiers - confirm before citing", "needs_key": false, "network": true,
+      "read_only_tools": ["search", "fetch_content"],
+      "read_only_tools_confirmed": false,
+      "label": null,
+      "changelog": "https://pypi.org/project/duckduckgo-mcp-server/#history",
+      "why_shortlisted": "Third-party, genuinely non-deterministic output - search results change - which is the hard false-alarm case for a behavioural detector.",
+      "caution": "Sends real searches to DuckDuckGo."
+    },
+    {
+      "name": "arxiv-mcp-server",
+      "launcher": "pip", "package": "arxiv-mcp-server",
+      "entry": ["-m", "arxiv_mcp_server"],
+      "old": "0.8.0", "new": "0.8.2",
+      "releases": 41, "first_release": "2024-12-03", "last_release": "2026-10-08",
+      "licence": "see classifiers - confirm before citing", "needs_key": false, "network": true,
+      "read_only_tools": ["search_papers", "download_paper", "read_paper"],
+      "read_only_tools_confirmed": false,
+      "label": null,
+      "changelog": "https://pypi.org/project/arxiv-mcp-server/#history",
+      "why_shortlisted": "41 releases, so upgrade pairs are plentiful and a patch-level pair is available - useful for showing a small upgrade is not automatically quiet.",
+      "caution": "download_paper writes files. Must not be probed."
+    }
+  ],
+
+  "excluded": [
+    {
+      "name": "mcp-server-sentry",
+      "reason": "Needs a Sentry auth token. The plan excludes servers requiring paid or account-bound credentials, and a probe against someone's issue tracker is not a harmless call."
+    },
+    {
+      "name": "mcp-server-docker",
+      "reason": "Requires a Docker daemon and its tools act on containers. Side effects are real and not confinable to a sandbox directory."
+    },
+    {
+      "name": "mcp-server-weather",
+      "reason": "Only 5 releases and the package metadata did not parse cleanly. Revisit if more servers are needed."
+    },
+    {
+      "name": "Node-based servers",
+      "reason": "Node.js is not installed on this machine, and the plan notes the sandbox monitor sees Python processes fully but Node only roughly - so their side-effect signals would not be comparable."
+    }
+  ],
+
+  "_shortfall": {
+    "proposed": 8,
+    "plan_target": "15 to 25",
+    "note": "Eight is short of the target. Python MCP servers with two or more published releases are scarcer than the plan assumed - a search of the obvious candidates found eleven, and three were excluded for credentials or tooling. Reaching fifteen would mean either installing Node.js to take in the npm ecosystem, or relaxing to servers with only two releases. Both are decisions for the user, and the shortfall should be stated in the write-up rather than quietly met by padding the list."
+  }
+}
