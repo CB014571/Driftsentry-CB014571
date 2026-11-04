@@ -42,6 +42,9 @@ from dataclasses import dataclass, field
 from typing import Any, Literal
 
 Safety = Literal["safe", "side-effecting"]
+#: "strict" is the default: a tool is probed only on POSITIVE evidence that
+#: it is read-only. The alternative fails open, and that was measured to be
+#: wrong on a real server - see classify_tool_safety.
 SafetyPolicy = Literal["default", "strict"]
 
 # Verbs that imply a tool changes state somewhere. Matched against name + description.
@@ -52,6 +55,18 @@ _DESTRUCTIVE = (
     "pay", "order", "purchase", "checkout", "charge", "refund", "transfer",
     "execute", "exec", "run", "shell", "command", "spawn", "kill", "shutdown",
     "reset", "revoke", "grant", "provision", "terminate", "archive",
+    # Added after mcp-server-git was introspected. git_commit and git_add
+    # matched no verb here and no read-only verb either, so the old
+    # fail-open default classified both as safe and would have probed them -
+    # staging files and creating commits in a real repository.
+    "commit", "add", "push", "merge", "rebase", "revert", "amend",
+    "append", "save", "apply", "move", "copy",
+    # "record", "set", "stage" and "store" were tried and withdrawn. All are
+    # common NOUNS on read-only tools - "returns a list of records", "the set
+    # of matching rows", "the data store" - and each turned a safe tool
+    # side-effecting. A verb that is also an everyday noun costs more
+    # coverage than it buys, and the strict default already catches the
+    # genuinely unknown case.
 )
 
 # Verbs that reliably imply read-only behaviour.
@@ -59,6 +74,11 @@ _SAFE = (
     "get", "list", "read", "search", "query", "find", "fetch", "lookup", "show",
     "describe", "status", "info", "echo", "ping", "count", "summar", "weather",
     "view", "inspect", "check", "resolve", "translate", "reverse",
+    # Added alongside the strict default. Without them, strict refuses to
+    # probe anything whose verb simply was not on the list - the calculator
+    # server's only tool, "calculate", became unprobeable.
+    "calculate", "compute", "evaluate", "convert", "parse", "format",
+    "validate", "analyse", "analyze", "diff", "log", "render", "explain",
 )
 
 _WORD_RE = re.compile(r"[a-z]+")
@@ -84,29 +104,68 @@ def _match_verb(verbs: tuple[str, ...], words: set[str]) -> str | None:
 # --------------------------------------------------------------------------- #
 # Safety classification
 # --------------------------------------------------------------------------- #
-def classify_tool_safety(tool: dict[str, Any], policy: SafetyPolicy = "default") -> tuple[Safety, str]:
-    """Decide whether a tool may be actively probed, and say why."""
+def classify_tool_safety(tool: dict[str, Any], policy: SafetyPolicy = "strict") -> tuple[Safety, str]:
+    """Decide whether a tool may be actively probed, and say why.
+
+    The default is STRICT, meaning a tool is probed only on positive evidence
+    that it is read-only: a readOnlyHint annotation, or a known read-only
+    verb. Anything else is observed rather than called.
+
+    It used to fail open, and that was measured to be wrong. Introspecting
+    the real mcp-server-git found twelve tools, five of which write. Two of
+    those - git_commit and git_add - matched no destructive verb and no
+    read-only verb, so the old default classified both as "safe, no
+    state-changing signal found" and would have probed them. On a real
+    repository that means staging files and creating commits: a detector
+    causing exactly the side effects it exists to detect.
+
+    The verb list has been extended to catch those two directly, but the
+    default change is the part that matters. A list of verbs is a list of
+    the cases someone thought of, and the next real server will have a tool
+    nobody thought of. Failing closed costs coverage on tools that turn out
+    to be harmless; failing open costs someone's data.
+
+    Checked before changing: all five tools on the adversarial server
+    classify identically under both policies, so Experiments 1 to 3 are
+    unaffected and remain the control they were.
+    """
     annotations = tool.get("annotations") or {}
     if annotations.get("destructiveHint") is True:
         return "side-effecting", "annotation: destructiveHint=true"
     if annotations.get("readOnlyHint") is True:
         return "safe", "annotation: readOnlyHint=true"
 
-    haystack = f"{tool.get('name', '')} {tool.get('description', '') or ''}".lower()
-    words = set(_WORD_RE.findall(haystack))
+    # The NAME is weighed before the description, and that ordering matters.
+    # git_log is described as "Shows the commit logs": "commit" appears as a
+    # noun in prose about a read-only operation. Matching name and
+    # description as one bag of words classified it side-effecting and lost
+    # a genuinely safe tool. What a tool is CALLED is the stronger evidence
+    # of what it does; the description is the tie-breaker.
+    name_words = set(_WORD_RE.findall((tool.get("name", "") or "").lower()))
+    desc_words = set(_WORD_RE.findall((tool.get("description", "") or "").lower()))
 
-    hit = _match_verb(_DESTRUCTIVE, words)
+    hit = _match_verb(_DESTRUCTIVE, name_words)
     if hit:
-        return "side-effecting", f"name/description suggests state change ({hit!r})"
+        return "side-effecting", f"name suggests state change ({hit!r})"
 
-    safe_hit = _match_verb(_SAFE, words)
+    safe_hit = _match_verb(_SAFE, name_words)
     if safe_hit:
-        return "safe", f"read-only verb ({safe_hit!r})"
+        return "safe", f"read-only verb in name ({safe_hit!r})"
+
+    hit = _match_verb(_DESTRUCTIVE, desc_words)
+    if hit:
+        return "side-effecting", f"description suggests state change ({hit!r})"
+
+    safe_hit = _match_verb(_SAFE, desc_words)
+    if safe_hit:
+        return "safe", f"read-only verb in description ({safe_hit!r})"
 
     if policy == "strict":
         # Fail safe: without positive evidence of read-only behaviour, observe only.
         return "side-effecting", "strict policy: no read-only annotation or verb"
-    return "safe", "no state-changing signal found (default policy)"
+    # Opt-in fail-open. Kept so the old behaviour can be reproduced when
+    # comparing against results recorded under it, and for nothing else.
+    return "safe", "no state-changing signal found (permissive policy)"
 
 
 # --------------------------------------------------------------------------- #
