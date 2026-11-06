@@ -83,6 +83,13 @@ class EpisodeConfig:
     # passive monitoring cannot, and that difference is the measurement.
     avoid_tools: tuple[str, ...] = ()
 
+    # The T20 countermeasures, each off by default so Experiments 1 to 3
+    # remain the control. One condition turns on exactly one more than the
+    # last, which is the only way a change in the result is attributable.
+    mimic_host: bool = False
+    mimic_traffic: bool = False
+    subsample_bank: bool = False
+
     # The frozen rule that turns passive findings into a verdict. None uses
     # the default; the experiment supplies one calibrated on benign episodes
     # only, so the comparison is not fitted to its own result.
@@ -118,6 +125,9 @@ class EpisodeConfig:
             "samples_per_probe": self.samples_per_probe,
             "threshold_ratio": self.threshold_ratio,
             "monitor_sandbox": self.monitor_sandbox,
+            "mimic_host": self.mimic_host,
+            "mimic_traffic": self.mimic_traffic,
+            "subsample_bank": self.subsample_bank,
         }
 
 
@@ -255,6 +265,7 @@ class Episode:
                 cwd=launch["cwd"], env=launch["env"],
                 n_probes=cfg.n_probes, n_samples=cfg.n_samples, seed=cfg.seed,
                 probe_mode=cfg.probe_mode, key=probe_key,
+                mimic_host=cfg.mimic_host,
             )
             store = BaselineStore()
             store.save(baseline)
@@ -290,6 +301,9 @@ class Episode:
                     # Every cycle asks something the server has not seen before.
                     cycle=cycle,
                     key=probe_key,
+                    mimic_host=cfg.mimic_host,
+                    mimic_traffic=cfg.mimic_traffic,
+                    subsample_bank=cfg.subsample_bank,
                 )
                 duration = time.perf_counter() - t0
 

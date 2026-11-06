@@ -55,14 +55,24 @@ async def verify_server(
     key: bytes | None = None,
     mimic_host: bool = False,
     mimic_traffic: bool = False,
+    subsample_bank: bool = False,
 ) -> DriftReport:
-    """Re-probe a server and score the result."""
+    """Re-probe a server and score the result.
+
+    The countermeasure flags are forwarded, not consumed here. An earlier
+    revision accepted them and dropped them, which would have made every T20
+    condition identical to the control - the same class of defect as the
+    launch-parity one, caught before it produced a number.
+    """
     command, args, cwd, env = _launch_of(baseline, launch)
     measurement = await reprobe(
         baseline, command, args, cwd=cwd, env=env,
         samples_per_probe=samples_per_probe,
         monitor_sandbox=monitor_sandbox,
         cycle=cycle, key=key,
+        mimic_host=mimic_host,
+        mimic_traffic=mimic_traffic,
+        subsample_bank=subsample_bank,
     )
     if threshold_ratio is None:
         threshold_ratio, source = active_threshold(measurement.embedding_backend)

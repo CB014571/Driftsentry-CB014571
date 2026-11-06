@@ -398,6 +398,7 @@ async def _reprobe_keyed(
     cycle: int,
     key: bytes | None,
     mimic_traffic: bool = False,
+    subsample_bank: bool = False,
 ) -> list[ProbeCheck]:
     """Verify with freshly generated values, against family baselines.
 
@@ -405,7 +406,16 @@ async def _reprobe_keyed(
     session at 0.983 once the client name is borrowed, and both come from
     probing being faster and burstier than a user. Pauses are drawn from the
     server's own observed gaps, keyed on the cycle so a run stays replayable.
+
+    ``subsample_bank`` treats the cycle's generated probes as a bank and draws
+    a keyed few of them (T19). Keyed generation already stops an attacker
+    PREDICTING a probe; it does not stop one that records every value it is
+    sent and fits a model to the set. Drawing a subset lowers how much of the
+    probe distribution any one cycle exposes, and lowers calls per cycle -
+    which is a cost saving and a possible recall loss at the same time, so
+    both are measured rather than assumed.
     """
+    from driftsentry import camouflage
     from driftsentry import keys as key_store
     from driftsentry.families import compare_to_family
     from driftsentry.probe_generator import KeyedProbeGenerator, UnsupportedSchema
@@ -449,6 +459,12 @@ async def _reprobe_keyed(
         except UnsupportedSchema as exc:  # pragma: no cover - caught at capture time
             log.warning("tool %r: cannot generate probes (%s)", tool.tool, exc)
             continue
+
+        if subsample_bank and len(probes) > camouflage.DEFAULT_DRAW:
+            drawn = camouflage.subsample(
+                probe_key, baseline.server, tool.tool, cycle,
+                bank_size=len(probes), draw=camouflage.DEFAULT_DRAW)
+            probes = [probes[i] for i in drawn]
 
         for probe in probes:
             payloads, observations = [], []
@@ -515,6 +531,7 @@ async def reprobe(
     key: bytes | None = None,
     mimic_host: bool = False,
     mimic_traffic: bool = False,
+    subsample_bank: bool = False,
 ) -> ReprobeReport:
     """Replay a stored baseline's probes against a live server and measure drift.
 
@@ -565,6 +582,8 @@ async def reprobe(
                 checks.extend(await _reprobe_keyed(
                     session, baseline, embedder, monitor,
                     samples_per_probe=samples_per_probe, cycle=cycle, key=key,
+                    mimic_traffic=mimic_traffic,
+                    subsample_bank=subsample_bank,
                 ))
                 return ReprobeReport(
                     server=baseline.server,

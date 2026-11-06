@@ -47,6 +47,10 @@ class SweepSpec:
     replay_sessions: int = 0
     recogniser: str | None = None
     avoid_tools: tuple[str, ...] = ()
+    # T20. Off by default: Experiments 1 to 3 are the control condition.
+    mimic_host: bool = False
+    mimic_traffic: bool = False
+    subsample_bank: bool = False
 
 
 def _configs(spec: SweepSpec) -> list[EpisodeConfig]:
@@ -70,6 +74,9 @@ def _configs(spec: SweepSpec) -> list[EpisodeConfig]:
         replay_sessions=spec.replay_sessions,
         recogniser=spec.recogniser,
         avoid_tools=spec.avoid_tools,
+        mimic_host=spec.mimic_host,
+        mimic_traffic=spec.mimic_traffic,
+        subsample_bank=spec.subsample_bank,
     )
     out: list[EpisodeConfig] = []
 

@@ -22,8 +22,13 @@ Four rules the design follows
        not about attacks. Arming the server would change what it returns and
        contaminate the argument family.
 
-The attacker is also given the real host's client identity on both paths, so
-`client_name` cannot separate the classes. See eval/host_profile.json.
+The real host's client identity is required before a collection can start,
+and the AGENT path announces it. The probe path announces whatever the
+detector announces, which by default is the SDK's own name - and that is why
+RQ3 measured the client family at AUC 1.000. It is a true property of the
+unmodified detector, not an artefact: nothing in it tries to look like a
+host. Closing that channel is the `mimic_host` countermeasure, which T20
+switches on as its second condition. See eval/host_profile.json.
 """
 from __future__ import annotations
 
@@ -57,6 +62,9 @@ class Collector:
         n_samples: int = 6,
         samples_per_probe: int = 2,
         monitor_sandbox: bool = True,
+        mimic_host: bool = False,
+        mimic_traffic: bool = False,
+        subsample_bank: bool = False,
     ) -> None:
         self.attacker_project = Path(attacker_project).resolve()
         self.out_dir = Path(out_dir)
@@ -75,6 +83,13 @@ class Collector:
         # (T10): the collection has to match the deployment in every respect
         # a feature can observe.
         self.monitor_sandbox = monitor_sandbox
+        # T20. A recogniser is only a fair test of a countermeasure if it was
+        # fitted to traffic produced WITH that countermeasure on. Fitting on
+        # unprotected probing and testing against protected probing measures
+        # how stale a model goes, not whether the countermeasure works.
+        self.mimic_host = mimic_host
+        self.mimic_traffic = mimic_traffic
+        self.subsample_bank = subsample_bank
 
         self.ds_home = self.workspace / "driftsentry"
         self.atk_home = self.workspace / "attacker"
@@ -141,7 +156,10 @@ class Collector:
         report = await verify_server(baseline, launch=launch,
                                      samples_per_probe=self.samples_per_probe,
                                      monitor_sandbox=self.monitor_sandbox,
-                                     cycle=cycle, key=key)
+                                     cycle=cycle, key=key,
+                                     mimic_host=self.mimic_host,
+                                     mimic_traffic=self.mimic_traffic,
+                                     subsample_bank=self.subsample_bank)
         end = time.time()
         self._window(PROBE, start, end, cycle=cycle)
         return report
@@ -171,7 +189,8 @@ class Collector:
             self.server_id, launch["command"], launch["args"],
             cwd=launch["cwd"], env=launch["env"],
             n_probes=self.n_probes, n_samples=self.n_samples, seed=self.seed,
-            probe_mode="keyed", key=key, monitor_sandbox=self.monitor_sandbox)
+            probe_mode="keyed", key=key, monitor_sandbox=self.monitor_sandbox,
+            mimic_host=self.mimic_host)
 
         # Baselining is itself probe traffic, but it is NOT labelled. It runs
         # once, with a different sample count from every later cycle, so its

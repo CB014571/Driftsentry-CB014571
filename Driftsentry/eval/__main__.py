@@ -206,6 +206,25 @@ def _cmd_rq3(ns: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_t20(ns: argparse.Namespace) -> int:
+    """Do the countermeasures close the channels, and at what cost?"""
+    _quiet()
+    from eval.t20 import report, run
+
+    out_dir = Path(ns.out)
+    names = tuple(n.strip() for n in ns.conditions.split(",") if n.strip())
+    print(f"attacker   : {ns.attacker}")
+    print(f"conditions : {', '.join(names)}")
+    print(f"cycles     : {ns.cycles} probe cycles per condition")
+    print(f"out        : {out_dir}")
+    print()
+
+    results = run(ns.attacker, ns.workspace, out_dir,
+                  conditions=names, cycles=ns.cycles, resume=not ns.restart)
+    print(report(results))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="eval", description="DriftSentry evaluation harness")
     parser.add_argument("--attacker", default=str(DEFAULT_ATTACKER),
@@ -249,6 +268,16 @@ def main(argv: list[str] | None = None) -> int:
     rq3.add_argument("--boot", type=int, default=2000, help="bootstrap resamples")
     rq3.add_argument("--seed", type=int, default=0)
     rq3.set_defaults(func=_cmd_rq3)
+
+    t20 = sub.add_parser("t20", help="countermeasures against a learned recogniser (RQ4)")
+    t20.add_argument("--out", default=str(DEFAULT_RESULTS / "t20"))
+    t20.add_argument("--conditions", default="none,host,mimic,subsample,all",
+                     help="comma-separated condition names, in order")
+    t20.add_argument("--cycles", type=int, default=60,
+                     help="probe cycles collected per condition")
+    t20.add_argument("--restart", action="store_true",
+                     help="discard measured conditions and start over")
+    t20.set_defaults(func=_cmd_t20)
 
     ns = parser.parse_args(argv)
     return ns.func(ns)

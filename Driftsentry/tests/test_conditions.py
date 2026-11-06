@@ -140,3 +140,147 @@ def test_an_unmeasured_condition_says_so_rather_than_showing_zero():
                                  "false_alarm_pct": 8.0, "cycle_seconds": 17.4,
                                  "calls_per_cycle": 18}})
     assert "not measured" in table
+
+
+# --------------------------------------------------------------------------- #
+# The plumbing
+#
+# verify_server accepted mimic_host and mimic_traffic and forwarded neither;
+# reprobe accepted mimic_traffic and forwarded nothing to the keyed path. Run
+# as it stood, every T20 condition would have been byte-identical to the
+# control and the comparison would have reported that no countermeasure
+# changes anything. Fourth defect of this shape, after launch parity (T4),
+# replay pacing (T10) and the collection sandbox - so it gets a test rather
+# than a fix.
+# --------------------------------------------------------------------------- #
+@pytest.mark.parametrize("flag", ["mimic_host", "mimic_traffic", "subsample_bank"])
+def test_verify_server_forwards_every_countermeasure(flag, monkeypatch):
+    import asyncio
+
+    from driftsentry import verify as verify_mod
+
+    seen = {}
+
+    async def fake_reprobe(*args, **kwargs):
+        seen.update(kwargs)
+        raise RuntimeError("stop here; the forwarding is the test")
+
+    monkeypatch.setattr(verify_mod, "reprobe", fake_reprobe)
+    monkeypatch.setattr(verify_mod, "_launch_of", lambda *a: ("python", [], None, None))
+
+    with pytest.raises(RuntimeError):
+        asyncio.run(verify_mod.verify_server(object(), **{flag: True}))
+
+    assert seen.get(flag) is True, f"verify_server dropped {flag}"
+
+
+@pytest.mark.parametrize("flag", ["mimic_traffic", "subsample_bank"])
+def test_reprobe_forwards_to_the_keyed_path(flag):
+    """The keyed path is the only one T20 runs, so a flag that stops at
+    reprobe has no effect at all."""
+    import inspect
+
+    from driftsentry.baseline import _reprobe_keyed, reprobe
+
+    assert flag in inspect.signature(_reprobe_keyed).parameters
+    assert f"{flag}={flag}" in inspect.getsource(reprobe)
+
+
+def test_the_episode_config_carries_the_conditions():
+    """A condition that cannot reach an episode cannot be measured."""
+    from eval.harness import EpisodeConfig
+
+    cfg = EpisodeConfig(experiment_id="x")
+    assert not (cfg.mimic_host or cfg.mimic_traffic or cfg.subsample_bank)
+    # In the config hash, so two conditions can never share a row's identity.
+    assert "mimic_host" in cfg.as_config()
+
+
+def test_the_sweep_spec_carries_the_conditions():
+    from eval.experiments import SweepSpec, _configs
+
+    spec = SweepSpec(experiment_id="x", mimic_host=True, subsample_bank=True,
+                     families=("sleeper",), levels=("L1",), seeds=(1,))
+    assert all(c.mimic_host and c.subsample_bank and not c.mimic_traffic
+               for c in _configs(spec))
+
+
+def test_the_collector_collects_under_the_condition(tmp_path):
+    """A recogniser fitted on unprotected traffic and tested on protected
+    traffic measures staleness, not the countermeasure."""
+    from eval.collect import Collector
+
+    c = Collector(tmp_path, tmp_path, tmp_path, mimic_host=True, mimic_traffic=True)
+    assert c.mimic_host and c.mimic_traffic and not c.subsample_bank
+
+
+# --------------------------------------------------------------------------- #
+# T20's own arithmetic
+# --------------------------------------------------------------------------- #
+def _episode(mode, outcome):
+    cfg = type("C", (), {"mode": mode})()
+    return type("R", (), {"config": cfg, "outcome": outcome})()
+
+
+def test_recall_counts_only_episodes_where_the_attack_fired():
+    """An attack that never triggered is not a miss, and counting it as one
+    would understate the detector."""
+    from eval.t20 import _rates
+
+    rate, hits, n = _rates([
+        _episode("rug-pull", "detected"),
+        _episode("rug-pull", "missed"),
+        _episode("rug-pull", "never_triggered"),
+    ])
+    assert (hits, n) == (1, 2)
+    assert rate == 50.0
+
+
+def test_false_alarms_come_from_the_benign_arms_only():
+    from eval.t20 import _false_alarms
+
+    rate, bad, n = _false_alarms([
+        _episode("benign", "benign_ok"),
+        _episode("benign", "false_alarm"),
+        _episode("rug-pull", "detected"),
+    ])
+    assert (bad, n) == (1, 2)
+    assert rate == 50.0
+
+
+def test_an_unmeasured_arm_is_nan_rather_than_zero():
+    """Zero recall and no measurement are different claims."""
+    import math
+
+    from eval.t20 import _rates
+
+    rate, _, n = _rates([])
+    assert n == 0 and math.isnan(rate)
+
+
+def test_the_merge_drops_the_genuine_sources_own_probe_windows(tmp_path):
+    """Unprotected probe traffic must never land in a protected condition's
+    probe class - it would understate the countermeasure."""
+    import json
+
+    from eval.t20 import merge_with_genuine
+
+    genuine = tmp_path / "rq3"
+    probes = tmp_path / "cond"
+    for d in (genuine, probes):
+        d.mkdir()
+    (genuine / "windows.jsonl").write_text(
+        json.dumps({"label": 0, "start": 1.0, "end": 2.0}) + "\n"
+        + json.dumps({"label": 1, "start": 3.0, "end": 4.0}) + "\n", encoding="utf-8")
+    (genuine / "features.jsonl").write_text(
+        json.dumps({"t": 1.5, "pid": 1, "proc_age_s": 0.5}) + "\n", encoding="utf-8")
+    (probes / "windows.jsonl").write_text(
+        json.dumps({"label": 1, "start": 100.0, "end": 101.0}) + "\n", encoding="utf-8")
+    (probes / "features.jsonl").write_text(
+        json.dumps({"t": 100.5, "pid": 2, "proc_age_s": 0.5}) + "\n", encoding="utf-8")
+
+    merged = merge_with_genuine(probes, genuine)
+    windows = [json.loads(l) for l in
+               (merged / "windows.jsonl").read_text(encoding="utf-8").splitlines() if l]
+    assert [w["label"] for w in windows] == [0, 1]
+    assert [w["start"] for w in windows] == [1.0, 100.0]
