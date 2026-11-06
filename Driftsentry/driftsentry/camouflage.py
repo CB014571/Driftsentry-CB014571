@@ -224,6 +224,36 @@ def gap_from_profile(
     return float(gaps[rng.randrange(len(gaps))])
 
 
+def startup_from_profile(
+    key: bytes,
+    server: str,
+    cycle: int,
+    profile: Any | None = None,
+    *,
+    fallback: float = 0.0,
+) -> float:
+    """How long to wait after starting the server before the first probe call.
+
+    This is the pause that matters. RQ3 put the timing family at AUC 0.951
+    and the feature carrying it is proc_age_s on the first call of a session:
+    3.105 seconds for genuine traffic, where a model was deciding what to
+    call, against 0.022 for a probe cycle that calls as soon as the process
+    answers. The gaps between later calls have a median of 5 milliseconds in
+    the same corpus, so pacing those alone leaves the channel wide open.
+
+    Drawn from the observed distribution and keyed on the cycle, for the same
+    reasons as gap_from_profile: a replayable run, and no parametric guess
+    about a think time that is not normally distributed.
+    """
+    if profile is None or not getattr(profile, "usable", False):
+        return fallback
+    startups = [v for v in getattr(profile, "startup_s", []) if v >= 0]
+    if not startups:
+        return fallback
+    rng = _rng(key, "startup", server, cycle)
+    return float(startups[rng.randrange(len(startups))])
+
+
 # --------------------------------------------------------------------------- #
 # Secret subsampling (T19)
 #

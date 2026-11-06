@@ -172,6 +172,15 @@ class Episode:
         os.environ["DRIFTSENTRY_HOME"] = str(self.ds_home)
         os.environ["ATTACKER_HOME"] = str(self.atk_home)
 
+        # The countermeasures imitate recorded data, and a fresh home has
+        # none - so they would run as the control. See eval/profiles.py.
+        if self.cfg.mimic_host or self.cfg.mimic_traffic:
+            from eval.profiles import install
+
+            install(self.cfg.server_id,
+                    mimic_host=self.cfg.mimic_host,
+                    mimic_traffic=self.cfg.mimic_traffic)
+
         if self.cfg.recogniser:
             source = Path(self.cfg.recogniser)
             if not source.is_file():

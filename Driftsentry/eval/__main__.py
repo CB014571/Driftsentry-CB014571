@@ -219,8 +219,11 @@ def _cmd_t20(ns: argparse.Namespace) -> int:
     print(f"out        : {out_dir}")
     print()
 
+    families = tuple(f.strip() for f in ns.families.split(",")) if ns.families else None
     results = run(ns.attacker, ns.workspace, out_dir,
-                  conditions=names, cycles=ns.cycles, resume=not ns.restart)
+                  conditions=names, cycles=ns.cycles,
+                  seeds=tuple(range(1, ns.seeds + 1)), families=families,
+                  resume=not ns.restart)
     print(report(results))
     return 0
 
@@ -275,6 +278,9 @@ def main(argv: list[str] | None = None) -> int:
                      help="comma-separated condition names, in order")
     t20.add_argument("--cycles", type=int, default=60,
                      help="probe cycles collected per condition")
+    t20.add_argument("--seeds", type=int, default=2, help="seeds per cell")
+    t20.add_argument("--families", default=None,
+                     help="comma-separated attack families; omit for all six")
     t20.add_argument("--restart", action="store_true",
                      help="discard measured conditions and start over")
     t20.set_defaults(func=_cmd_t20)

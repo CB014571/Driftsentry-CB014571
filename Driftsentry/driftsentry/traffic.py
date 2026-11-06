@@ -72,6 +72,16 @@ class TrafficProfile:
     n_calls: int = 0
     calls_per_session: list[int] = field(default_factory=list)
     gaps_s: list[float] = field(default_factory=list)
+    #: Seconds from the handshake to the session's FIRST tool call.
+    #:
+    #: Pacing the gaps BETWEEN calls does not close the timing channel. The
+    #: feature that separates the classes is proc_age_s on the first call:
+    #: genuine 3.105s, because a model spent that long deciding, against
+    #: 0.022s for a probe cycle that calls the moment the server is up. The
+    #: gaps themselves have a median of 5 milliseconds, so imitating them
+    #: changes nothing. This is the distribution that matters, and the proxy
+    #: can see it - it stamps both the initialize and the first call.
+    startup_s: list[float] = field(default_factory=list)
     tool_shapes: dict[str, ToolShape] = field(default_factory=dict)
 
     # -- derived -----------------------------------------------------------
@@ -82,6 +92,9 @@ class TrafficProfile:
 
     def median_gap(self) -> float:
         return float(statistics.median(self.gaps_s)) if self.gaps_s else 0.0
+
+    def median_startup(self) -> float:
+        return float(statistics.median(self.startup_s)) if self.startup_s else 0.0
 
     def median_session(self) -> int:
         return (int(statistics.median(self.calls_per_session))
@@ -101,6 +114,7 @@ class TrafficProfile:
             n_calls=int(data.get("n_calls", 0)),
             calls_per_session=list(data.get("calls_per_session") or []),
             gaps_s=list(data.get("gaps_s") or []),
+            startup_s=list(data.get("startup_s") or []),
             tool_shapes=shapes,
         )
 
@@ -124,6 +138,7 @@ def learn(log_path: str | Path, server: str = "") -> TrafficProfile:
         return TrafficProfile(server=server)
 
     by_session: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    handshake: dict[str, float] = {}
     for line in path.read_text(encoding="utf-8").splitlines():
         if not line.strip():
             continue
@@ -131,7 +146,14 @@ def learn(log_path: str | Path, server: str = "") -> TrafficProfile:
             rec = json.loads(line)
         except Exception:
             continue
-        if rec.get("dir") != "c2s" or rec.get("method") != "tools/call":
+        if rec.get("dir") != "c2s":
+            continue
+        if rec.get("method") == "initialize" and rec.get("kind") == "request":
+            stamp = _parse_ts(rec.get("ts"))
+            if stamp is not None:
+                handshake.setdefault(rec.get("session", "?"), stamp)
+            continue
+        if rec.get("method") != "tools/call":
             continue
         if rec.get("kind") != "request":
             continue
@@ -139,11 +161,22 @@ def learn(log_path: str | Path, server: str = "") -> TrafficProfile:
 
     calls_per_session: list[int] = []
     gaps: list[float] = []
+    startups: list[float] = []
     texts: dict[str, list[str]] = defaultdict(list)
 
-    for calls in by_session.values():
+    for session, calls in by_session.items():
         calls.sort(key=lambda r: r.get("ts", ""))
         calls_per_session.append(len(calls))
+
+        opened = handshake.get(session)
+        first = _parse_ts(calls[0].get("ts")) if calls else None
+        if opened is not None and first is not None:
+            startup = first - opened
+            # Same ceiling as a gap: a user who walked away before asking for
+            # anything is not a think time.
+            if 0.0 <= startup <= MAX_GAP_S:
+                startups.append(startup)
+
         previous = None
         for rec in calls:
             tool = rec.get("tool")
@@ -177,6 +210,7 @@ def learn(log_path: str | Path, server: str = "") -> TrafficProfile:
         n_calls=sum(calls_per_session),
         calls_per_session=calls_per_session,
         gaps_s=gaps,
+        startup_s=startups,
         tool_shapes=shapes,
     )
     if not profile.usable:

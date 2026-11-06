@@ -399,6 +399,7 @@ async def _reprobe_keyed(
     key: bytes | None,
     mimic_traffic: bool = False,
     subsample_bank: bool = False,
+    process_started: float | None = None,
 ) -> list[ProbeCheck]:
     """Verify with freshly generated values, against family baselines.
 
@@ -443,6 +444,28 @@ async def _reprobe_keyed(
             profile = None
     call_index = 0
 
+    # The think time before the first call, which is the feature the timing
+    # family actually keys on. Done once per cycle, before any probing.
+    #
+    # Paced to a TARGET, not by adding a pause. The process is already a few
+    # hundred milliseconds old by the time the handshake completes, and the
+    # feature recorded is proc_age_s - the age itself, not how long the
+    # detector chose to wait - so the wait has to be the remainder.
+    # Taken by the caller, immediately before the server process is spawned,
+    # so the remainder is measured against the age the attacker will see and
+    # not against the start of this function.
+    if process_started is None:
+        process_started = time.monotonic()
+    if profile is not None:
+        from driftsentry.camouflage import startup_from_profile
+
+        target = startup_from_profile(probe_key, baseline.server, cycle, profile)
+        remaining = target - (time.monotonic() - process_started)
+        if remaining > 0:
+            await anyio.sleep(min(remaining, 30.0))
+
+    last_call_at: float | None = None
+
     for tool in baseline.tools:
         if not tool.probed:
             continue
@@ -469,17 +492,25 @@ async def _reprobe_keyed(
         for probe in probes:
             payloads, observations = [], []
             for _ in range(samples_per_probe):
-                if profile is not None:
+                if profile is not None and last_call_at is not None:
                     from driftsentry.camouflage import gap_from_profile
 
-                    pause = gap_from_profile(probe_key, baseline.server, cycle,
-                                             call_index, profile)
-                    if pause > 0:
-                        await anyio.sleep(min(pause, 10.0))
+                    # Again a target inter-arrival time, not an added pause.
+                    # A probe call takes about a second of its own, and the
+                    # genuine gaps have a median of 5 milliseconds, so adding
+                    # a drawn pause on top moved probe gaps FURTHER from
+                    # genuine ones: 1.09s against 0.005s, measured. Waiting
+                    # only the remainder is what the docstring always claimed.
+                    target = gap_from_profile(probe_key, baseline.server, cycle,
+                                              call_index, profile)
+                    remaining = target - (time.monotonic() - last_call_at)
+                    if remaining > 0:
+                        await anyio.sleep(min(remaining, 10.0))
                 call_index += 1
                 payload, _latency, observation = await _call_once(
                     session, tool.tool, probe.args, monitor
                 )
+                last_call_at = time.monotonic()
                 payloads.append(payload)
                 observations.append(observation)
 
@@ -555,6 +586,7 @@ async def reprobe(
         )
 
     params = StdioServerParameters(command=command, args=args, cwd=cwd, env=env)
+    process_started = time.monotonic()
 
     import psutil
 
@@ -584,6 +616,7 @@ async def reprobe(
                     samples_per_probe=samples_per_probe, cycle=cycle, key=key,
                     mimic_traffic=mimic_traffic,
                     subsample_bank=subsample_bank,
+                    process_started=process_started,
                 ))
                 return ReprobeReport(
                     server=baseline.server,

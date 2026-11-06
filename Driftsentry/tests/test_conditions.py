@@ -284,3 +284,206 @@ def test_the_merge_drops_the_genuine_sources_own_probe_windows(tmp_path):
                (merged / "windows.jsonl").read_text(encoding="utf-8").splitlines() if l]
     assert [w["label"] for w in windows] == [0, 1]
     assert [w["start"] for w in windows] == [1.0, 100.0]
+
+
+# --------------------------------------------------------------------------- #
+# The data the countermeasures imitate
+#
+# Every episode runs in a fresh DRIFTSENTRY_HOME, which has no recorded host
+# profile and no learned traffic profile. Both countermeasures then fall back
+# with a warning the evaluation CLI silences, and run as the control. The
+# first T20 smoke run did exactly that: the 'all' condition, everything on,
+# still had `client` as its strongest channel at AUC 1.000. Reported, that
+# would have read as "the countermeasures do not work".
+# --------------------------------------------------------------------------- #
+def test_mimic_host_without_a_recording_raises(tmp_path, monkeypatch):
+    from eval import profiles
+
+    monkeypatch.setattr(profiles, "HOST_PROFILE", tmp_path / "absent.json")
+    with pytest.raises(profiles.ProfileMissing, match="recorded host identity"):
+        profiles.install("srv", mimic_host=True)
+
+
+def test_imitating_the_sdk_default_is_refused(tmp_path, monkeypatch):
+    """Imitating the SDK's own name is imitating a probe."""
+    import json
+
+    from eval import profiles
+
+    path = tmp_path / "host.json"
+    path.write_text(json.dumps({"name": "mcp", "version": "1.0"}), encoding="utf-8")
+    monkeypatch.setattr(profiles, "HOST_PROFILE", path)
+    with pytest.raises(profiles.ProfileMissing, match="SDK"):
+        profiles.install("srv", mimic_host=True)
+
+
+def test_mimic_traffic_without_startup_times_raises(tmp_path, monkeypatch):
+    """A profile with gaps but no startup times cannot close the channel."""
+    import json
+
+    from eval import profiles
+
+    path = tmp_path / "traffic.json"
+    path.write_text(json.dumps({
+        "server": "x", "n_sessions": 50, "n_calls": 50,
+        "calls_per_session": [1] * 50, "gaps_s": [0.005] * 20,
+        "startup_s": [], "tool_shapes": {},
+    }), encoding="utf-8")
+    monkeypatch.setattr(profiles, "TRAFFIC_PROFILE", path)
+    with pytest.raises(profiles.ProfileMissing, match="startup"):
+        profiles.install("srv", mimic_traffic=True)
+
+
+def test_the_committed_fixtures_are_usable():
+    """They are real recordings, and the comparison cannot run without them."""
+    import json
+
+    from eval.profiles import HOST_PROFILE, TRAFFIC_PROFILE
+    from driftsentry.traffic import TrafficProfile
+
+    host = json.loads(HOST_PROFILE.read_text(encoding="utf-8"))
+    assert host["name"] and host["name"] != "mcp"
+
+    profile = TrafficProfile.from_dict(
+        json.loads(TRAFFIC_PROFILE.read_text(encoding="utf-8")))
+    assert profile.usable
+    # 115 genuine sessions from the RQ3 proxy log.
+    assert profile.n_sessions >= 100
+    # The think time that matters, not the 5ms inter-call gap.
+    assert 1.0 < profile.median_startup() < 30.0
+
+
+def test_an_episode_installs_what_its_condition_needs(tmp_path, monkeypatch):
+    from eval.harness import Episode, EpisodeConfig
+
+    seen = {}
+    import eval.profiles as profiles_mod
+
+    monkeypatch.setattr(profiles_mod, "install",
+                        lambda server, **kw: seen.update({"server": server, **kw}))
+
+    episode = Episode.__new__(Episode)
+    episode.cfg = EpisodeConfig(experiment_id="x", mimic_host=True,
+                                mimic_traffic=True)
+    episode.ds_home = tmp_path / "ds"
+    episode.atk_home = tmp_path / "atk"
+    episode._prepare()
+
+    assert seen == {"server": episode.cfg.server_id,
+                    "mimic_host": True, "mimic_traffic": True}
+
+
+# --------------------------------------------------------------------------- #
+# Startup pacing - the pause the timing family actually keys on
+# --------------------------------------------------------------------------- #
+def test_startup_times_are_learned_from_the_handshake(tmp_path):
+    """first tools/call minus initialize, per session."""
+    import json
+
+    from driftsentry.traffic import learn
+
+    log = tmp_path / "srv.jsonl"
+    log.write_text("\n".join(json.dumps(r) for r in [
+        {"dir": "c2s", "kind": "request", "method": "initialize",
+         "session": "a", "ts": "2026-11-03T04:57:00+00:00"},
+        {"dir": "c2s", "kind": "request", "method": "tools/call", "tool": "t",
+         "args": {}, "session": "a", "ts": "2026-11-03T04:57:03+00:00"},
+    ]) + "\n", encoding="utf-8")
+
+    profile = learn(log, server="srv")
+    assert profile.startup_s == [3.0]
+
+
+def test_a_startup_longer_than_the_ceiling_is_dropped(tmp_path):
+    """A user who walked away before asking for anything is not a think time."""
+    import json
+
+    from driftsentry.traffic import learn
+
+    log = tmp_path / "srv.jsonl"
+    log.write_text("\n".join(json.dumps(r) for r in [
+        {"dir": "c2s", "kind": "request", "method": "initialize",
+         "session": "a", "ts": "2026-11-03T04:00:00+00:00"},
+        {"dir": "c2s", "kind": "request", "method": "tools/call", "tool": "t",
+         "args": {}, "session": "a", "ts": "2026-11-03T04:05:00+00:00"},
+    ]) + "\n", encoding="utf-8")
+
+    assert learn(log, server="srv").startup_s == []
+
+
+def test_the_startup_draw_is_keyed_and_repeatable():
+    from driftsentry.camouflage import startup_from_profile
+    from driftsentry.traffic import TrafficProfile
+
+    profile = TrafficProfile(server="srv", n_sessions=50, n_calls=50,
+                             calls_per_session=[1] * 50,
+                             startup_s=[1.5, 3.0, 4.5, 9.0])
+    key = b"k" * 32
+    first = startup_from_profile(key, "srv", 1, profile)
+    assert first == startup_from_profile(key, "srv", 1, profile)
+    assert first in profile.startup_s
+    # A different cycle is a different draw, or the pause is a fingerprint.
+    draws = {startup_from_profile(key, "srv", c, profile) for c in range(1, 12)}
+    assert len(draws) > 1
+
+
+def test_no_profile_means_no_pause_rather_than_a_guess():
+    from driftsentry.camouflage import startup_from_profile
+
+    assert startup_from_profile(b"k" * 32, "srv", 1, None) == 0.0
+
+
+def test_the_probe_loop_pauses_before_the_first_call():
+    import inspect
+
+    from driftsentry.baseline import _reprobe_keyed
+
+    source = inspect.getsource(_reprobe_keyed)
+    startup_at = source.index("startup_from_profile")
+    loop_at = source.index("for tool in baseline.tools")
+    assert startup_at < loop_at, "the pause must happen before any probing"
+
+
+# --------------------------------------------------------------------------- #
+# Pacing to a target, not by adding a pause
+#
+# The first implementation slept the drawn value before each call. A probe
+# call takes about a second of its own and the genuine gaps have a median of
+# 5 milliseconds, so adding a drawn pause on top moved probe gaps FURTHER
+# from genuine ones - measured at 1.09s against 0.005s. The feature recorded
+# is the arrival time, not how long the detector chose to wait, so the wait
+# has to be the remainder.
+# --------------------------------------------------------------------------- #
+def test_the_pause_is_the_remainder_of_a_target():
+    import inspect
+
+    from driftsentry.baseline import _reprobe_keyed
+
+    source = inspect.getsource(_reprobe_keyed)
+    assert "remaining = target - (time.monotonic() - last_call_at)" in source
+    assert "remaining = target - (time.monotonic() - process_started)" in source
+
+
+def test_the_first_call_is_paced_against_the_real_process_age():
+    """Measured from before the process is spawned, not from the probe loop:
+    the handshake alone is several hundred milliseconds."""
+    import inspect
+
+    from driftsentry.baseline import reprobe
+
+    source = inspect.getsource(reprobe)
+    spawn_at = source.index("stdio_client(params)")
+    clock_at = source.index("process_started = time.monotonic()")
+    assert clock_at < spawn_at
+    assert "process_started=process_started" in source
+
+
+def test_no_pacing_without_a_previous_call():
+    """There is no inter-arrival gap before the first call; the startup draw
+    covers that, and applying both would double-count."""
+    import inspect
+
+    from driftsentry.baseline import _reprobe_keyed
+
+    assert ("if profile is not None and last_call_at is not None:"
+            in inspect.getsource(_reprobe_keyed))

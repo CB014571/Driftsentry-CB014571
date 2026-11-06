@@ -111,6 +111,14 @@ async def collect_probes(
     )
     collector.prepare()
 
+    from eval.profiles import install
+
+    installed = install(collector.server_id,
+                        mimic_host=cond.mimic_host,
+                        mimic_traffic=cond.mimic_traffic)
+    if progress and installed:
+        print(f"    profiles: {installed}", flush=True)
+
     key = key_store.derive_experiment_key(seed, f"t20-{cond.name}")
     launch = probe_launch(collector.attacker_project, collector.atk_home)
 
@@ -241,6 +249,7 @@ def run_matrix(
     out_dir: str | Path,
     *,
     seeds: tuple[int, ...] = (1, 2),
+    families: tuple[str, ...] | None = None,
     cycles: int = 4,
     replay_sessions: int = 2,
 ) -> dict[str, Any]:
@@ -262,6 +271,7 @@ def run_matrix(
             levels=(level,),
             seeds=seeds,
             cycles=cycles,
+            **({"families": families} if families else {}),
             launch_parity=True,
             replay_sessions=replay_sessions,
             recogniser=recogniser,
@@ -324,6 +334,8 @@ def run(
     *,
     conditions: tuple[str, ...] = tuple(c.name for c in CONDITIONS),
     cycles: int = PROBE_CYCLES,
+    seeds: tuple[int, ...] = (1, 2),
+    families: tuple[str, ...] | None = None,
     resume: bool = True,
     progress: bool = True,
 ) -> dict[str, Any]:
@@ -384,7 +396,7 @@ def run(
         if progress:
             print("  running the matrix", flush=True)
         arms = run_matrix(cond, fitted["recogniser"], attacker_project,
-                          workspace, out_dir)
+                          workspace, out_dir, seeds=seeds, families=families)
 
         row = summarise_condition(name, arms, collection)
         row["best_auc"] = fitted["best_auc"]
