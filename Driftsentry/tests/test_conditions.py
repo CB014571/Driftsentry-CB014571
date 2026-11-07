@@ -15,6 +15,8 @@ from __future__ import annotations
 
 import pytest
 
+from pathlib import Path
+
 from eval.conditions import BY_NAME, CONDITIONS, Condition, cost_table, h4_verdict
 
 
@@ -487,3 +489,144 @@ def test_no_pacing_without_a_previous_call():
 
     assert ("if profile is not None and last_call_at is not None:"
             in inspect.getsource(_reprobe_keyed))
+
+
+# --------------------------------------------------------------------------- #
+# Resuming a sweep that died
+# --------------------------------------------------------------------------- #
+# A sweep is hours long and the process does not always survive it. The
+# environment arm of Experiment 3 died after 13 of 18 episodes, leaving a
+# results file that ResultWriter would happily append a second copy of those
+# 13 to. These cover the three ways that goes wrong: re-running what is
+# already measured, recording one episode under two configurations, and
+# reporting a recall figure over the fragment a resumed run executed.
+def _spec(tmp_path, **kw):
+    from eval.experiments import SweepSpec
+    return SweepSpec(experiment_id="exp_resume_test",
+                     families=("exfiltration",), levels=("L1",), seeds=(1, 2),
+                     benign_seeds=(), benign_update_seeds=(), **kw)
+
+
+def _write_rows(out_dir, spec, configs):
+    """Put real rows on disk for the given configs, as a dead run would leave."""
+    from eval.record import ExperimentRow, ResultWriter, config_hash, now
+    from eval.experiments import _episode_id
+    with ResultWriter(out_dir, spec.experiment_id) as writer:
+        for cfg in configs:
+            writer.append(ExperimentRow(
+                experiment_id=spec.experiment_id,
+                episode_id=_episode_id(cfg),
+                timestamp=now(),
+                seed=cfg.seed,
+                server_id="s", tool_id="t",
+                attack_family=cfg.family or "", attack_level=cfg.level or "",
+                probe_mode=cfg.probe_mode, scoring_mode=cfg.scoring_mode,
+                partition=cfg.partition,
+                outcome="detected", detected=True,
+                config_hash=config_hash(cfg.as_config()),
+            ))
+
+
+def test_a_recorded_episode_is_not_run_again(tmp_path):
+    from eval.experiments import _configs, run_sweep
+    spec = _spec(tmp_path)
+    configs = _configs(spec)
+    _write_rows(tmp_path, spec, configs[:1])
+
+    ran = []
+
+    def fake_run_episode(cfg, attacker, workspace):
+        ran.append(cfg.seed)
+        raise AssertionError("should not have been reached in this test")
+
+    import eval.experiments as mod
+    real = mod.run_episode
+    mod.run_episode = lambda cfg, a, w: fake_run_episode(cfg, a, w)
+    try:
+        with pytest.raises(AssertionError):
+            run_sweep(spec, "atk", tmp_path / "ws", tmp_path, progress=False)
+    finally:
+        mod.run_episode = real
+    # The first config was on disk, so the attempt landed on the second.
+    assert ran == [configs[1].seed]
+
+
+def test_resume_off_runs_everything(tmp_path):
+    from eval.experiments import _configs, run_sweep
+    spec = _spec(tmp_path)
+    configs = _configs(spec)
+    _write_rows(tmp_path, spec, configs[:1])
+
+    ran = []
+    import eval.experiments as mod
+    real = mod.run_episode
+
+    def boom(cfg, a, w):
+        ran.append(cfg.seed)
+        raise AssertionError("stop")
+
+    mod.run_episode = boom
+    try:
+        with pytest.raises(AssertionError):
+            run_sweep(spec, "atk", tmp_path / "ws", tmp_path,
+                      progress=False, resume=False)
+    finally:
+        mod.run_episode = real
+    assert ran == [configs[0].seed]
+
+
+def test_the_same_episode_under_a_different_config_is_a_conflict(tmp_path):
+    """Two configurations under one episode_id makes the file unreadable."""
+    from eval.experiments import ResumeConflict, _configs, run_sweep
+    spec = _spec(tmp_path)
+    _write_rows(tmp_path, spec, _configs(spec)[:1])
+
+    # Same episode ids, different detector configuration.
+    moved = _spec(tmp_path, n_probes=spec.n_probes + 1)
+    with pytest.raises(ResumeConflict):
+        run_sweep(moved, "atk", tmp_path / "ws", tmp_path, progress=False)
+
+
+def test_a_resumed_run_returns_only_what_it_ran(tmp_path):
+    """So a caller cannot mistake the fragment for the whole sweep."""
+    from eval.experiments import _configs, run_sweep
+    spec = _spec(tmp_path)
+    configs = _configs(spec)
+    _write_rows(tmp_path, spec, configs)  # everything already done
+
+    import eval.experiments as mod
+    real = mod.run_episode
+    mod.run_episode = lambda cfg, a, w: pytest.fail("nothing left to run")
+    try:
+        results = run_sweep(spec, "atk", tmp_path / "ws", tmp_path,
+                            progress=False)
+    finally:
+        mod.run_episode = real
+    assert results == []
+
+
+def test_recorded_reads_episode_ids_and_hashes_from_disk(tmp_path):
+    from eval.experiments import _configs, _episode_id, _recorded
+    spec = _spec(tmp_path)
+    configs = _configs(spec)
+    _write_rows(tmp_path, spec, configs)
+    found = _recorded(tmp_path, spec.experiment_id)
+    assert set(found) == {_episode_id(c) for c in configs}
+    assert all(len(h) == 1 for h in found.values())
+
+
+def test_recorded_is_empty_when_nothing_has_run(tmp_path):
+    from eval.experiments import _recorded
+    assert _recorded(tmp_path, "never_run") == {}
+
+
+def test_episode_id_matches_the_harness(tmp_path):
+    """The two are computed in different places; if they drift, resume lies."""
+    from eval.experiments import _configs, _episode_id
+    from eval.harness import Episode
+    from eval.__main__ import DEFAULT_ATTACKER
+    if not Path(DEFAULT_ATTACKER).is_dir():
+        pytest.skip("the attacker project is not checked out here")
+    cfg = _configs(_spec(tmp_path))[0]
+    episode = Episode(cfg, DEFAULT_ATTACKER, tmp_path / "ws")
+    assert _episode_id(cfg) == episode.episode_id

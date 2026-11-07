@@ -12,9 +12,38 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Sequence
 
+import csv
+
 from eval import ground_truth
 from eval.harness import EpisodeConfig, EpisodeResult, run_episode
-from eval.record import ResultWriter
+from eval.record import ResultWriter, config_hash
+
+
+class ResumeConflict(RuntimeError):
+    """An episode is on disk already, under a different detector configuration."""
+
+
+def _episode_id(cfg: EpisodeConfig) -> str:
+    """The identity Episode gives a row. Kept in step with harness.Episode."""
+    return f"{cfg.experiment_id}-{cfg.label().replace('/', '-')}-s{cfg.seed}"
+
+
+def _recorded(out_dir: Path, experiment_id: str) -> dict[str, set[str]]:
+    """episode_id -> the config hashes already written for it.
+
+    Read from the CSV rather than kept in memory, because the case this
+    exists for is a run that died: the process holding that memory is gone.
+    """
+    path = Path(out_dir) / f"{experiment_id}.csv"
+    if not path.exists() or path.stat().st_size == 0:
+        return {}
+    out: dict[str, set[str]] = {}
+    with path.open(newline="", encoding="utf-8") as fh:
+        for row in csv.DictReader(fh):
+            episode = row.get("episode_id")
+            if episode:
+                out.setdefault(episode, set()).add(row.get("config_hash", ""))
+    return out
 
 FAMILIES = [
     "exfiltration", "silent-tamper", "content-injection",
@@ -103,21 +132,53 @@ def run_sweep(
     out_dir: str | Path,
     *,
     progress: bool = True,
+    resume: bool = True,
 ) -> list[EpisodeResult]:
-    """Run every episode in a sweep, writing rows as they complete."""
+    """Run every episode in a sweep, writing rows as they complete.
+
+    ``resume`` skips episodes the results file already holds. A sweep is hours
+    long and the process does not always survive it - the environment arm of
+    Experiment 3 died after 13 of 18 episodes - and ResultWriter appends, so
+    without this the only ways to finish are to re-run the completed episodes
+    or to write two outcomes under one episode_id. Skipping is conditional on
+    the configuration matching: an episode recorded under a different
+    config_hash is a conflict, not something to resume past, because one
+    episode_id holding two configurations makes the file unreadable rather
+    than merely incomplete.
+    """
     configs = _configs(spec)
     results: list[EpisodeResult] = []
+    done = _recorded(Path(out_dir), spec.experiment_id) if resume else {}
+    skipped = 0
     started = time.perf_counter()
 
     with ResultWriter(Path(out_dir), spec.experiment_id) as writer:
         for i, cfg in enumerate(configs, 1):
+            episode_id = _episode_id(cfg)
+            if episode_id in done:
+                cfg_hash = config_hash(cfg.as_config())
+                if done[episode_id] != {cfg_hash}:
+                    raise ResumeConflict(
+                        f"{episode_id} is already in "
+                        f"{Path(out_dir) / (spec.experiment_id + '.csv')} under "
+                        f"config {sorted(done[episode_id])}, but this sweep "
+                        f"would run it under {cfg_hash}. Move that file aside "
+                        f"rather than mixing two configurations under one "
+                        f"episode id."
+                    )
+                skipped += 1
+                if progress:
+                    print(f"  [{i:>3}/{len(configs)}] {cfg.label():26s} "
+                          f"seed={cfg.seed:<4} already recorded", flush=True)
+                continue
             result = run_episode(cfg, attacker_project, workspace)
             results.append(result)
             for row in result.rows:
                 writer.append(row)
             if progress:
                 elapsed = time.perf_counter() - started
-                eta = (elapsed / i) * (len(configs) - i)
+                ran = len(results)
+                eta = (elapsed / ran) * (len(configs) - skipped - ran)
                 score = max((r.final_score for r in result.rows), default=0.0)
                 print(
                     f"  [{i:>3}/{len(configs)}] {cfg.label():26s} seed={cfg.seed:<4} "
@@ -126,6 +187,15 @@ def run_sweep(
                 )
                 if result.error:
                     print(f"        ERROR: {result.error}", flush=True)
+
+    if skipped and progress:
+        # The returned list is what the in-process report summarises, and it
+        # holds only what this run executed. Said plainly, because a recall
+        # figure over 5 of 18 episodes looks like a recall figure.
+        print(f"\n  {skipped} episode(s) were already recorded and were not "
+              f"re-run. Any summary printed below covers only the "
+              f"{len(results)} episode(s) from this run; for the whole file "
+              f"use: python -m eval tables", flush=True)
     return results
 
 
