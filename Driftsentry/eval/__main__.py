@@ -228,6 +228,48 @@ def _cmd_t20(ns: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_real(ns: argparse.Namespace) -> int:
+    """Gap 3: does the detector alarm on a genuine version upgrade?
+
+    This one installs and runs third-party code from PyPI, which is the whole
+    point - the gap asks about real servers - but it is also the only command
+    here that executes something nobody in this project wrote. It therefore
+    says exactly what it is about to install before it does, and --dry-run
+    prints that list and stops.
+    """
+    _quiet()
+    import anyio
+
+    from eval.real_run import load_specs, report, run_all
+
+    try:
+        only = tuple(s.strip() for s in ns.servers.split(",") if s.strip()) \
+            if ns.servers else ()
+        specs = load_specs(only=only)
+    except KeyError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+
+    print("Gap 3 installs and runs these releases from PyPI:")
+    for spec in specs:
+        net = " (reaches the network when called)" if spec.get("network") else ""
+        print(f"  {spec['package']}=={spec['old']} and =={spec['new']}{net}")
+    print(f"\nenvironments : {Path(ns.workspace) / 'real'}")
+    print(f"runs         : {ns.runs} per phase")
+    print(f"out          : {Path(ns.results) / 'rq1'}")
+    if ns.dry_run:
+        print("\n--dry-run: nothing installed, nothing run.")
+        return 0
+    print()
+
+    done = anyio.run(lambda: run_all(
+        Path(ns.workspace) / "real", Path(ns.results) / "rq1",
+        only=only, runs=ns.runs, resolve=not ns.no_sdk_walk,
+        clean=ns.clean))
+    print(report(done))
+    return 0
+
+
 def _cmd_tables(ns: argparse.Namespace) -> int:
     """Assemble every measured result, and name what is still missing."""
     _quiet()
@@ -296,6 +338,22 @@ def main(argv: list[str] | None = None) -> int:
     t20.add_argument("--restart", action="store_true",
                      help="discard measured conditions and start over")
     t20.set_defaults(func=_cmd_t20)
+
+    real = sub.add_parser("real", help="false alarms on real version upgrades (Gap 3)")
+    real.add_argument("--servers", default="time,calculator,git,sqlite",
+                      help="comma-separated short names from real_servers.json; "
+                           "the default is the local, no-network set")
+    real.add_argument("--runs", type=int, default=3,
+                      help="probe runs per phase (noise, then upgrade)")
+    real.add_argument("--no-sdk-walk", action="store_true",
+                      help="do not search for an older SDK a release can run "
+                           "on; reproduces the 'unmeasurable' result instead "
+                           "of fixing it")
+    real.add_argument("--clean", action="store_true",
+                      help="rebuild the environments from scratch")
+    real.add_argument("--dry-run", action="store_true",
+                      help="print what would be installed and stop")
+    real.set_defaults(func=_cmd_real)
 
     tables = sub.add_parser("tables", help="assemble the result tables (T21)")
     tables.add_argument("--out", default=str(DEFAULT_RESULTS / "tables.md"),
