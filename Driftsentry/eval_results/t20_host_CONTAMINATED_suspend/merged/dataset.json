@@ -1,0 +1,9 @@
+{
+  "rows": 1245,
+  "genuine_rows": 165,
+  "probe_rows": 1080,
+  "groups": 175,
+  "unlabelled_dropped": 2268,
+  "pre_baseline_dropped": 0,
+  "dataset": "F:\\fyp project\\Driftsentry\\eval_results\\t20\\host\\merged\\dataset.jsonl"
+}

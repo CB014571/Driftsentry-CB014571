@@ -1,0 +1,97 @@
+{
+  "dataset": "F:\\fyp project\\Driftsentry\\eval_results\\t20\\host\\merged\\dataset.jsonl",
+  "dataset_digest": "sha256:22712b929ed2f48f",
+  "rows": 1245,
+  "genuine": 165,
+  "probe": 1080,
+  "groups": 175,
+  "cv_splits": 5,
+  "vs_reference": {
+    "client": {
+      "auc1": 0.5,
+      "auc2": 0.7700448933782267,
+      "p": 2.925551340431636e-26,
+      "var": 0.0006488128214856943,
+      "z": 10.601718225446373,
+      "p_holm": 1.1702205361726545e-25,
+      "beats_reference": false
+    },
+    "environment": {
+      "auc1": 0.5,
+      "auc2": 0.7700448933782267,
+      "p": 2.925551340431636e-26,
+      "var": 0.0006488128214856943,
+      "z": 10.601718225446373,
+      "p_holm": 1.1702205361726545e-25,
+      "beats_reference": false
+    },
+    "session": {
+      "auc1": 0.9506509539842873,
+      "auc2": 0.7700448933782267,
+      "p": 6.760646938692841e-12,
+      "var": 0.0006926025500489781,
+      "z": 6.862625137810959,
+      "p_holm": 1.3521293877385681e-11,
+      "beats_reference": true
+    },
+    "timing": {
+      "auc1": 0.9556172839506173,
+      "auc2": 0.7700448933782267,
+      "p": 9.728015969671633e-12,
+      "var": 0.0007424590603748192,
+      "z": 6.810470353156163,
+      "p_holm": 1.3521293877385681e-11,
+      "beats_reference": true
+    }
+  },
+  "h3": {
+    "threshold": 0.9,
+    "qualifying_families": {
+      "session": 0.9506509539842873,
+      "timing": 0.9556172839506173
+    },
+    "auc_part_passes": true,
+    "note": "H3 also requires the recall half - an L6 attacker cutting detection by >= 50 points. That is T16, not this."
+  },
+  "best_family": "all",
+  "best_auc": 0.9885185185185186,
+  "recogniser": "F:\\fyp project\\Driftsentry\\eval_results\\t20\\host\\merged\\recogniser_all.json",
+  "families": {
+    "argument": {
+      "auc": 0.7700448933782267,
+      "low": 0.7031030133668524,
+      "high": 0.8307588833271535,
+      "n_boot": 2000
+    },
+    "client": {
+      "auc": 0.5,
+      "low": 0.5,
+      "high": 0.5,
+      "n_boot": 2000
+    },
+    "environment": {
+      "auc": 0.5,
+      "low": 0.5,
+      "high": 0.5,
+      "n_boot": 2000
+    },
+    "session": {
+      "auc": 0.9506509539842873,
+      "low": 0.9362793906995714,
+      "high": 0.9630514052161563,
+      "n_boot": 2000
+    },
+    "timing": {
+      "auc": 0.9556172839506173,
+      "low": 0.9399856594904479,
+      "high": 0.9674222876957076,
+      "n_boot": 2000
+    },
+    "all": {
+      "auc": 0.9885185185185186,
+      "low": 0.9786504440036478,
+      "high": 0.9961904238260325,
+      "n_boot": 2000
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "windows": 60,
+  "genuine_windows": 0,
+  "probe_windows": 60,
+  "feature_rows": 1134,
+  "baseline_cutoff": 1794026400.7283309,
+  "errors": [],
+  "out_dir": "F:\\fyp project\\Driftsentry\\eval_results\\t20\\none",
+  "condition": "none",
+  "cycle_seconds": 18.97,
+  "calls_per_cycle": 18.0
+}

@@ -630,3 +630,58 @@ def test_episode_id_matches_the_harness(tmp_path):
     cfg = _configs(_spec(tmp_path))[0]
     episode = Episode(cfg, DEFAULT_ATTACKER, tmp_path / "ws")
     assert _episode_id(cfg) == episode.episode_id
+
+
+# --------------------------------------------------------------------------- #
+# The cost figure, and a stalled machine
+# --------------------------------------------------------------------------- #
+# Measured failure. Collecting the host condition, cycles 1 to 35 ran at
+# 20.5s each and the reported cost then jumped to 387.3s/cycle: the machine
+# idle-slept for about four hours inside one cycle and perf_counter counts
+# wall clock. The run recovered, finished at normal speed, and reported
+# 270s/cycle - a fourteen-fold cost for a countermeasure that does not touch
+# timing. Same shape as the countermeasures that were wired and did nothing:
+# a figure that looks like a measurement of the countermeasure.
+def test_the_cost_figure_survives_a_suspended_machine():
+    from eval.t20 import _cycle_cost
+    steady = [20.5] * 35
+    stalled = [20.5 * 10, 14000.0, 20.5, 20.5, 20.5]
+    cost = _cycle_cost(steady + stalled)
+    assert cost["cycle_seconds"] == 20.5
+    assert cost["cycle_seconds_mean"] > 300
+
+
+def test_the_stall_is_reported_not_smoothed_away():
+    """A stall may be a suspend, and it may be the countermeasure blocking.
+    Either way it is worth seeing."""
+    from eval.t20 import _cycle_cost
+    cost = _cycle_cost([20.0] * 20 + [14000.0])
+    assert len(cost["cycle_outliers"]) == 1
+    assert cost["cycle_outliers"][0]["cycle"] == 21
+    assert cost["cycle_outliers"][0]["seconds"] == 14000.0
+
+
+def test_ordinary_variance_is_not_called_an_outlier():
+    """The threshold is loose on purpose; pruning normal variance would be
+    choosing the cost figure."""
+    from eval.t20 import _cycle_cost
+    cost = _cycle_cost([18.0, 20.0, 22.0, 25.0, 19.0, 60.0])
+    assert cost["cycle_outliers"] == []
+
+
+def test_every_cycle_duration_is_kept():
+    """So a contaminated figure can be recomputed rather than re-measured."""
+    from eval.t20 import _cycle_cost
+    cost = _cycle_cost([1.0, 2.0, 3.0])
+    assert cost["cycle_seconds_all"] == [1.0, 2.0, 3.0]
+
+
+def test_an_even_number_of_cycles_still_has_a_median():
+    from eval.t20 import _cycle_cost
+    assert _cycle_cost([10.0, 20.0, 30.0, 40.0])["cycle_seconds"] == 25.0
+
+
+def test_no_cycles_is_zero_rather_than_a_crash():
+    from eval.t20 import _cycle_cost
+    cost = _cycle_cost([])
+    assert cost["cycle_seconds"] == 0.0 and cost["cycle_outliers"] == []

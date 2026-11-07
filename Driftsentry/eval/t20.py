@@ -145,11 +145,52 @@ async def collect_probes(
 
     summary = collector.finish(baseline_cutoff, [])
     summary["condition"] = cond.name
-    summary["cycle_seconds"] = round(sum(durations) / len(durations), 2) if durations else 0.0
+    summary.update(_cycle_cost(durations))
     summary["calls_per_cycle"] = _calls_per_cycle(Path(out_dir))
     (Path(out_dir) / "collection.json").write_text(
         json.dumps(summary, indent=2), encoding="utf-8")
     return summary
+
+
+def _cycle_cost(durations: list[float]) -> dict[str, Any]:
+    """The cost half of RQ4, stated so a stalled machine cannot fake it.
+
+    This was measured as a mean, and the mean was wrong. Collecting the host
+    condition, cycles 1 to 35 ran at 20.5s each and the reported figure then
+    jumped to 387.3s/cycle: the machine idle-slept for roughly four hours
+    inside one cycle, and perf_counter counts wall clock. The run recovered
+    and finished the remaining cycles at normal speed, so the final number
+    was 270s/cycle - a fourteen-fold cost for a countermeasure that does not
+    touch timing at all.
+
+    That is the same shape of error as the countermeasures that were wired
+    up and silently did nothing: a figure that looks like a measurement of
+    the countermeasure and is a measurement of the environment.
+
+    So the headline figure is the median, which one stalled cycle cannot
+    move, and every per-cycle duration is kept beside it. Cycles far above
+    the median are listed rather than smoothed away, because a stall is
+    worth seeing - it may be a suspend, and it may be the countermeasure
+    occasionally blocking.
+    """
+    if not durations:
+        return {"cycle_seconds": 0.0, "cycle_seconds_mean": 0.0,
+                "cycle_seconds_all": [], "cycle_outliers": []}
+
+    ordered = sorted(durations)
+    mid = len(ordered) // 2
+    median = (ordered[mid] if len(ordered) % 2
+              else (ordered[mid - 1] + ordered[mid]) / 2)
+    # Ten times the median. Loose on purpose: the point is to catch a
+    # four-hour suspend, not to prune ordinary variance.
+    outliers = [{"cycle": i + 1, "seconds": round(d, 2)}
+                for i, d in enumerate(durations) if d > 10 * median]
+    return {
+        "cycle_seconds": round(median, 2),
+        "cycle_seconds_mean": round(sum(durations) / len(durations), 2),
+        "cycle_seconds_all": [round(d, 2) for d in durations],
+        "cycle_outliers": outliers,
+    }
 
 
 def _calls_per_cycle(out_dir: Path) -> float:
@@ -319,7 +360,15 @@ def summarise_condition(cond_name: str, arms: dict[str, list[Any]],
                           if l1_n and l6_n else None),
         "false_alarm_pct": fa,
         "false_alarms": f"{fa_bad}/{fa_n}",
+        # Median, not mean. See _cycle_cost: a four-hour idle sleep inside
+        # one cycle put the host condition at 270s/cycle against a true
+        # 20.5s, and the mean carried it.
         "cycle_seconds": collection.get("cycle_seconds", float("nan")),
+        "cycle_seconds_mean": collection.get("cycle_seconds_mean",
+                                             float("nan")),
+        # Carried into the summary so a stalled collection is visible where
+        # the numbers are read, not only in the collection file.
+        "cycle_outliers": len(collection.get("cycle_outliers") or []),
         "calls_per_cycle": collection.get("calls_per_cycle", 0),
     }
 
