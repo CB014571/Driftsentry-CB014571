@@ -228,6 +228,18 @@ def _cmd_t20(ns: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_tables(ns: argparse.Namespace) -> int:
+    """Assemble every measured result, and name what is still missing."""
+    _quiet()
+    from eval.tables import build
+
+    text = build(ns.out)
+    print(text)
+    if ns.out:
+        print(f"written to {ns.out}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="eval", description="DriftSentry evaluation harness")
     parser.add_argument("--attacker", default=str(DEFAULT_ATTACKER),
@@ -284,6 +296,11 @@ def main(argv: list[str] | None = None) -> int:
     t20.add_argument("--restart", action="store_true",
                      help="discard measured conditions and start over")
     t20.set_defaults(func=_cmd_t20)
+
+    tables = sub.add_parser("tables", help="assemble the result tables (T21)")
+    tables.add_argument("--out", default=str(DEFAULT_RESULTS / "tables.md"),
+                        help="where the Markdown is written")
+    tables.set_defaults(func=_cmd_tables)
 
     ns = parser.parse_args(argv)
     return ns.func(ns)
