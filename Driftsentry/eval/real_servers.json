@@ -1,5 +1,25 @@
 {
-  "_status": "PROPOSAL - NOT YET APPROVED, NOT YET RUN",
+  "_status": "APPROVED for the local four; the network four remain a proposal",
+
+  "_decisions": {
+    "_what": "Calls that were the user's to make, recorded here rather than left in a chat log.",
+    "run_scope": {
+      "decided": "2026-11-07",
+      "by": "user",
+      "approved": ["mcp-server-time", "mcp-server-calculator",
+                   "mcp-server-git", "mcp-server-sqlite"],
+      "not_approved": ["mcp-server-fetch", "mcp-simple-arxiv",
+                       "duckduckgo-mcp-server", "arxiv-mcp-server"],
+      "note": "The approved four are local: no network, no credentials. The other four send real traffic to someone else's service when their tools are called, so they stay unapproved and `eval real` does not include them in its default set."
+    },
+    "label": {
+      "decided": "2026-11-07",
+      "by": "user",
+      "decision": "Leave every label null and state it as a limitation.",
+      "consequence": "Gap 3's false-alarm rate is reported UNLABELLED. The measurement stands - an alarm on an upgrade where nothing malicious happened is a false alarm either way - but the benign versus benign-security-relevant split is not available, so no claim is made about whether the detector is noisier on security-relevant upgrades than on ordinary ones. This must appear in the write-up's limitations, not be quietly omitted.",
+      "why_not_assigned": "The label is a reading of intent out of each changelog. Assigning it from a package summary would be asserting something about eight changelogs nobody read closely, and it is the label the rate is measured against."
+    }
+  },
 
   "_what_this_is": [
     "Candidate real MCP servers for Gap 3: the false-alarm rate of a",
