@@ -228,6 +228,79 @@ def _cmd_t20(ns: argparse.Namespace) -> int:
     return 0
 
 
+RQ3U_RULES = DEFAULT_RESULTS / "rq3u" / "rules_frozen.json"
+
+
+def _cmd_rq3u(ns: argparse.Namespace) -> int:
+    """RQ3a: attacks hidden in legitimate updates, scored five ways (T28).
+
+    Refuses to start unless the permitted-change rules verify against their
+    frozen file - the rules were sealed before any cover-change attack was
+    built, and scoring with rules edited since would invalidate the result.
+    A per-tool threshold file is verified the same way when one is given.
+    """
+    _quiet()
+    from driftsentry.calibration import verify_frozen
+    from driftsentry.residue import verify_rules
+    from eval.experiments import FAMILIES, SweepSpec, run_sweep, summarise
+
+    try:
+        rules = verify_rules(RQ3U_RULES)
+    except (OSError, ValueError) as exc:
+        print(f"error: the frozen rules do not verify, refusing to score: {exc}",
+              file=sys.stderr)
+        return 2
+
+    per_tool = None
+    if ns.per_tool:
+        try:
+            per_tool = dict(verify_frozen(ns.per_tool)["thresholds"])
+        except (OSError, ValueError, KeyError) as exc:
+            print(f"error: per-tool thresholds do not verify: {exc}", file=sys.stderr)
+            return 2
+
+    def split(text: str) -> tuple[str, ...]:
+        return tuple(t.strip() for t in text.split(",") if t.strip())
+
+    families = tuple(FAMILIES) if ns.families == "all" else split(ns.families)
+    covers, benign = split(ns.covers), split(ns.benign_updates)
+    seeds = tuple(int(s) for s in split(ns.seeds))
+    if ns.quick:
+        families, covers, benign, seeds = families[:1], ("C0", "C2"), (), seeds[:1]
+
+    unknown = [f for f in families if f not in FAMILIES]
+    bad = [c for c in covers + benign if c not in ("C0", "C1", "C2", "C3")]
+    if unknown or bad:
+        print(f"error: unknown families {unknown} or covers {bad}", file=sys.stderr)
+        return 2
+
+    spec = SweepSpec(
+        experiment_id="rq3u_L1" + ("_quick" if ns.quick else ""),
+        probe_mode=ns.probe_mode,
+        families=families, levels=split(ns.levels), seeds=seeds,
+        benign_seeds=(), benign_update_seeds=(),
+        cycles=ns.cycles,
+        update_covers=covers, benign_update_covers=benign,
+        per_tool=per_tool,
+    )
+    n = len(families) * len(spec.levels) * len(covers) * len(seeds) + len(benign) * len(seeds)
+    print(f"rules      : v{rules['rules']['version']}  sha256 {rules['_sha256'][:16]}  "
+          f"open-world {rules['rules']['open_world']}")
+    print(f"thresholds : " + (f"per-tool, {len(per_tool)} tools, from {ns.per_tool}"
+                              if per_tool else
+                              "GLOBAL calibrated threshold - no per-tool file given"))
+    print(f"families   : {', '.join(families)}")
+    print(f"covers     : {', '.join(covers)}   benign updates: {', '.join(benign) or 'none'}")
+    print(f"seeds      : {seeds}   cycles {ns.cycles}   probes {ns.probe_mode}")
+    print(f"episodes   : {n}\n")
+
+    out_dir = Path(ns.results) / "rq3u"
+    results = run_sweep(spec, ns.attacker, ns.workspace, out_dir)
+    print(summarise(results))
+    print(f"\nrows written to {out_dir / (spec.experiment_id + '.csv')}")
+    return 0
+
+
 def _cmd_real(ns: argparse.Namespace) -> int:
     """Gap 3: does the detector alarm on a genuine version upgrade?
 
@@ -338,6 +411,22 @@ def main(argv: list[str] | None = None) -> int:
     t20.add_argument("--restart", action="store_true",
                      help="discard measured conditions and start over")
     t20.set_defaults(func=_cmd_t20)
+
+    rq3u = sub.add_parser("rq3u", help="attacks hidden in legitimate updates (RQ3a)")
+    rq3u.add_argument("--families", default="all",
+                      help="comma-separated attack families, or 'all'")
+    rq3u.add_argument("--levels", default="L1")
+    rq3u.add_argument("--covers", default="C0,C1,C2,C3")
+    rq3u.add_argument("--benign-updates", default="C1,C2",
+                      help="covers shipped with no attack: the false-alarm set")
+    rq3u.add_argument("--seeds", default="1,2,3")
+    rq3u.add_argument("--cycles", type=int, default=4)
+    rq3u.add_argument("--probe-mode", choices=["keyed", "fixed"], default="keyed")
+    rq3u.add_argument("--per-tool", default=None,
+                      help="a frozen per-tool threshold file (T8); verified before use")
+    rq3u.add_argument("--quick", action="store_true",
+                      help="one family, C0 and C2, one seed - checks the pipeline")
+    rq3u.set_defaults(func=_cmd_rq3u)
 
     real = sub.add_parser("real", help="false alarms on real version upgrades (Gap 3)")
     real.add_argument("--servers", default="time,calculator,git,sqlite",

@@ -20,6 +20,17 @@ class ScenarioError(RuntimeError):
     """The attacker CLI refused a command."""
 
 
+def _release_args(release: str | None, cover: str | None) -> list[str]:
+    """T26 releases. Omitted when not given, so the attacker keeps whatever
+    its scenario file says - v1 for a fresh home."""
+    args: list[str] = []
+    if release is not None:
+        args += ["--release", release]
+    if cover is not None:
+        args += ["--cover", cover]
+    return args
+
+
 @dataclass
 class AttackerControl:
     """Handle on one adversarial server installation."""
@@ -73,12 +84,14 @@ class AttackerControl:
             )
         return proc.stdout
 
-    def benign(self, *, updates: bool = False, seed: int | None = None) -> None:
+    def benign(self, *, updates: bool = False, seed: int | None = None,
+               release: str | None = None, cover: str | None = None) -> None:
         args = ["benign"]
         if updates:
             args.append("--updates")
         if seed is not None:
             args += ["--seed", str(seed)]
+        args += _release_args(release, cover)
         self._run(*args)
 
     def arm(
@@ -92,6 +105,8 @@ class AttackerControl:
         after_calls: int | None = None,
         payload: str | None = None,
         only_tools: list[str] | tuple[str, ...] | None = None,
+        release: str | None = None,
+        cover: str | None = None,
     ) -> None:
         """Arm one attack. L4/L5 imply probe-awareness and require the opt-in."""
         args = ["attack", family, "--level", level]
@@ -105,6 +120,7 @@ class AttackerControl:
             args += ["--payload", payload]
         if only_tools:
             args += ["--only-tools", ",".join(only_tools)]
+        args += _release_args(release, cover)
         # The attacker validates that a probe-aware level without
         # --probe-aware is a config error, so default it on for those levels
         # rather than letting the episode fail deep inside a run. L6 is in the

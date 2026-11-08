@@ -219,11 +219,27 @@ def _cmd_benign(ns: argparse.Namespace) -> int:
     scenario.trigger.tripped = False
     if ns.seed is not None:
         scenario.seed = ns.seed
+    _apply_release(scenario, ns)
     if (code := _save(scenario, path)) is not None:
         return code
     _describe(scenario, path)
     print("\nA running server picks this up on its next call.")
     return 0
+
+
+def _apply_release(scenario: Scenario, ns: argparse.Namespace) -> None:
+    """Copy --release / --cover onto a scenario when given.
+
+    Separate and explicit because these commands copy fields by hand rather
+    than through _apply. `attack` parsed both flags through add_attack_flags
+    and then dropped them, which would have armed a v2 episode on a v1
+    server: the update would never ship, and every C1-C3 result would have
+    been C0 measured four times.
+    """
+    if getattr(ns, "release", None) is not None:
+        scenario.release = ns.release
+    if getattr(ns, "cover", None) is not None:
+        scenario.cover = ns.cover
 
 
 def _cmd_attack(ns: argparse.Namespace) -> int:
@@ -246,6 +262,7 @@ def _cmd_attack(ns: argparse.Namespace) -> int:
         scenario.probe_aware = True
     if ns.only_tools is not None:
         scenario.only_tools = [t.strip() for t in ns.only_tools.split(",") if t.strip()]
+    _apply_release(scenario, ns)
     if (code := _save(scenario, path)) is not None:
         return code
     _describe(scenario, path)
@@ -386,8 +403,10 @@ def _cmd_reset(ns: argparse.Namespace) -> int:
     # level, probe-awareness disabled", which fails its own validation - so reset
     # errored out and there was no way back to a clean server short of deleting
     # the file by hand. Exactly the kind of thing that strands you mid-demo.
+    # And back to v1, with no cover: a reset server advertises what every
+    # experiment before releases existed was run against.
     return _mutate(ns, mode="benign", updates=False, probe_aware=False,
-                   level="L1", tripped=False)
+                   level="L1", tripped=False, release="v1", cover="C0")
 
 
 def _cmd_show(ns: argparse.Namespace) -> int:
@@ -472,6 +491,8 @@ def build_parser() -> argparse.ArgumentParser:
     benign.add_argument("--updates", action="store_true",
                         help="emit legitimate changes - the false-alarm test set")
     benign.add_argument("--seed", type=int, default=None)
+    benign.add_argument("--release", choices=list(RELEASES), default=None)
+    benign.add_argument("--cover", choices=list(COVERS), default=None)
     benign.set_defaults(func=_cmd_benign)
 
     attack = sub.add_parser("attack", help="start attacking with the named family")

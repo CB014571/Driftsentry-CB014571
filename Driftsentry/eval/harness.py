@@ -35,6 +35,12 @@ log = logging.getLogger("eval.harness")
 
 DETECTOR_VERSION = "0.1.0"
 
+# Update episodes attack this tool. The attacker's C1 cover lands on a
+# different tool and C2/C3 on this one, so the attack must be confined here
+# for the covers to mean what they say. Duplicated from the attacker, which
+# the harness cannot import.
+UPDATE_ATTACKED_TOOL = "lookup_customer"
+
 
 @dataclass
 class EpisodeConfig:
@@ -109,10 +115,22 @@ class EpisodeConfig:
 
     server_id: str = "target"
 
+    # T27. An update episode: baseline v1 (v1n for C3), then ship the v2
+    # release carrying this cover change, and score the re-probe under the
+    # five update conditions. None keeps every existing experiment as it was.
+    update_cover: str | None = None
+
+    # Per-tool thresholds, from a frozen file (T8). None uses the global
+    # calibrated threshold, as every experiment before RQ3a did.
+    per_tool: dict[str, float] | None = None
+
     def label(self) -> str:
         if self.mode == "benign":
-            return "benign-update" if self.updates else "benign"
-        return f"{self.family}/{self.level}"
+            base = "benign-update" if self.updates else "benign"
+        else:
+            base = f"{self.family}/{self.level}"
+        # The cover is part of the label so each cover gets its own episode id.
+        return f"{base}@{self.update_cover}" if self.update_cover else base
 
     def as_config(self) -> dict[str, Any]:
         """The subset that identifies the DETECTOR configuration, for hashing."""
@@ -128,7 +146,20 @@ class EpisodeConfig:
             "mimic_host": self.mimic_host,
             "mimic_traffic": self.mimic_traffic,
             "subsample_bank": self.subsample_bank,
+            # Only present for update episodes. Adding the key to every
+            # config would change every existing config_hash, and resume
+            # would then refuse every half-finished sweep as a conflict.
+            **({"update_check": True, "residue_rules": _rules_version()}
+               if self.update_cover else {}),
+            # Likewise only when set, for the same reason.
+            **({"per_tool": dict(sorted(self.per_tool.items()))}
+               if self.per_tool else {}),
         }
+
+
+def _rules_version() -> str:
+    from driftsentry.residue import RULES_VERSION
+    return RULES_VERSION
 
 
 @dataclass
@@ -246,6 +277,38 @@ class Episode:
                 log.warning("replay session failed: %s", exc)
         return out
 
+    async def _update_cycle(self, baseline, launch: dict[str, Any], cycle: int,
+                            key: bytes | None):
+        """One re-probe of the shipped update, scored under every condition.
+
+        Not verify_server: that returns one verdict, and the five conditions
+        need the measurement itself so they can all be scored from it.
+        """
+        from driftsentry.baseline import reprobe
+        from driftsentry.verify import _launch_of, active_threshold
+        from eval.update_conditions import score_update
+
+        cfg = self.cfg
+        command, args, cwd, env = _launch_of(baseline, launch)
+        measurement = await reprobe(
+            baseline, command, args, cwd=cwd, env=env,
+            samples_per_probe=cfg.samples_per_probe,
+            monitor_sandbox=cfg.monitor_sandbox,
+            cycle=cycle, key=key,
+            mimic_host=cfg.mimic_host, mimic_traffic=cfg.mimic_traffic,
+            subsample_bank=cfg.subsample_bank,
+        )
+        threshold, source = ((cfg.threshold_ratio, "explicit")
+                             if cfg.threshold_ratio is not None
+                             else active_threshold(measurement.embedding_backend))
+        return score_update(
+            measurement, baseline.tool_definitions,
+            threshold_ratio=threshold, calibration_source=source,
+            per_tool=cfg.per_tool,
+            family=(cfg.family if cfg.mode == "rug-pull" else ""),
+            attacked_tool=UPDATE_ATTACKED_TOOL,
+        )
+
     # -- the run ------------------------------------------------------------
     async def run(self) -> EpisodeResult:
         from driftsentry import keys as key_store
@@ -259,8 +322,14 @@ class Episode:
 
         self._prepare()
         try:
-            # 1. benign server, clean slate
-            self.attacker.benign(seed=cfg.seed)
+            # 1. benign server, clean slate. An update episode baselines the
+            # release it is updating FROM: v1, or v1n for C3, which needs a
+            # narrow declaration to widen.
+            update = cfg.update_cover is not None
+            self.attacker.benign(
+                seed=cfg.seed,
+                release=(("v1n" if cfg.update_cover == "C3" else "v1")
+                         if update else None))
             ground_truth.clear(attacker_home=self.atk_home)
 
             # 2. baseline it while it is honest (Trust On First Use)
@@ -283,11 +352,15 @@ class Episode:
             # the server is armed counts as evidence the attack executed.
             ground_truth.clear(attacker_home=self.atk_home)
 
-            # 3. arm
+            # 3. arm. An update episode also ships the v2 release, which the
+            # server reads at startup - so the next verification sees it.
+            ship = ({"release": "v2", "cover": cfg.update_cover} if update else {})
             if cfg.mode == "benign":
-                self.attacker.benign(updates=cfg.updates, seed=cfg.seed)
+                self.attacker.benign(updates=cfg.updates, seed=cfg.seed, **ship)
             else:
-                self.attacker.arm(cfg.family, level=cfg.level, seed=cfg.seed)
+                self.attacker.arm(cfg.family, level=cfg.level, seed=cfg.seed,
+                                  only_tools=([UPDATE_ATTACKED_TOOL] if update else None),
+                                  **ship)
 
             # 4. verification cycles
             started = time.perf_counter()
@@ -301,19 +374,24 @@ class Episode:
                 if _PROC is not None:
                     _PROC.cpu_percent(None)          # prime the interval
                 t0 = time.perf_counter()
-                report = await verify_server(
-                    baseline,
-                    launch=launch,
-                    samples_per_probe=cfg.samples_per_probe,
-                    monitor_sandbox=cfg.monitor_sandbox,
-                    threshold_ratio=cfg.threshold_ratio,
-                    # Every cycle asks something the server has not seen before.
-                    cycle=cycle,
-                    key=probe_key,
-                    mimic_host=cfg.mimic_host,
-                    mimic_traffic=cfg.mimic_traffic,
-                    subsample_bank=cfg.subsample_bank,
-                )
+                scored = None
+                if update:
+                    scored = await self._update_cycle(baseline, launch, cycle, probe_key)
+                    report = scored.residue
+                else:
+                    report = await verify_server(
+                        baseline,
+                        launch=launch,
+                        samples_per_probe=cfg.samples_per_probe,
+                        monitor_sandbox=cfg.monitor_sandbox,
+                        threshold_ratio=cfg.threshold_ratio,
+                        # Every cycle asks something the server has not seen before.
+                        cycle=cycle,
+                        key=probe_key,
+                        mimic_host=cfg.mimic_host,
+                        mimic_traffic=cfg.mimic_traffic,
+                        subsample_bank=cfg.subsample_bank,
+                    )
                 duration = time.perf_counter() - t0
 
                 # Genuine traffic AFTER the probes, so the attacker has had
@@ -331,7 +409,10 @@ class Episode:
 
                 passive = passive_findings(self.ds_home, cfg.server_id)
                 detected = full_detected(report)
-                saw_hash = hash_detected(report)
+                # The hash-only reading. For an update episode `report` is the
+                # residue verdict, so the hash comes from the full scoring,
+                # which still carries it.
+                saw_hash = hash_detected(scored.full if scored else report)
                 saw_passive = passive_detected(passive, self.cfg.passive_rule)
 
                 latencies = [r["latency_s"] for r in replayed if "latency_s" in r]
@@ -374,9 +455,16 @@ class Episode:
                 )
                 for name, value in components(report).items():
                     setattr(row, name, round(value, 4))
+                if scored is not None:
+                    _fill_update_columns(row, scored, cfg.update_cover)
+                    row.full_detected = full_detected(scored.full)
                 result.rows.append(row)
 
-                if detected and cfg.stop_on_alert:
+                # Update episodes run every cycle. The five conditions are
+                # compared on the same cycles, and stopping when residue
+                # alerts would end the episode before a condition that only
+                # alerts later had its chance - biased toward residue.
+                if detected and cfg.stop_on_alert and not update:
                     break
 
             # 5. ground truth, read from the attacker
@@ -398,6 +486,27 @@ class Episode:
         finally:
             self._cleanup()
         return result
+
+
+def _fill_update_columns(row: ExperimentRow, scored, cover: str) -> None:
+    """Write one update cycle's five-condition result into its row."""
+    import json
+
+    from eval.update_conditions import CONDITIONS
+
+    residue = scored.residue.residue or {}
+    items = residue.get("items", [])
+    row.release = "v2"
+    row.cover = cover
+    row.declared_changes = json.dumps(scored.diff.to_dict(), sort_keys=True)
+    row.residue_verdict = residue.get("verdict", "accepted" if scored.diff.empty else "")
+    row.residue_signals = ",".join(sorted({i["signal"] for i in items
+                                           if i["classification"] == "residue"}))
+    row.escalations = ",".join(f"{t}:{e}" for t, e in residue.get("escalations", []))
+    row.held_for_review = sum(1 for i in items if i["classification"] == "held_for_review")
+    for name in CONDITIONS:
+        setattr(row, f"alert_{name}", scored.conditions[name].alert)
+        setattr(row, f"attributed_{name}", scored.conditions[name].attributed)
 
 
 def run_episode(

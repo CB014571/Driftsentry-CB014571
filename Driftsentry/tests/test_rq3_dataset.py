@@ -342,9 +342,12 @@ def test_appending_under_a_stale_header_is_refused(tmp_path):
 
     from eval.record import FIELD_NAMES, ExperimentRow, ResultWriter, SchemaMismatch
 
+    # A column missing from the MIDDLE: the case that was measured, where
+    # appending shifted every later value one column left. A header that is
+    # merely shorter - a prefix - lines up and is accepted; see below.
     stale = tmp_path / "exp.csv"
     with stale.open("w", newline="", encoding="utf-8") as fh:
-        _csv.writer(fh).writerow(FIELD_NAMES[:-3])      # an older, shorter schema
+        _csv.writer(fh).writerow(FIELD_NAMES[:5] + FIELD_NAMES[6:])
 
     with pytest.raises(SchemaMismatch, match="different schema"):
         with ResultWriter(tmp_path, "exp"):
@@ -359,8 +362,8 @@ def test_the_old_file_is_kept_not_overwritten(tmp_path):
     stale = tmp_path / "exp.csv"
     with stale.open("w", newline="", encoding="utf-8") as fh:
         w = _csv.writer(fh)
-        w.writerow(FIELD_NAMES[:-3])
-        w.writerow(["keep-me"] * (len(FIELD_NAMES) - 3))
+        w.writerow(FIELD_NAMES[:5] + FIELD_NAMES[6:])
+        w.writerow(["keep-me"] * (len(FIELD_NAMES) - 1))
 
     with pytest.raises(SchemaMismatch):
         with ResultWriter(tmp_path, "exp"):
@@ -394,3 +397,80 @@ def test_a_fresh_file_writes_the_current_header(tmp_path):
         pass
     with (tmp_path / "exp.csv").open(newline="", encoding="utf-8") as fh:
         assert next(_csv.reader(fh)) == FIELD_NAMES
+
+
+# --------------------------------------------------------------------------- #
+# A header that is a prefix of today's (T27)
+# --------------------------------------------------------------------------- #
+# Columns are only ever appended. A file written before the update-episode
+# columns existed is therefore an exact prefix of today's header, lines up with
+# every column it has, and must stay resumable - otherwise adding a column
+# would retire every half-finished sweep and restart it from nothing.
+def _prefix_file(tmp_path, n_dropped):
+    import csv as _csv
+
+    from eval.record import FIELD_NAMES
+    path = tmp_path / "exp.csv"
+    with path.open("w", newline="", encoding="utf-8") as fh:
+        _csv.writer(fh).writerow(FIELD_NAMES[:-n_dropped])
+    return path
+
+
+def test_a_prefix_header_is_appended_to_under_its_own_columns(tmp_path):
+    import csv as _csv
+
+    from eval.record import FIELD_NAMES, ExperimentRow, ResultWriter, now
+    path = _prefix_file(tmp_path, 17)
+    with ResultWriter(tmp_path, "exp") as w:
+        w.append(ExperimentRow(experiment_id="e", episode_id="ep", timestamp=now(),
+                               config_hash="cfg:x"))
+    rows = list(_csv.reader(path.open(encoding="utf-8")))
+    assert rows[0] == FIELD_NAMES[:-17]
+    assert len(rows[1]) == len(rows[0])
+    assert rows[1][rows[0].index("config_hash")] == "cfg:x"
+
+
+def test_a_row_with_values_in_a_column_the_file_lacks_is_refused(tmp_path):
+    """Writing it would drop the values silently."""
+    from eval.record import ExperimentRow, ResultWriter, SchemaMismatch, now
+    _prefix_file(tmp_path, 17)
+    with ResultWriter(tmp_path, "exp") as w:
+        with pytest.raises(SchemaMismatch, match="predates the columns"):
+            w.append(ExperimentRow(experiment_id="e", episode_id="ep",
+                                   timestamp=now(), cover="C2"))
+
+
+def test_a_prefix_file_keeps_its_rows(tmp_path):
+    from eval.record import ExperimentRow, ResultWriter, now
+    path = _prefix_file(tmp_path, 17)
+    with ResultWriter(tmp_path, "exp") as w:
+        w.append(ExperimentRow(experiment_id="e", episode_id="ep1", timestamp=now()))
+    with ResultWriter(tmp_path, "exp") as w:
+        w.append(ExperimentRow(experiment_id="e", episode_id="ep2", timestamp=now()))
+    text = path.read_text(encoding="utf-8")
+    assert "ep1" in text and "ep2" in text
+    assert not list(tmp_path.glob("exp.*.old.csv")), "nothing should be retired"
+
+
+def test_every_existing_results_file_is_a_prefix_of_todays_header():
+    """The property the prefix rule rests on, checked on the real files."""
+    import csv as _csv
+    from pathlib import Path
+
+    from eval.record import FIELD_NAMES
+    results = Path(__file__).resolve().parents[1] / "eval_results"
+    # Archives are excluded by name: the August Experiment 1 file predates the
+    # columns inserted mid-row that the header guard was written for, so it is
+    # NOT a prefix - and it is never resumed, because its detector
+    # configuration can no longer be reproduced. Everything else must be.
+    files = [p for p in results.rglob("*.csv")
+             if ".old." not in p.name and "SUPERSEDED" not in p.name
+             and p.stat().st_size]
+    checked = 0
+    for path in files:
+        header = next(_csv.reader(path.open(encoding="utf-8")), [])
+        if "episode_id" not in header or "experiment_id" not in header:
+            continue                          # not an ExperimentRow file
+        assert FIELD_NAMES[:len(header)] == header, path.name
+        checked += 1
+    assert checked, "expected at least one results file to check"

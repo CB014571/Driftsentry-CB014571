@@ -80,6 +80,30 @@ class SweepSpec:
     mimic_host: bool = False
     mimic_traffic: bool = False
     subsample_bank: bool = False
+    # T28, RQ3a. Non-empty makes this an UPDATE sweep: every family ships in
+    # every one of these covers, plus benign updates in benign_update_covers,
+    # and nothing else - no plain benign arms, because the false-alarm set for
+    # an update is a benign update.
+    update_covers: tuple[str, ...] = ()
+    benign_update_covers: tuple[str, ...] = ()
+    per_tool: dict[str, float] | None = None
+
+
+def _update_configs(spec: SweepSpec, common: dict) -> list[EpisodeConfig]:
+    """The RQ3a matrix: family x cover x seed, then benign updates."""
+    out: list[EpisodeConfig] = []
+    for family in spec.families:
+        for level in spec.levels:
+            for cover in spec.update_covers:
+                for seed in spec.seeds:
+                    out.append(EpisodeConfig(
+                        spec.experiment_id, mode="rug-pull", family=family,
+                        level=level, seed=seed, update_cover=cover, **common))
+    for cover in spec.benign_update_covers:
+        for seed in spec.seeds:
+            out.append(EpisodeConfig(spec.experiment_id, mode="benign",
+                                     seed=seed, update_cover=cover, **common))
+    return out
 
 
 def _configs(spec: SweepSpec) -> list[EpisodeConfig]:
@@ -107,6 +131,8 @@ def _configs(spec: SweepSpec) -> list[EpisodeConfig]:
         mimic_traffic=spec.mimic_traffic,
         subsample_bank=spec.subsample_bank,
     )
+    if spec.update_covers or spec.benign_update_covers:
+        return _update_configs(spec, dict(common, per_tool=spec.per_tool))
     out: list[EpisodeConfig] = []
 
     for seed in spec.benign_seeds:

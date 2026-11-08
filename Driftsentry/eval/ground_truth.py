@@ -36,6 +36,65 @@ FAMILY_EVIDENCE: dict[str, set[str]] = {
 PROBE_SKIP = "probe-skip"
 
 
+# --------------------------------------------------------------------------- #
+# Attribution (T27, ground rule 5)
+# --------------------------------------------------------------------------- #
+# An alert counts as detecting a hidden change only if it names a signal that
+# change causes. Signal names are the residue checker's vocabulary
+# (driftsentry.residue.SIGNAL_NAMES).
+#
+# Wider than the plan's sketch for the two content families, and the reason
+# is measured rather than preferred. The plan mapped silent-tamper to
+# field_drift alone. But every attacker tool returns one prose string, which
+# fielddrift classifies as `text` at weight 0.3 - its field-drift score tops
+# out at 0.48 and can never reach the alert line - and the keyed probe path
+# computes no field drift at all. A tamper therefore shows up as
+# determinism_break or behavioural_drift, the signals that read the changed
+# text. Mapping it to field_drift alone would score every silent-tamper as
+# undetected under every condition: an artefact of the mapping, not a
+# property of any detector.
+#
+# structural_change is deliberately absent: neither content attack alters a
+# response's structure - one rewrites text, the other appends to it - so the
+# only structural change in an update episode is the cover's own new field,
+# and crediting it would count the cover as the attack.
+#
+# The cover cannot leak into the rest either: the declared field is masked out
+# before residue is scored, and attribution also requires the signal to be on
+# the attacked tool.
+_CONTENT = {"behavioural_drift", "determinism_break", "field_drift"}
+ATTRIBUTION: dict[str, set[str]] = {
+    "new-egress": {"new_egress_host"},
+    "exfiltration": {"new_file", "new_egress_host"},
+    "silent-tamper": set(_CONTENT),
+    "content-injection": {"content_flag"} | _CONTENT,
+}
+
+# sleeper and conditional say WHEN; the payload they deliver says WHAT.
+# Mirrors the attacker's own defaults, duplicated for the same reason
+# events_path is - the harness cannot import the attacker.
+DEFAULT_PAYLOAD = {"sleeper": "content-injection", "conditional": "exfiltration"}
+
+
+def attribution_signals(family: str, payload: str | None = None) -> set[str]:
+    """The signals an attack of this family causes, by its delivered payload."""
+    delivered = payload or DEFAULT_PAYLOAD.get(family, family)
+    return set(ATTRIBUTION.get(delivered, set()))
+
+
+def attributed(signals_on_tool: dict[str, set[str]], *, attacked_tool: str,
+               family: str, payload: str | None = None) -> bool:
+    """Does any alerting signal on the attacked tool name what the attack did?
+
+    ``signals_on_tool`` maps tool -> the residue-vocabulary names of signals
+    that alerted on it. Signals on any other tool are not the attack's, which
+    is exactly what separates detecting the hidden change from alarming on
+    the cover change beside it.
+    """
+    return bool(signals_on_tool.get(attacked_tool, set())
+                & attribution_signals(family, payload))
+
+
 def events_path(attacker_home: str | Path | None = None) -> Path:
     """Locate the attacker's event log.
 

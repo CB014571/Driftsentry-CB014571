@@ -21,7 +21,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
-from dataclasses import asdict, dataclass, field, fields
+from dataclasses import MISSING, asdict, dataclass, field, fields
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -116,11 +116,49 @@ class ExperimentRow:
     config_hash: str = ""
     note: str = ""
 
+    # -- update episodes (T27, RQ3a) --------------------------------------
+    #
+    # Appended after every existing column, never inserted, so a results file
+    # written before these existed is an exact prefix of this header and can
+    # still be resumed (see ResultWriter). Empty on every non-update row.
+    release: str = ""                # the release verified: v2 for an update
+    cover: str = ""                  # C0-C3
+    declared_changes: str = ""       # DeclaredDiff.to_dict() as JSON
+    residue_verdict: str = ""        # accepted | residue_alert | escalation | held_for_review
+    residue_signals: str = ""        # residue signal names, comma-separated
+    escalations: str = ""            # tool:escalation, comma-separated
+    held_for_review: int = 0
+
+    # The SAME re-probe scored five ways. H3 compares these, so they must
+    # come from one measurement: separate runs would make the comparison
+    # unpaired and discard what McNemar needs. "alert" is any alert;
+    # "attributed" is an alert on the attacked tool naming a signal the
+    # attack causes, which is what H3 counts.
+    alert_accept_rebaseline: bool = False
+    attributed_accept_rebaseline: bool = False
+    alert_refuse_all: bool = False
+    attributed_refuse_all: bool = False
+    alert_definition_diff: bool = False
+    attributed_definition_diff: bool = False
+    alert_new_host_only: bool = False
+    attributed_new_host_only: bool = False
+    alert_residue: bool = False
+    attributed_residue: bool = False
+
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
 FIELD_NAMES = [f.name for f in fields(ExperimentRow)]
+
+# Each column's default, so a writer can tell whether a row carries anything
+# in a column an older file does not have.
+_DEFAULTS: dict[str, Any] = {
+    f.name: (f.default if f.default is not MISSING
+             else f.default_factory() if f.default_factory is not MISSING  # type: ignore[misc]
+             else None)
+    for f in fields(ExperimentRow)
+}
 
 
 # --------------------------------------------------------------------------- #
@@ -206,14 +244,16 @@ class ResultWriter:
         self._csv_handle = None
         self._writer = None
         self._jsonl_handle = None
+        self._dropped: list[str] = []
         self.count = 0
 
     def __enter__(self) -> "ResultWriter":
         new_file = not self.csv_path.exists() or self.csv_path.stat().st_size == 0
-        if not new_file:
-            self._require_matching_header()
+        header = FIELD_NAMES if new_file else self._require_matching_header()
+        self._dropped = [f for f in FIELD_NAMES if f not in header]
         self._csv_handle = self.csv_path.open("a", newline="", encoding="utf-8")
-        self._writer = csv.DictWriter(self._csv_handle, fieldnames=FIELD_NAMES)
+        self._writer = csv.DictWriter(self._csv_handle, fieldnames=header,
+                                      extrasaction="ignore")
         if new_file:
             self._writer.writeheader()
         self._jsonl_handle = self.jsonl_path.open("a", encoding="utf-8")
@@ -232,11 +272,21 @@ class ResultWriter:
 
         The file is rotated rather than overwritten, because the old rows are
         still evidence of whatever run produced them.
+
+        One mismatch is safe, and is accepted: an older file whose header is
+        an exact PREFIX of today's. Columns are only ever appended (T27), so
+        such a file lines up with every column it has, and the rows going into
+        it leave the newer columns at their defaults - append() refuses any
+        row that does not. Without this, adding a column would retire every
+        results file still being resumed, and a 66-episode sweep would restart
+        from nothing. Returns the header to write under.
         """
         with self.csv_path.open("r", newline="", encoding="utf-8") as handle:
             existing = next(csv.reader(handle), [])
         if existing == FIELD_NAMES:
-            return
+            return FIELD_NAMES
+        if existing and FIELD_NAMES[:len(existing)] == existing:
+            return existing
 
         missing = [f for f in FIELD_NAMES if f not in existing]
         extra_cols = [f for f in existing if f not in FIELD_NAMES]
@@ -258,6 +308,12 @@ class ResultWriter:
 
     def append(self, row: ExperimentRow, extra: dict[str, Any] | None = None) -> None:
         data = row.to_dict()
+        carried = [f for f in self._dropped if data.get(f) != _DEFAULTS.get(f)]
+        if carried:
+            raise SchemaMismatch(
+                f"{self.csv_path.name} predates the columns {carried}, and this "
+                f"row has values in them. Writing it would lose those values "
+                f"silently; write update episodes to a results file of their own.")
         self._writer.writerow(data)
         self._csv_handle.flush()
         payload = dict(data)
