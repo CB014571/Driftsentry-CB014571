@@ -204,3 +204,67 @@ def test_same_release_alarms_are_shown_beside_upgrade_alarms(results):
     table = tables.table_real_upgrades()
     assert "same release" in table
     assert table.count("(1/1)") >= 2
+
+
+# --------------------------------------------------------------------------- #
+# Three states, not two
+# --------------------------------------------------------------------------- #
+# An arm with no result file has not been measured. An arm with eighteen
+# measured episodes and none that fired HAS been measured and has no
+# denominator. Both printed as NOT MEASURED, which lost the environment
+# finding and overstated what was still missing.
+def _write_arm(path, rows):
+    import csv as _csv
+    from eval.record import FIELD_NAMES
+    with open(path, "w", newline="", encoding="utf-8") as fh:
+        w = _csv.DictWriter(fh, fieldnames=FIELD_NAMES)
+        w.writeheader()
+        for episode, outcome in rows:
+            w.writerow({"episode_id": episode, "outcome": outcome})
+
+
+def test_no_result_file_is_not_measured(tmp_path):
+    from eval.tables import MISSING, _recall_cell, _render_recall
+    cell = _recall_cell(tmp_path / "absent.csv")
+    assert cell[0] == "absent"
+    assert _render_recall(cell) == MISSING
+
+
+def test_measured_with_nothing_fired_is_undefined_not_missing(tmp_path):
+    """The environment arm: 18 episodes ran, none attacked."""
+    from eval.tables import MISSING, _recall_cell, _render_recall
+    path = tmp_path / "arm.csv"
+    _write_arm(path, [(f"e{i}", "never_triggered") for i in range(12)]
+               + [(f"b{i}", "benign_ok") for i in range(6)])
+    cell = _recall_cell(path)
+    assert cell[0] == "none_fired"
+    text = _render_recall(cell)
+    assert "undefined" in text
+    assert MISSING not in text
+    assert "18" in text
+
+
+def test_measured_with_fired_episodes_is_a_rate(tmp_path):
+    from eval.tables import _recall_cell, _render_recall
+    path = tmp_path / "arm.csv"
+    _write_arm(path, [("e1", "detected"), ("e2", "detected"), ("e3", "missed")])
+    cell = _recall_cell(path)
+    assert cell[0] == "ok" and cell[1] == (2, 3)
+    assert "66.7%" in _render_recall(cell)
+
+
+def test_an_undefined_arm_produces_no_drop_figure(tmp_path, monkeypatch):
+    """Reported as -100.0pp it would read as perfect evasion, which is the
+    opposite of what happened."""
+    from eval import tables
+    monkeypatch.setattr(tables, "RESULTS", tmp_path)
+    monkeypatch.setattr(tables, "RQ3_FAMILIES", ["environment"])
+    _write_arm(tmp_path / "exp3_environment_L1.csv",
+               [("a", "detected"), ("b", "detected")])
+    _write_arm(tmp_path / "exp3_environment_L6.csv",
+               [(f"e{i}", "never_triggered") for i in range(12)])
+    text = tables.table_evasion()
+    row = [l for l in text.splitlines() if l.startswith("| environment")][0]
+    assert "undefined" in row
+    assert "-100.0pp" not in row
+    assert row.rstrip().endswith("| - |")

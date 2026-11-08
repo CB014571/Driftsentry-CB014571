@@ -110,6 +110,35 @@ def _outcome(cycles: list[dict[str, str]]) -> str:
     return seen[-1] if seen else "error"
 
 
+def _recall_cell(path: Path) -> tuple[str, Any]:
+    """Classify one arm: no file, no fired episodes, or a rate.
+
+    These are three different facts and were printed as two. An arm with no
+    result file has not been measured. An arm with eighteen measured
+    episodes and none that fired has been measured and has no denominator,
+    which is a result - the environment recogniser scores every call probe
+    and the attacker never fires, so there is no recall to lose. Printing
+    both as NOT MEASURED loses the finding and overstates what is missing.
+    """
+    episodes = _episodes(_rows(path))
+    if not episodes:
+        return "absent", None
+    fired = [c for c in episodes.values() if _outcome(c) in FIRED]
+    if not fired:
+        return "none_fired", len(episodes)
+    hits = sum(1 for c in fired if _outcome(c) == "detected")
+    return "ok", (hits, len(fired))
+
+
+def _render_recall(cell: tuple[str, Any]) -> str:
+    kind, value = cell
+    if kind == "absent":
+        return MISSING
+    if kind == "none_fired":
+        return f"undefined (0 of {value} episodes fired)"
+    return _rate(*value)
+
+
 def _rate(hits: int, n: int) -> str:
     from eval.stats import wilson
 
@@ -379,23 +408,16 @@ def table_evasion() -> str:
     for family in RQ3_FAMILIES:
         cells = []
         for level in ("L1", "L6"):
-            episodes = _episodes(_rows(RESULTS / f"exp3_{family}_{level}.csv"))
-            fired = [c for c in episodes.values() if _outcome(c) in FIRED]
-            if not fired:
-                cells.append(None)
-            else:
-                hits = sum(1 for c in fired if _outcome(c) == "detected")
-                cells.append((hits, len(fired)))
+            cells.append(_recall_cell(RESULTS / f"exp3_{family}_{level}.csv"))
 
-        if cells == [None, None]:
+        if all(c[0] == "absent" for c in cells):
             continue
         any_row = True
         auc = f"{auc_of[family]:.3f}" if family in auc_of else "-"
-        l1 = _rate(*cells[0]) if cells[0] else MISSING
-        l6 = _rate(*cells[1]) if cells[1] else MISSING
-        if cells[0] and cells[1]:
-            pp = (100.0 * cells[1][0] / cells[1][1]
-                  - 100.0 * cells[0][0] / cells[0][1])
+        l1, l6 = (_render_recall(c) for c in cells)
+        if cells[0][0] == "ok" and cells[1][0] == "ok":
+            (l1_hits, l1_n), (l6_hits, l6_n) = cells[0][1], cells[1][1]
+            pp = 100.0 * l6_hits / l6_n - 100.0 * l1_hits / l1_n
             drop = f"{pp:+.1f}pp"
         else:
             drop = "-"
@@ -417,6 +439,18 @@ def table_evasion() -> str:
               "was no attack to catch. Counting those as detections would",
               "credit the detector for an attack that did not happen, and",
               "counting them as misses would penalise it for the same.",
+              "",
+              "The environment row is that argument taken to its limit, and",
+              "it is a result rather than a gap. All 18 L6 episodes ran and",
+              "none fired, so there is no denominator: the recall is",
+              "undefined, not zero. The attacker's own log gives the reason -",
+              "it scored every single call `probe (p=0.929)`, the same value",
+              "throughout, and so stayed benign for all of them. That is what",
+              "an AUC of 0.500 does in deployment. A recogniser that cannot",
+              "separate probe traffic from genuine traffic, and guesses",
+              "`probe`, disables the attack it was built to protect. Reported",
+              "as -100.0pp it would read as perfect evasion, which is the",
+              "opposite of what happened.",
               ""]
     return "\n".join(lines)
 

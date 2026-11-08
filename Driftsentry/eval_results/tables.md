@@ -1,6 +1,6 @@
 # DriftSentry - measured results
 
-Generated 2026-11-07 from the files in `eval_results/`. Where a result has not been measured this says so and gives the command that would produce it. Nothing here is transcribed by hand.
+Generated 2026-11-08 from the files in `eval_results/`. Where a result has not been measured this says so and gives the command that would produce it. Nothing here is transcribed by hand.
 
 ### Table 1. Fixed against keyed probe values
 
@@ -16,11 +16,11 @@ demonstration in Table 1b, which is not a rate.
 
 | level | fixed probes | keyed probes |
 | --- | --- | --- |
-| L1 | 100.0% [0.65, 1.00] (7/7) | NOT MEASURED |
-| L2 | 100.0% [0.61, 1.00] (6/6) | NOT MEASURED |
-| L3 | 100.0% [0.61, 1.00] (6/6) | NOT MEASURED |
-| L4 | never fired (6 held back) | NOT MEASURED |
-| L5 | never fired (6 held back) | NOT MEASURED |
+| L1 | NOT MEASURED | NOT MEASURED |
+| L2 | NOT MEASURED | NOT MEASURED |
+| L3 | NOT MEASURED | NOT MEASURED |
+| L4 | NOT MEASURED | NOT MEASURED |
+| L5 | NOT MEASURED | NOT MEASURED |
 
 `never fired` is not a detection failure. A level-4 server that
 recognises a fixed probe value holds back while it is being
@@ -55,11 +55,12 @@ attacks - and they are reported separately for that reason.
 | --- | --- | --- | --- | --- |
 | argument | 10 | 0/10 | 0/10 | 10/10 |
 | client | 12 | 0/12 | 0/12 | 12/12 |
+| environment | 11 | 0/11 | 0/11 | 11/11 |
 | session | 12 | 0/12 | 0/12 | 12/12 |
 | timing | 11 | 0/11 | 0/11 | 11/11 |
 
-Across all 4 replications, 45 episodes in which
-the attack executed: hash pinning caught 0, passive monitoring 0, the full detector 45.
+Across all 5 replications, 56 episodes in which
+the attack executed: hash pinning caught 0, passive monitoring 0, the full detector 56.
 
 A single-replication interval, which is the honest one for a
 design of twelve configurations:
@@ -70,7 +71,7 @@ design of twelve configurations:
 | passive monitoring | 0.0% [0.00, 0.28] (0/10) |
 | DriftSentry, full | 100.0% [0.72, 1.00] (10/10) |
 
-The advertised tool definition changed in 0/45 of these
+The advertised tool definition changed in 0/56 of these
 attacks. That is the mechanism of a behavioural rug pull: the
 declared interface is byte-identical before and after the tool
 turns, so a pinned hash has nothing to compare.
@@ -110,6 +111,7 @@ believes is a probe.
 | session | 0.983 | 100.0% [0.76, 1.00] (12/12) | 0.0% [0.00, 0.28] (0/10) | -100.0pp |
 | timing | 0.951 | 100.0% [0.74, 1.00] (11/11) | 0.0% [0.00, 0.43] (0/5) | -100.0pp |
 | argument | 0.763 | 100.0% [0.72, 1.00] (10/10) | 0.0% [0.00, 0.43] (0/5) | -100.0pp |
+| environment | 0.500 | 100.0% [0.74, 1.00] (11/11) | undefined (0 of 18 episodes fired) | - |
 
 The drop does not track the AUC. A channel at 0.763 cost as
 much detection as one at 1.000, because an attacker does not
@@ -123,6 +125,18 @@ classified `never_triggered` and excluded from recall: there
 was no attack to catch. Counting those as detections would
 credit the detector for an attack that did not happen, and
 counting them as misses would penalise it for the same.
+
+The environment row is that argument taken to its limit, and
+it is a result rather than a gap. All 18 L6 episodes ran and
+none fired, so there is no denominator: the recall is
+undefined, not zero. The attacker's own log gives the reason -
+it scored every single call `probe (p=0.929)`, the same value
+throughout, and so stayed benign for all of them. That is what
+an AUC of 0.500 does in deployment. A recogniser that cannot
+separate probe traffic from genuine traffic, and guesses
+`probe`, disables the attack it was built to protect. Reported
+as -100.0pp it would read as perfect evasion, which is the
+opposite of what happened.
 
 ### Table 5. Real benign servers and real version upgrades (Gap 3)
 
@@ -146,19 +160,35 @@ reach and belongs in threats to validity.
 
 ### Table 6. Countermeasures, and what they cost (RQ4, H4)
 
-**NOT MEASURED.** Run:
+```
+========================================================================
+  T20 - countermeasures against a learned recogniser (RQ4 / H4)
+========================================================================
 
-    python -m eval t20 --cycles 60
+  condition     best AUC    recall  false alarms   cycle s   calls
+  ----------------------------------------------------------------
+  none             1.000      0.0%         50.0%      19.0    18.0
+  host        not measured
+  mimic       not measured
+  subsample   not measured
+  all         not measured
 
-Each condition collects its own probe traffic, fits a recogniser
-on that traffic, and runs the L1/L6 matrix against it.
+  condition          channel   L1 recall   L6 recall      gap
+  ------------------------------------------------------------
+  none                client      100.0%        0.0% -100.0pp
+  host          not measured
+  mimic         not measured
+  subsample     not measured
+  all           not measured
+
+  H4: UNDEFINED
+```
 
 ## Outstanding
 
 - **NOT MEASURED.** Experiment 2 has not run: `eval_results/exp2_console.log` holds one line, `waiting for Experiment 1 to finish...`, and no result file exists. Produce it with:
-- | L1 | 100.0% [0.65, 1.00] (7/7) | NOT MEASURED |
-- | L2 | 100.0% [0.61, 1.00] (6/6) | NOT MEASURED |
-- | L3 | 100.0% [0.61, 1.00] (6/6) | NOT MEASURED |
-- | L4 | never fired (6 held back) | NOT MEASURED |
-- | L5 | never fired (6 held back) | NOT MEASURED |
-- **NOT MEASURED.** Run:
+- | L1 | NOT MEASURED | NOT MEASURED |
+- | L2 | NOT MEASURED | NOT MEASURED |
+- | L3 | NOT MEASURED | NOT MEASURED |
+- | L4 | NOT MEASURED | NOT MEASURED |
+- | L5 | NOT MEASURED | NOT MEASURED |
