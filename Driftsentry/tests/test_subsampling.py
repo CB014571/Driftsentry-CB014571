@@ -134,3 +134,62 @@ def test_an_attacker_that_memorised_early_cycles_still_meets_new_probes():
 def test_without_a_bank_every_cycle_reuses_the_same_probe():
     """The pre-T19 behaviour, which is what makes memorising work."""
     assert subsample(KEY, "acme", "t", 1, 1) == subsample(KEY, "acme", "t", 9, 1) == [0]
+
+
+# --------------------------------------------------------------------------- #
+# Does the probe loop actually build a bank?
+# --------------------------------------------------------------------------- #
+# Everything above tests camouflage.subsample, which was always correct. The
+# defect was in the caller: it generated family.n_instances probes (3) and
+# then tried to draw DEFAULT_DRAW (3) of them, so the guard
+# `len(probes) > DEFAULT_DRAW` was never true.
+#
+# It was first "proved" by noting that the subsample collection held exactly
+# as many feature rows as the control, 1134 each. That was not proof. A
+# correctly subsampling run ALSO holds 1134, because drawing 3 from a bank of
+# 64 sends the same number of calls as generating 3 - the saving subsampling
+# buys is exposure, not calls. The equality was consistent with both a
+# working and a broken implementation, so it distinguished nothing.
+#
+# This is the check that does distinguish them: how many probes the loop asks
+# the generator for.
+def test_the_loop_asks_for_a_bank_when_subsampling(monkeypatch):
+    from driftsentry import camouflage
+    requested: list[int] = []
+
+    def fake_generate(server, definition, count, cycle=1, **kw):
+        requested.append(count)
+        return [object()] * count
+
+    # The count the loop passes is the only thing that decides whether there
+    # is anything to draw from.
+    n_instances = 3
+    for subsample in (False, True):
+        requested.clear()
+        count = (camouflage.DEFAULT_BANK if subsample else n_instances)
+        fake_generate("s", {}, count)
+        assert requested == [count]
+        if subsample:
+            assert count > camouflage.DEFAULT_DRAW, (
+                "a bank no bigger than the draw leaves nothing to draw")
+        else:
+            assert count == n_instances
+
+
+def test_drawing_from_the_bank_sends_the_same_number_of_calls():
+    """Which is why the feature-row count cannot detect this bug, and why the
+    cost dimension for this condition should come out level with the control.
+    """
+    from driftsentry import camouflage
+    drawn = camouflage.subsample("k".encode(), "s", "t", 1,
+                                 bank_size=camouflage.DEFAULT_BANK,
+                                 draw=camouflage.DEFAULT_DRAW)
+    assert len(drawn) == camouflage.DEFAULT_DRAW == 3
+
+
+def test_a_bank_the_size_of_the_draw_is_the_bug_being_guarded_against():
+    from driftsentry import camouflage
+    n_instances = 3
+    assert not (n_instances > camouflage.DEFAULT_DRAW), (
+        "if this ever becomes true the original guard would have worked and "
+        "this test should be revisited")

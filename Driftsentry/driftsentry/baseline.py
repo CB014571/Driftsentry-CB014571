@@ -374,6 +374,19 @@ class ReprobeReport:
     observed_definition_hash: str
     checks: list[ProbeCheck]
     embedding_backend: str
+    # T22. The tool definitions as this re-probe actually saw them, full
+    # model_dump - outputSchema and annotations included.
+    #
+    # The hash above answers "did anything change". Residue checking needs
+    # "what changed", because a declared change may only explain the
+    # behaviour it literally covers: an added output field explains drift in
+    # that field of that tool and nothing else. A hash cannot say which
+    # field, so it cannot distinguish a declared change from an undeclared
+    # one, which is the whole of Gap 2.
+    #
+    # Default empty rather than required, so baselines and reports written
+    # before this field existed still load.
+    observed_definitions: list[dict] = field(default_factory=list)
 
     @property
     def definition_changed(self) -> bool:
@@ -632,6 +645,7 @@ async def reprobe(
                     observed_definition_hash=observed_hash,
                     checks=checks,
                     embedding_backend=embedder.name,
+                    observed_definitions=observed_definitions,
                 )
 
             for tool in baseline.tools:
@@ -719,4 +733,5 @@ async def reprobe(
         observed_definition_hash=observed_hash,
         checks=checks,
         embedding_backend=embedder.name,
+        observed_definitions=observed_definitions,
     )
