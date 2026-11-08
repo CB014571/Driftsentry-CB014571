@@ -685,3 +685,82 @@ def test_no_cycles_is_zero_rather_than_a_crash():
     from eval.t20 import _cycle_cost
     cost = _cycle_cost([])
     assert cost["cycle_seconds"] == 0.0 and cost["cycle_outliers"] == []
+
+
+# --------------------------------------------------------------------------- #
+# A resumed arm must not shrink the condition row
+# --------------------------------------------------------------------------- #
+# run_sweep returns only the episodes that call executed, which is right for
+# run_sweep and wrong for T20: the host L6 arm stopped at 10 of 18 overnight,
+# and on resume the condition's recall would have been computed over the 8
+# episodes the second run managed. A recall over 8 episodes looks exactly
+# like a recall over 18.
+def _arm_csv(tmp_path, experiment_id, episodes):
+    """Write a sweep results file the way ResultWriter would."""
+    from eval.record import ExperimentRow, ResultWriter, now
+    with ResultWriter(tmp_path, experiment_id) as writer:
+        for family, level, seed, outcome in episodes:
+            episode_id = f"{experiment_id}-{family}-{level or 'x'}-s{seed}"
+            for cycle in (1, 2):
+                writer.append(ExperimentRow(
+                    experiment_id=experiment_id, episode_id=episode_id,
+                    timestamp=now(), seed=seed, server_id="s", tool_id="t",
+                    attack_family=family, attack_level=level,
+                    probe_mode="keyed", scoring_mode="max",
+                    partition="development", verification_cycle=cycle,
+                    outcome=outcome, detected=outcome == "detected"))
+
+
+def test_an_arm_is_read_back_whole_however_many_runs_wrote_it(tmp_path):
+    from eval.t20 import _rates, episodes_from_disk
+    # First run managed ten episodes.
+    _arm_csv(tmp_path, "t20_x_L6", [
+        ("benign", "", 101, "benign_ok"),
+        ("exfiltration", "L6", 1, "detected"),
+        ("exfiltration", "L6", 2, "missed"),
+    ])
+    # A later run appended the rest.
+    _arm_csv(tmp_path, "t20_x_L6", [
+        ("silent-tamper", "L6", 1, "detected"),
+        ("silent-tamper", "L6", 2, "detected"),
+    ])
+    eps = episodes_from_disk(tmp_path, "t20_x_L6")
+    assert len(eps) == 5
+    _, hits, n = _rates(eps)
+    assert (hits, n) == (3, 4)        # not (2, 2) from the second run alone
+
+
+def test_benign_and_rug_pull_episodes_are_told_apart(tmp_path):
+    from eval.t20 import _false_alarms, _rates, episodes_from_disk
+    _arm_csv(tmp_path, "t20_y_L1", [
+        ("benign", "", 101, "benign_ok"),
+        ("benign-update", "", 201, "false_alarm"),
+        ("exfiltration", "L1", 1, "detected"),
+    ])
+    eps = episodes_from_disk(tmp_path, "t20_y_L1")
+    assert _rates(eps)[2] == 1            # one attack episode fired
+    assert _false_alarms(eps)[2] == 2     # two benign episodes judged
+
+
+def test_an_episode_counts_once_however_many_cycles_it_wrote(tmp_path):
+    """Counting rows would weight a long episode more than a short one."""
+    from eval.t20 import episodes_from_disk
+    _arm_csv(tmp_path, "t20_z_L1", [("exfiltration", "L1", 1, "detected")])
+    eps = episodes_from_disk(tmp_path, "t20_z_L1")
+    assert len(eps) == 1
+
+
+def test_a_missing_arm_is_empty_not_an_error(tmp_path):
+    from eval.t20 import episodes_from_disk
+    assert episodes_from_disk(tmp_path, "never_ran") == []
+
+
+def test_the_episode_outcome_is_tables_own_definition(tmp_path):
+    """One definition of what an episode came to, so a condition row and the
+    tables cannot disagree."""
+    from eval.t20 import episodes_from_disk
+    from eval.tables import _outcome
+    _arm_csv(tmp_path, "t20_w_L1", [("exfiltration", "L1", 1, "detected")])
+    eps = episodes_from_disk(tmp_path, "t20_w_L1")
+    assert eps[0].outcome == _outcome([{"outcome": "detected"},
+                                       {"outcome": "detected"}])

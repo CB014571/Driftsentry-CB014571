@@ -55,6 +55,7 @@ the table has to show that rather than report the AUC alone.
 from __future__ import annotations
 
 import asyncio
+import csv
 import json
 import shutil
 import time
@@ -320,8 +321,71 @@ def run_matrix(
             mimic_traffic=cond.mimic_traffic,
             subsample_bank=cond.subsample_bank,
         )
-        rows[level] = run_sweep(spec, attacker_project, workspace, out_dir)
+        run_sweep(spec, attacker_project, workspace, out_dir)
+        # Read back from the file rather than using what run_sweep returned.
+        # run_sweep returns only the episodes THAT call executed, which is
+        # correct for it and wrong here: a resumed arm would have its
+        # condition row computed over the few episodes the last run managed.
+        # The host L6 arm stopped at 10 of 18 overnight, so on resume this
+        # would have reported a recall over 8 episodes as the condition's
+        # recall. The CSV holds all 18 however many runs it took.
+        rows[level] = episodes_from_disk(out_dir, spec.experiment_id)
     return rows
+
+
+# --------------------------------------------------------------------------- #
+# Reading an arm back off disk
+# --------------------------------------------------------------------------- #
+class _Episode:
+    """Enough of an EpisodeResult for _rates and _false_alarms.
+
+    Deliberately minimal. Rebuilding a full EpisodeResult from a CSV would
+    mean inventing the fields the CSV flattens away, and the two rate
+    functions need exactly two things: whether the episode was benign, and
+    what it came to.
+    """
+
+    __slots__ = ("config", "outcome", "episode_id")
+
+    class _Config:
+        __slots__ = ("mode", "family", "level", "seed")
+
+        def __init__(self, mode: str, family: str, level: str, seed: str):
+            self.mode, self.family, self.level, self.seed = (
+                mode, family, level, seed)
+
+    def __init__(self, episode_id: str, cycles: list[dict[str, str]]):
+        from eval.tables import _outcome
+
+        first = cycles[0]
+        family = first.get("attack_family", "")
+        self.episode_id = episode_id
+        self.outcome = _outcome(cycles)
+        self.config = self._Config(
+            mode="benign" if family in ("benign", "benign-update")
+                 else "rug-pull",
+            family=family,
+            level=first.get("attack_level", ""),
+            seed=first.get("seed", ""),
+        )
+
+
+def episodes_from_disk(out_dir: str | Path, experiment_id: str) -> list[Any]:
+    """Every episode in one sweep's results file, one object per episode.
+
+    Collapsed per episode with tables.py's own _outcome, so the rate a
+    condition row reports and the rate the tables report cannot disagree -
+    there is one definition of what an episode came to, not two.
+    """
+    from eval.tables import _episodes
+
+    path = Path(out_dir) / f"{experiment_id}.csv"
+    if not path.exists() or path.stat().st_size == 0:
+        return []
+    with path.open(newline="", encoding="utf-8") as fh:
+        rows = list(csv.DictReader(fh))
+    return [_Episode(episode_id, cycles)
+            for episode_id, cycles in _episodes(rows).items()]
 
 
 def _rates(results: list[Any]) -> tuple[float, int, int]:
