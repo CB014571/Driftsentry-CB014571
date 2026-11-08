@@ -85,14 +85,29 @@ def test_an_advertised_but_unreachable_tool_is_still_refused(scenario_mod):
 
 
 def test_the_declared_tool_names_match_the_server(scenario_mod):
-    """If the server gains a tool and this list does not, targeting it fails."""
-    source = (ATTACKER / "attacker" / "server.py").read_text(encoding="utf-8")
+    """If the server gains a tool and this list does not, targeting it fails.
+
+    Checked against what the server actually REGISTERS, for every release.
+    This used to read @mcp.tool() decorators out of the source with a regex;
+    T26 moved registration to startup so a release can choose definitions, and
+    the regex then found nothing. Asking the registration itself is the check
+    the regex was standing in for, and it also covers v2's cover tools, which
+    are defined inside factories and never appear as top-level decorators.
+    """
+    import asyncio
+
+    from mcp.server.fastmcp import FastMCP
+
+    import attacker.server as server
+
     declared = set(scenario_mod.TOOL_NAMES)
-    for name in declared:
-        assert f"def {name}(" in source, f"{name} is declared but not defined"
-    import re
-    defined = set(re.findall(r"@mcp\.tool\(\)\s*\ndef (\w+)", source))
-    assert defined == declared, f"server defines {defined}, scenario declares {declared}"
+    for release, cover in (("v1", "C0"), ("v1n", "C0"), ("v2", "C0"),
+                           ("v2", "C1"), ("v2", "C2"), ("v2", "C3")):
+        sc = scenario_mod.Scenario(release=release, cover=cover)
+        target = server.register_tools(sc, target=FastMCP("t"))
+        defined = {t.name for t in asyncio.run(target.list_tools())}
+        assert defined == declared, (
+            f"{release}/{cover}: server registers {defined}, scenario declares {declared}")
 
 
 # --------------------------------------------------------------------------- #

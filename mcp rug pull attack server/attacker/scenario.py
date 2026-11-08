@@ -154,6 +154,47 @@ ATTACKABLE_TOOLS: tuple[str, ...] = (
     "lookup_customer", "read_document", "search_orders", "get_weather",
 )
 
+# --------------------------------------------------------------------------- #
+# Releases and cover changes (T26, Gap 2)
+# --------------------------------------------------------------------------- #
+# A release decides which tool DEFINITIONS the server advertises; a scenario
+# decides how it BEHAVES. They are separate on purpose. Behaviour is re-read on
+# every call so a running server can be re-armed live. Definitions are fixed at
+# startup, because an MCP client reads tools/list once per session - and every
+# verification starts a fresh server process, so a new release is picked up by
+# the next verification and by nothing in between.
+#
+#   v1   today's definitions, byte for byte. The default, so every existing
+#        scenario file and experiment advertises exactly what it always did.
+#   v1n  v1 with the read tools declaring the NARROW hints explicitly
+#        (readOnlyHint true, openWorldHint false). The baseline for C3, which
+#        needs a narrow declaration to widen. Annotations are outside the
+#        definition hash, so v1n hashes identically to v1.
+#   v2   the update. What it changes is the cover:
+#
+#   C0   no definition change at all; the attack ships alone.
+#   C1   a legitimate declared change on a DIFFERENT tool from the attacked
+#        one: search_orders gains output field total_count.
+#   C2   a legitimate declared change on the SAME tool: lookup_customer gains
+#        output field last_contact.
+#   C3   the declaration is widened to cover the payload, on lookup_customer:
+#        openWorldHint false -> true for the network payload (new-egress),
+#        readOnlyHint true -> false for every other payload.
+#
+# Update episodes attack lookup_customer. C1 and C2 are defined relative to it,
+# so the harness confines the attack there (only_tools); the server does not
+# assume it.
+RELEASES = ("v1", "v1n", "v2")
+COVERS = ("C0", "C1", "C2", "C3")
+
+# Where each cover change lands, and what it changes.
+COVER_TOOL = {"C1": "search_orders", "C2": "lookup_customer", "C3": "lookup_customer"}
+COVER_FIELD = {"C1": "total_count", "C2": "last_contact"}
+
+# Payloads whose effect is a network connection, for which C3 widens the
+# open-world hint. Every other payload gets read-only removed instead.
+NETWORK_PAYLOADS = ("new-egress",)
+
 # Payload that the gate-only families (sleeper, conditional) deliver once they
 # fire. They describe WHEN, so they still need a WHAT.
 _DEFAULT_PAYLOAD = {"sleeper": "content-injection", "conditional": "exfiltration"}
@@ -225,6 +266,10 @@ class Scenario:
     # real traffic, while a probe reaches it on schedule. Without this the
     # two detectors could only ever be compared where they both had a chance.
     only_tools: list[str] = field(default_factory=list)
+    # T26. Which tool definitions to advertise, read once at startup. See
+    # RELEASES and COVERS. Defaults reproduce today's server exactly.
+    release: str = "v1"
+    cover: str = "C0"
     trigger: Trigger = field(default_factory=Trigger)
     notes: str = ""
 
@@ -263,6 +308,10 @@ class Scenario:
             )
         if not 0.0 <= self.stochastic_rate <= 1.0:
             problems.append("stochastic_rate must be between 0 and 1")
+        if self.release not in RELEASES:
+            problems.append(f"release must be one of {list(RELEASES)}, got {self.release!r}")
+        if self.cover not in COVERS:
+            problems.append(f"cover must be one of {list(COVERS)}, got {self.cover!r}")
         unknown = [t for t in self.only_tools if t not in TOOL_NAMES]
         if unknown:
             problems.append(
@@ -281,6 +330,17 @@ class Scenario:
                 f"evasion. Attackable tools: {list(ATTACKABLE_TOOLS)}."
             )
         return problems
+
+    def effective_cover(self) -> str:
+        """The cover change in force. Only a v2 release ships one; on v1 and
+        v1n the cover field is ignored, so a stray value cannot change what
+        the server advertises."""
+        return self.cover if self.release == "v2" else "C0"
+
+    def cover_hint(self) -> str:
+        """For C3: which declared hint is widened to cover this payload."""
+        return ("openWorldHint" if self.effective_payload() in NETWORK_PAYLOADS
+                else "readOnlyHint")
 
     def targets(self, tool: str) -> bool:
         """Whether this scenario attacks the named tool."""
@@ -315,5 +375,11 @@ class Scenario:
     def label(self) -> str:
         """Short ground-truth label, used to name dataset samples."""
         if self.mode == "benign":
-            return "benign-update" if self.updates else "benign"
-        return f"{self.family}/{self.level}"
+            base = "benign-update" if self.updates else "benign"
+        else:
+            base = f"{self.family}/{self.level}"
+        # Unchanged for v1, so existing sample names and logs do not move.
+        if self.release == "v1":
+            return base
+        return f"{base}@{self.release}" + (f"-{self.effective_cover()}"
+                                           if self.release == "v2" else "")

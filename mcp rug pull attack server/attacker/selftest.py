@@ -25,6 +25,9 @@ So this verifies the attacker against itself, with no detector involved:
                            headline RQ4 result would be an artefact.
   7. REPRODUCIBILITY       the same seed replays the same pattern of malicious
                            and benign calls, so any run can be reproduced.
+  8. RELEASES              v1 still hashes 6805aff88dcf676e; each v2 cover
+                           declares exactly its change and really implements
+                           it; a benign v2 does nothing malicious (T26).
 
 Run:
     attacker selftest
@@ -43,12 +46,16 @@ from typing import Any
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
-from attacker.scenario import FAMILIES, Scenario, Trigger
+from attacker.scenario import COVER_FIELD, COVER_TOOL, FAMILIES, Scenario, Trigger
 
 # Input that looks nothing like a probe, so a probe-aware attacker will fire.
 REAL_INPUT = {"customer_id": "C-1002"}
 # A value drawn from the pool a fixed-template prober would use.
 PROBE_SHAPED = {"path": "README.md"}
+
+# The v1 definition hash every result so far was produced against. If this
+# moves, v1 is no longer the server those results measured.
+EXPECTED_V1_HASH = "6805aff88dcf676e"
 
 
 def _definition_hash(tools: list[dict[str, Any]]) -> str:
@@ -102,16 +109,19 @@ class Harness:
                 await session.initialize()
                 listed = await session.list_tools()
                 definitions = [t.model_dump(mode="json") for t in listed.tools]
-                answers = []
+                answers, results = [], []
                 for tool, args in calls:
                     result = await session.call_tool(tool, args)
                     answers.append(" ".join(
                         b.text for b in result.content
                         if getattr(b, "type", None) == "text"
                     ))
+                    results.append(result.model_dump(mode="json"))
         return {"hash": _definition_hash(definitions),
                 "tools": [d["name"] for d in definitions],
-                "answers": answers}
+                "definitions": {d["name"]: d for d in definitions},
+                "answers": answers,
+                "results": results}
 
     def events(self) -> list[tuple[str, str, str]]:
         log = self.home / "sink" / "events.log"
@@ -262,9 +272,108 @@ async def main() -> int:
                 0 < sum(pattern_a) < len(pattern_a),
                 f"{sum(pattern_a)}/{len(pattern_a)} calls malicious")
 
+    ok &= await _releases(harness)
+
     print("\n" + ("SELF TEST PASSED - the ground truth is sound"
                   if ok else "SELF TEST FAILED - do not trust detection results until fixed"))
     return 0 if ok else 1
+
+
+def _changed(a: dict, b: dict) -> list[str]:
+    """Tools whose full definition differs between two releases."""
+    return sorted(n for n in a if a[n] != b.get(n))
+
+
+def _out_fields(definition: dict) -> list[str]:
+    return sorted(((definition.get("outputSchema") or {}).get("properties") or {}))
+
+
+def _hints(definition: dict) -> tuple:
+    ann = definition.get("annotations") or {}
+    return ann.get("readOnlyHint"), ann.get("openWorldHint")
+
+
+async def _releases(harness: Harness) -> bool:
+    """T26: the releases a v2 update can ship, checked against v1.
+
+    The checks a cover change has to pass to be a LEGITIMATE one: it declares
+    exactly one change, it really does what it declares, the response differs
+    from v1 only in the declared field, and a benign v2 does nothing
+    malicious. A cover change that also moved something undeclared would hand
+    residue checking a free detection it did not earn.
+    """
+    ok = True
+    look = ("lookup_customer", {"customer_id": "C-1002"})
+    search = ("search_orders", {"query": "belt"})
+
+    print("\n8. Releases and cover changes (T26)")
+    v1 = await harness.run(harness.write("r_v1", mode="benign", seed=7), [look, search])
+    ok &= check("v1 definition hash is unchanged", v1["hash"] == EXPECTED_V1_HASH,
+                f"hash={v1['hash']}")
+
+    stray = await harness.run(harness.write("r_stray", mode="benign", seed=7,
+                                            release="v1", cover="C2"), [look])
+    ok &= check("a cover on v1 is ignored", stray["definitions"] == v1["definitions"])
+
+    v1n = await harness.run(harness.write("r_v1n", mode="benign", seed=7,
+                                          release="v1n"), [look])
+    narrow = all(_hints(v1n["definitions"][t]) == (True, False)
+                 for t in ("lookup_customer", "read_document", "search_orders", "get_weather"))
+    ok &= check("v1n declares the narrow hints on the read tools", narrow)
+    ok &= check("v1n leaves send_invoice undeclared",
+                _hints(v1n["definitions"]["send_invoice"]) == (None, None))
+    ok &= check("v1n hashes as v1 (annotations are outside the hash)",
+                v1n["hash"] == EXPECTED_V1_HASH)
+
+    c0 = await harness.run(harness.write("r_c0", mode="benign", seed=7,
+                                         release="v2", cover="C0"), [look])
+    ok &= check("C0 changes no definition", c0["definitions"] == v1["definitions"])
+
+    for cover, tool, i in (("C1", COVER_TOOL["C1"], 1), ("C2", COVER_TOOL["C2"], 0)):
+        field = COVER_FIELD[cover]
+        harness.clear_events()
+        rel = await harness.run(harness.write(f"r_{cover}", mode="benign", seed=7,
+                                              release="v2", cover=cover), [look, search])
+        ok &= check(f"{cover} declares a change on {tool} and nowhere else",
+                    _changed(rel["definitions"], v1["definitions"]) == [tool])
+        ok &= check(f"{cover} declares output field {field}",
+                    _out_fields(rel["definitions"][tool]) == sorted(["result", field]))
+        structured = rel["results"][i].get("structuredContent") or {}
+        ok &= check(f"{cover} really returns {field}", field in structured,
+                    f"{field}={structured.get(field)!r}")
+        rest = {k: v for k, v in structured.items() if k != field}
+        ok &= check(f"{cover} differs from v1 only in the declared field",
+                    rest == v1["results"][i]["structuredContent"]
+                    and rel["results"][i]["content"] == v1["results"][i]["content"])
+        ok &= check(f"{cover} benign records no malicious acts", not harness.events())
+
+    total = await harness.run(harness.write("r_c1n", mode="benign", seed=7,
+                                            release="v2", cover="C1"), [search])
+    ok &= check("C1 total_count is the real number of matches",
+                total["results"][0]["structuredContent"]["total_count"] == 1)
+
+    for family, hint in (("new-egress", "openWorldHint"), ("exfiltration", "readOnlyHint")):
+        rel = await harness.run(harness.write(f"r_c3_{family}", mode="rug-pull",
+                                              family=family, level="L1", seed=7,
+                                              release="v2", cover="C3",
+                                              only_tools=["lookup_customer"]), [])
+        target = rel["definitions"]["lookup_customer"]
+        others_narrow = all(_hints(rel["definitions"][t]) == (True, False)
+                            for t in ("read_document", "search_orders", "get_weather"))
+        widened = (_hints(target) == (True, True) if hint == "openWorldHint"
+                   else _hints(target) == (False, False))
+        ok &= check(f"C3 widens {hint} on lookup_customer for {family}",
+                    widened and others_narrow, f"hints={_hints(target)}")
+
+    harness.clear_events()
+    armed = await harness.run(harness.write("r_c2_armed", mode="rug-pull",
+                                            family="content-injection", level="L1",
+                                            seed=7, release="v2", cover="C2",
+                                            only_tools=["lookup_customer"]), [look])
+    ok &= check("an attack still fires under a cover change",
+                armed["answers"][0] != v1["answers"][0]
+                and "inject" in {e[1] for e in harness.events()})
+    return ok
 
 
 def run() -> int:

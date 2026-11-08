@@ -37,9 +37,11 @@ import sys
 from pathlib import Path
 
 from attacker.scenario import (
+    COVERS,
     DEFAULT_SCENARIO_PATH,
     FAMILIES,
     LEVELS,
+    RELEASES,
     Scenario,
     Trigger,
 )
@@ -55,6 +57,8 @@ _SCENARIO_FLAGS = [
     ("updates", "--updates"),
     ("payload", "--payload"),
     ("only_tools", "--only-tools"),
+    ("release", "--release"),
+    ("cover", "--cover"),
 ]
 
 
@@ -292,6 +296,37 @@ def _cmd_serve(ns: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_tools(ns: argparse.Namespace) -> int:
+    """Print the tools a release advertises, without starting a server.
+
+    Reads the scenario and overlays any flags, but never writes the file: this
+    answers "what would the server advertise", it does not change what it does.
+    """
+    import asyncio
+
+    from mcp.server.fastmcp import FastMCP
+
+    from attacker import server
+
+    scenario = _load_or_default(_path(ns))
+    _apply(scenario, ns)
+    if problems := scenario.validate():
+        print("\n".join(problems), file=sys.stderr)
+        return 2
+    target = FastMCP("acme-business-tools")
+    server.register_tools(scenario, target=target)
+    tools = asyncio.run(target.list_tools())
+    print(f"release {scenario.release}, cover {scenario.effective_cover()}: "
+          f"{len(tools)} tools")
+    for tool in tools:
+        out = sorted(((tool.outputSchema or {}).get("properties") or {}))
+        ann = tool.annotations
+        hints = ("-" if ann is None else
+                 f"readOnly={ann.readOnlyHint} openWorld={ann.openWorldHint}")
+        print(f"  {tool.name:<17} output={','.join(out) or '-':<22} {hints}")
+    return 0
+
+
 def _cmd_launch_command(ns: argparse.Namespace) -> int:
     """Print the exact command another tool should use to start this server."""
     python = Path(sys.executable)
@@ -400,6 +435,12 @@ def build_parser() -> argparse.ArgumentParser:
                             "and a probe still reaches.")
         p.add_argument("--probe-aware", action="store_true",
                        help="opt in to L4/L5: recognise the detector's canary inputs")
+        p.add_argument("--release", choices=list(RELEASES), default=None,
+                       help="which tool definitions to advertise, read at "
+                            "startup: v1 (today's), v1n (narrow hints), v2 (an update)")
+        p.add_argument("--cover", choices=list(COVERS), default=None,
+                       help="v2 only: the legitimate declared change shipped "
+                            "with the update, C0 (none) to C3 (hint widened)")
 
     # --- everyday ---------------------------------------------------------
     menu = sub.add_parser(
@@ -485,6 +526,13 @@ def build_parser() -> argparse.ArgumentParser:
     trip = sub.add_parser("trip", help="fire a sleeper / trigger-gated attack now")
     add_scenario_path(trip)
     trip.set_defaults(func=_cmd_trip)
+
+    tools = sub.add_parser("tools", help="list the tools a release advertises")
+    add_scenario_path(tools)
+    add_attack_flags(tools)
+    # C3 widens a different hint per payload, so the listing needs the family.
+    tools.add_argument("--family", choices=sorted(FAMILIES), default=None)
+    tools.set_defaults(func=_cmd_tools)
 
     show = sub.add_parser("show", help="print the raw scenario JSON")
     add_scenario_path(show)
