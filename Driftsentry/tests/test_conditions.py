@@ -49,11 +49,22 @@ def test_the_full_condition_has_everything():
     assert full.mimic_host and full.mimic_traffic and full.subsample_bank
 
 
-def test_probe_kwargs_only_carry_what_the_probe_path_accepts():
-    """subsample_bank is handled at capture, not passed to verify_server."""
-    kwargs = BY_NAME["all"].probe_kwargs()
-    assert set(kwargs) == {"mimic_host", "mimic_traffic"}
-    assert all(kwargs.values())
+def test_each_kwargs_helper_matches_the_function_it_feeds():
+    """One dict served both calls and was wrong in both directions: it
+    omitted subsample_bank, which verify_server does take, and included
+    mimic_traffic, which capture_baseline does not."""
+    import inspect
+
+    from driftsentry.baseline import capture_baseline
+    from driftsentry.verify import verify_server
+
+    cond = BY_NAME["all"]
+    cap = set(inspect.signature(capture_baseline).parameters)
+    ver = set(inspect.signature(verify_server).parameters)
+    assert set(cond.baseline_kwargs()) <= cap
+    assert set(cond.verify_kwargs()) <= ver
+    assert set(cond.verify_kwargs()) == {"mimic_host", "mimic_traffic",
+                                         "subsample_bank"}
 
 
 def test_every_condition_explains_itself():
@@ -764,3 +775,59 @@ def test_the_episode_outcome_is_tables_own_definition(tmp_path):
     eps = episodes_from_disk(tmp_path, "t20_w_L1")
     assert eps[0].outcome == _outcome([{"outcome": "detected"},
                                        {"outcome": "detected"}])
+
+
+# --------------------------------------------------------------------------- #
+# T19 needs a bank bigger than the draw
+# --------------------------------------------------------------------------- #
+# Measured failure. family.n_instances is 3 for every tool - families require
+# at least 3 - and camouflage.DEFAULT_DRAW is also 3, so the probe loop's
+# guard `len(probes) > DEFAULT_DRAW` was never true and subsampling never
+# happened. The subsample condition collected 1134 feature rows, exactly the
+# control's 1134, and a 30% lower cycle time that was machine variance would
+# have been published as the countermeasure's saving.
+def test_the_bank_is_bigger_than_the_draw():
+    from driftsentry import camouflage
+    assert camouflage.DEFAULT_BANK > camouflage.DEFAULT_DRAW
+
+
+def test_a_bank_equal_to_the_draw_draws_everything():
+    """Which is why n_instances == DEFAULT_DRAW was a no-op, not a bug in
+    subsample() itself."""
+    from driftsentry import camouflage
+    drawn = camouflage.subsample(b"k", "s", "t", 1, bank_size=3, draw=3)
+    assert drawn == [0, 1, 2]
+
+
+def test_a_draw_from_the_real_bank_is_a_strict_subset():
+    from driftsentry import camouflage
+    drawn = camouflage.subsample(b"k", "s", "t", 1,
+                                 bank_size=camouflage.DEFAULT_BANK,
+                                 draw=camouflage.DEFAULT_DRAW)
+    assert len(drawn) == camouflage.DEFAULT_DRAW
+    assert len(set(drawn)) == len(drawn)
+    assert max(drawn) < camouflage.DEFAULT_BANK
+
+
+def test_different_cycles_draw_differently():
+    """Otherwise the bank buys nothing: an attacker sees the same few every
+    cycle and memorising them is as good as before."""
+    from driftsentry import camouflage
+    draws = {tuple(camouflage.subsample(
+        b"k", "s", "t", c, bank_size=camouflage.DEFAULT_BANK,
+        draw=camouflage.DEFAULT_DRAW)) for c in range(1, 12)}
+    assert len(draws) > 1
+
+
+def test_the_condition_passes_every_flag_it_holds():
+    """subsample_bank was missing - the fifth flag in this project accepted
+    and dropped."""
+    from eval.conditions import BY_NAME
+    assert BY_NAME["all"].verify_kwargs() == {
+        "mimic_host": True, "mimic_traffic": True, "subsample_bank": True}
+
+
+def test_the_control_passes_every_flag_off():
+    from eval.conditions import BY_NAME
+    assert BY_NAME["none"].verify_kwargs() == {
+        "mimic_host": False, "mimic_traffic": False, "subsample_bank": False}

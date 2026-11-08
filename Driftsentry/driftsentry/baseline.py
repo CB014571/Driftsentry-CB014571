@@ -475,9 +475,17 @@ async def _reprobe_keyed(
             log.warning("no family baseline for %r; skipping", tool.tool)
             continue
 
+        # T19 needs a bank BIGGER than the draw, or there is nothing to draw
+        # from. Measured: family.n_instances is 3 for every tool (families
+        # require at least 3) and DEFAULT_DRAW is also 3, so the guard below
+        # was never true and subsampling never happened. The subsample
+        # condition collected 1134 feature rows - exactly the control's 1134 -
+        # and would have been published as a countermeasure result.
+        count = (camouflage.DEFAULT_BANK if subsample_bank
+                 else family.n_instances)
         try:
             probes = generator.generate(
-                baseline.server, definition, count=family.n_instances, cycle=cycle
+                baseline.server, definition, count=count, cycle=cycle
             )
         except UnsupportedSchema as exc:  # pragma: no cover - caught at capture time
             log.warning("tool %r: cannot generate probes (%s)", tool.tool, exc)

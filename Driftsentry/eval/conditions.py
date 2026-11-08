@@ -42,10 +42,28 @@ class Condition:
     subsample_bank: bool = False
     note: str = ""
 
-    def probe_kwargs(self) -> dict[str, Any]:
-        """What to pass to capture_baseline and verify_server."""
+    def baseline_kwargs(self) -> dict[str, Any]:
+        """What capture_baseline accepts: mimic_host, and nothing else.
+
+        Split from verify_kwargs because they genuinely differ, and a single
+        dict claiming to serve both was wrong in both directions. It omitted
+        subsample_bank, which verify_server does take - so a caller using it
+        would have run the subsample condition as the control, the fifth
+        flag in this project accepted and dropped. And it included
+        mimic_traffic, which capture_baseline does NOT take, so splatting it
+        there would have raised TypeError.
+
+        Baselining is not paced. The baseline is captured once against a
+        server that is still honest, and a traffic profile learned from that
+        server does not exist yet.
+        """
+        return {"mimic_host": self.mimic_host}
+
+    def verify_kwargs(self) -> dict[str, Any]:
+        """What verify_server accepts: all three flags."""
         return {"mimic_host": self.mimic_host,
-                "mimic_traffic": self.mimic_traffic}
+                "mimic_traffic": self.mimic_traffic,
+                "subsample_bank": self.subsample_bank}
 
     def describe(self) -> str:
         on = [n for n, v in (("host", self.mimic_host),
