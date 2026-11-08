@@ -1,9 +1,0 @@
-{
-  "rows": 2329,
-  "genuine_rows": 169,
-  "probe_rows": 2160,
-  "groups": 234,
-  "unlabelled_dropped": 0,
-  "pre_baseline_dropped": 54,
-  "dataset": "eval_results\\rq3\\dataset.jsonl"
-}

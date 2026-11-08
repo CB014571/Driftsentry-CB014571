@@ -168,16 +168,16 @@ reach and belongs in threats to validity.
   condition     best AUC    recall  false alarms   cycle s   calls
   ----------------------------------------------------------------
   none             1.000      0.0%         50.0%      19.0    18.0
-  host        not measured
-  mimic       not measured
+  host             0.994      0.0%         50.0%      19.3    18.0
+  mimic            0.993     50.0%         50.0%      17.5    18.0
   subsample   not measured
   all         not measured
 
   condition          channel   L1 recall   L6 recall      gap
   ------------------------------------------------------------
   none                client      100.0%        0.0% -100.0pp
-  host          not measured
-  mimic         not measured
+  host                   all      100.0%        0.0% -100.0pp
+  mimic                  all      100.0%       50.0%  -50.0pp
   subsample     not measured
   all           not measured
 
