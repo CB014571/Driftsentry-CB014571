@@ -365,6 +365,20 @@ class ProbeCheck:
     # edit an embedding is blind to: one digit of an account number.
     field_drift: float = 0.0
     field_changes: list[str] = field(default_factory=list)
+    # T24. Names of the arguments this probe set - names only, never values.
+    # The input-parameter rule needs them: a declared parameter change
+    # explains response changes only on probes that actually USE it.
+    arg_names: list[str] = field(default_factory=list)
+    # T24. This probe measured again with the tool's DECLARED output fields
+    # removed from the response (residue.mask_payload), by the same
+    # arithmetic: distance, band, ratio, within_band, shape_known,
+    # determinism_break, field_drift, field_changes, comparability.
+    #
+    # None unless this update declared an output change for this tool, so
+    # nothing is computed - and no score moves - for any existing experiment.
+    # mask_note says why masking was impossible when it was attempted.
+    masked: dict[str, Any] | None = None
+    mask_note: str = ""
 
 
 @dataclass
@@ -401,6 +415,87 @@ class ReprobeReport:
         return max((c.ratio for c in self.checks), default=0.0)
 
 
+def _declared_output_paths(baseline: ServerBaseline,
+                           observed_definitions: list[dict]) -> dict[str, list[str]]:
+    """Tool -> output field paths this update declared changed (T24).
+
+    Empty - so nothing extra is measured and no score moves - whenever the
+    definitions did not change, which is every existing experiment.
+    """
+    if not baseline.tool_definitions:
+        return {}
+    from driftsentry.declared_diff import diff_definitions
+
+    diff = diff_definitions(baseline.tool_definitions, observed_definitions)
+    out: dict[str, list[str]] = {}
+    for name, td in diff.tools.items():
+        paths = sorted({c.path for c in td.output_changes if c.path})
+        if paths:
+            out[name] = paths
+    return out
+
+
+def _mask_all(payloads: list[dict], paths: list[str]) -> tuple[list[dict] | None, str]:
+    from driftsentry.residue import mask_payload
+
+    masked = []
+    for payload in payloads:
+        m, note = mask_payload(payload, paths)
+        if m is None:
+            return None, note
+        masked.append(m)
+    return masked, ""
+
+
+def _masked_fixed(payloads, paths, probe, embedder, profiles) -> tuple[dict | None, str]:
+    """The fixed-path measurement again, on responses with the declared
+    fields removed. The same arithmetic as the check itself, deliberately."""
+    masked, note = _mask_all(payloads, paths)
+    if masked is None:
+        return None, note
+    normalized = [normalize_result(p) for p in masked]
+    vectors = embedder.embed([n.text for n in normalized])
+    distance = max(cosine_distance(v, probe.centroid) for v in vectors)
+    known_shapes, known_texts = set(probe.shape_hashes), set(probe.text_hashes)
+    drift, changes = (max((compare_fields(profiles, p) for p in masked),
+                          key=lambda r: r[0]) if profiles else (0.0, []))
+    return {
+        "distance": distance,
+        "band": probe.band,
+        "ratio": distance / probe.band if probe.band else float("inf"),
+        "within_band": distance <= probe.band,
+        "shape_known": all(n.shape_hash in known_shapes for n in normalized),
+        "determinism_break": (probe.is_deterministic()
+                              and any(n.text_hash not in known_texts for n in normalized)),
+        "field_drift": drift,
+        "field_changes": [c.describe() for c in changes[:5]],
+        "comparability": 1.0,
+    }, ""
+
+
+def _masked_keyed(payloads, observations, paths, probe, family, embedder) -> tuple[dict | None, str]:
+    """The keyed-path measurement again, without the declared fields."""
+    from driftsentry.families import compare_to_family
+
+    masked, note = _mask_all(payloads, paths)
+    if masked is None:
+        return None, note
+    normalized = [normalize_result(p) for p in masked]
+    vectors = embedder.embed([redact(n.text, probe.args) for n in normalized])
+    samples = [
+        ProbeSample(embedding=vec, normalized=norm, latency_ms=0.0,
+                    hosts=obs.hosts, files=obs.files,
+                    content_flags=content_flags(norm.text))
+        for vec, norm, obs in zip(vectors, normalized, observations)
+    ]
+    measured = compare_to_family(family, samples)
+    out = {k: measured[k] for k in ("distance", "band", "ratio", "within_band",
+                                    "shape_known", "determinism_break",
+                                    "comparability")}
+    out.update(field_drift=0.0, field_changes=[])
+    return out, ""
+
+
 async def _reprobe_keyed(
     session: ClientSession,
     baseline: ServerBaseline,
@@ -413,6 +508,7 @@ async def _reprobe_keyed(
     mimic_traffic: bool = False,
     subsample_bank: bool = False,
     process_started: float | None = None,
+    declared_output: dict[str, list[str]] | None = None,
 ) -> list[ProbeCheck]:
     """Verify with freshly generated values, against family baselines.
 
@@ -548,6 +644,11 @@ async def _reprobe_keyed(
                 for vec, norm, obs in zip(vectors, normalized, observations)
             ]
             measured = compare_to_family(family, samples)
+            masked, mask_note = None, ""
+            paths = (declared_output or {}).get(tool.tool)
+            if paths:
+                masked, mask_note = _masked_keyed(payloads, observations, paths,
+                                                  probe, family, embedder)
             checks.append(ProbeCheck(
                 tool=tool.tool,
                 probe_id=probe.probe_id,
@@ -565,6 +666,9 @@ async def _reprobe_keyed(
                 became_error=measured["became_error"],
                 determinism_break=measured["determinism_break"],
                 comparability=measured["comparability"],
+                arg_names=sorted(probe.args),
+                masked=masked,
+                mask_note=mask_note,
             ))
     return checks
 
@@ -630,6 +734,7 @@ async def reprobe(
             listed = await session.list_tools()
             observed_definitions = [t.model_dump(mode="json") for t in listed.tools]
             observed_hash = tools_definition_hash(observed_definitions)
+            declared_output = _declared_output_paths(baseline, observed_definitions)
 
             if baseline.probe_mode == "keyed":
                 checks.extend(await _reprobe_keyed(
@@ -638,6 +743,7 @@ async def reprobe(
                     mimic_traffic=mimic_traffic,
                     subsample_bank=subsample_bank,
                     process_started=process_started,
+                    declared_output=declared_output,
                 ))
                 return ReprobeReport(
                     server=baseline.server,
@@ -705,6 +811,12 @@ async def reprobe(
                         if profiles else (0.0, [])
                     )
 
+                    masked, mask_note = None, ""
+                    paths = declared_output.get(tool.tool)
+                    if paths:
+                        masked, mask_note = _masked_fixed(payloads, paths, probe,
+                                                          embedder, profiles)
+
                     checks.append(
                         ProbeCheck(
                             tool=tool.tool,
@@ -724,6 +836,9 @@ async def reprobe(
                             determinism_break=determinism_break,
                             field_drift=field_drift,
                             field_changes=[c.describe() for c in field_changes[:5]],
+                            arg_names=sorted(probe.args),
+                            masked=masked,
+                            mask_note=mask_note,
                         )
                     )
 

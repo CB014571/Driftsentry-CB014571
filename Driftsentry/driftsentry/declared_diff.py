@@ -308,7 +308,7 @@ def diff_schema(old: dict[str, Any] | None, new: dict[str, Any] | None) -> list[
 # --------------------------------------------------------------------------- #
 # Annotations
 # --------------------------------------------------------------------------- #
-def _hint(annotations: dict[str, Any] | None, key: str) -> tuple[bool, bool]:
+def hint(annotations: dict[str, Any] | None, key: str) -> tuple[bool, bool]:
     """(effective value, explicit) for one hint.
 
     Explicit means present and not None - measured: unset hints arrive as
@@ -330,8 +330,8 @@ def diff_annotations(old: dict[str, Any] | None,
     """
     changes: dict[str, AnnotationChange] = {}
     for key in ANNOTATION_DEFAULTS:
-        old_v, old_x = _hint(old, key)
-        new_v, new_x = _hint(new, key)
+        old_v, old_x = hint(old, key)
+        new_v, new_x = hint(new, key)
         if old_v != new_v:
             changes[key] = AnnotationChange(old_v, new_v, old_x, new_x)
 

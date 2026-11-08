@@ -256,6 +256,138 @@ def _severity_for(score: float) -> str:
     return "low"
 
 
+def check_signals(
+    check,                                   # driftsentry.baseline.ProbeCheck
+    *,
+    threshold_ratio: float,
+    per_tool: dict[str, float] | None = None,
+    hash_signal: Signal | None = None,
+) -> list[Signal]:
+    """Every signal one probe check raises, in evidence units.
+
+    Factored out of score_report unchanged, so the residue checker (T24) can
+    score a probe - and the same probe with its declared fields removed - by
+    exactly the arithmetic the detector uses, rather than by a copy of it that
+    could drift. score_report calls this for every check, so the golden tests
+    pin both.
+    """
+    signals: list[Signal] = []
+
+    # -- signal 2: behavioural drift, scaled by this tool's own variance
+    # Dividing by the calibrated threshold puts a noisy tool and a
+    # deterministic one on the same scale: both alert at 1.0.
+    # A tool with its own calibrated threshold is judged by that one.
+    # The global number is set by the noisiest tool in the calibration
+    # set, so a deterministic tool is otherwise held to a bar raised
+    # for a weather feed. Default None keeps the old behaviour exactly,
+    # which is what the golden tests and Experiments 1-2 rely on.
+    tool_threshold = threshold_ratio
+    if per_tool:
+        tool_threshold = per_tool.get(check.tool, threshold_ratio)
+    raw_behavioural = check.ratio / tool_threshold if tool_threshold > 0 else 0.0
+    # Scale by how comparable this family's responses actually are.
+    #
+    # For the exact-probe path this is 1.0 and nothing changes. For a
+    # keyed family whose answers genuinely differ between inputs, the
+    # embedding distance partly measures the input rather than the tool,
+    # and asserting otherwise would manufacture false alarms. Where the
+    # signal is weak the detector leans on the invariant evidence -
+    # structure, rules, side effects - which does not depend on the input.
+    comparability = getattr(check, "comparability", 1.0)
+    behavioural = min(raw_behavioural * comparability, W_BEHAVIOURAL_MAX)
+    signals.append(Signal(
+        name="behavioural_drift",
+        score=behavioural,
+        severity=_severity_for(behavioural),
+        detail=(
+            f"response drift {check.distance:.4f} against a benign band of "
+            f"{check.band:.4f} (ratio {check.ratio:.2f}, alert at {tool_threshold:.2f})"
+        ),
+        evidence={
+            "distance": check.distance,
+            "band": check.band,
+            "ratio": check.ratio,
+            "threshold_ratio": tool_threshold,
+            "uncapped_score": raw_behavioural,
+            "baseline_excerpt": check.baseline_excerpt,
+            "observed_excerpt": check.observed_excerpt,
+        },
+    ))
+
+    # -- structural change (weak on its own, by design)
+    if not check.shape_known:
+        signals.append(Signal(
+            name="structural_change",
+            score=W_STRUCTURAL,
+            severity=_severity_for(W_STRUCTURAL),
+            detail="the response's structure differs from every shape seen at baseline",
+            evidence={"observed_shape": check.observed_shape_hash},
+        ))
+
+    # -- a security-relevant field changed value
+    field_drift = getattr(check, "field_drift", 0.0)
+    if field_drift > 0.0:
+        score = min(field_drift * W_FIELD_DRIFT, W_BEHAVIOURAL_MAX)
+        signals.append(Signal(
+            name="field_drift",
+            score=score,
+            severity=_severity_for(score),
+            detail=("a security-relevant field changed value: "
+                    + "; ".join(getattr(check, "field_changes", []) or ["(unspecified)"])),
+            evidence={"field_drift": field_drift,
+                      "changes": getattr(check, "field_changes", [])},
+        ))
+
+    # -- exact-equality break on a provably deterministic probe
+    if getattr(check, "determinism_break", False):
+        signals.append(Signal(
+            name="determinism_break",
+            score=W_DETERMINISM,
+            severity=_severity_for(W_DETERMINISM),
+            detail=(
+                "this probe returned byte-identical text on every sample at "
+                "baseline, and now returns something different"
+            ),
+            evidence={
+                "baseline_excerpt": check.baseline_excerpt,
+                "observed_excerpt": check.observed_excerpt,
+                "distance": check.distance,
+                "band": check.band,
+            },
+        ))
+
+    # -- error-rate change
+    if check.became_error:
+        signals.append(Signal(
+            name="error_behaviour",
+            score=W_ERROR_RATE,
+            severity="low",
+            detail="the tool now errors on a probe that succeeded at baseline",
+            evidence={"excerpt": check.observed_excerpt[:200]},
+        ))
+
+    # -- signal 3: security rules (differential)
+    for hit in security_rules.evaluate(
+        new_hosts=check.new_hosts,
+        new_files=check.new_files,
+        new_content_flags=check.new_content_flags,
+    ):
+        weight = W_RULE_HIGH if hit.severity == "high" else W_RULE_MEDIUM
+        signals.append(Signal(
+            name=f"rule:{hit.rule}",
+            score=weight,
+            severity=_severity_for(weight),
+            detail=f"{security_rules.describe_rule(hit.rule)} ({hit.detail})",
+            evidence={"matches": hit.evidence},
+        ))
+
+    # -- signal 1: definition hash applies to every probe on this server
+    if hash_signal:
+        signals.append(hash_signal)
+
+    return signals
+
+
 def score_report(
     report,                                  # driftsentry.baseline.ReprobeReport
     *,
@@ -319,119 +451,8 @@ def score_report(
         probe_scores: list[ProbeScore] = []
 
         for check in checks:
-            signals: list[Signal] = []
-
-            # -- signal 2: behavioural drift, scaled by this tool's own variance
-            # Dividing by the calibrated threshold puts a noisy tool and a
-            # deterministic one on the same scale: both alert at 1.0.
-            # A tool with its own calibrated threshold is judged by that one.
-            # The global number is set by the noisiest tool in the calibration
-            # set, so a deterministic tool is otherwise held to a bar raised
-            # for a weather feed. Default None keeps the old behaviour exactly,
-            # which is what the golden tests and Experiments 1-2 rely on.
-            tool_threshold = threshold_ratio
-            if per_tool:
-                tool_threshold = per_tool.get(check.tool, threshold_ratio)
-            raw_behavioural = check.ratio / tool_threshold if tool_threshold > 0 else 0.0
-            # Scale by how comparable this family's responses actually are.
-            #
-            # For the exact-probe path this is 1.0 and nothing changes. For a
-            # keyed family whose answers genuinely differ between inputs, the
-            # embedding distance partly measures the input rather than the tool,
-            # and asserting otherwise would manufacture false alarms. Where the
-            # signal is weak the detector leans on the invariant evidence -
-            # structure, rules, side effects - which does not depend on the input.
-            comparability = getattr(check, "comparability", 1.0)
-            behavioural = min(raw_behavioural * comparability, W_BEHAVIOURAL_MAX)
-            signals.append(Signal(
-                name="behavioural_drift",
-                score=behavioural,
-                severity=_severity_for(behavioural),
-                detail=(
-                    f"response drift {check.distance:.4f} against a benign band of "
-                    f"{check.band:.4f} (ratio {check.ratio:.2f}, alert at {tool_threshold:.2f})"
-                ),
-                evidence={
-                    "distance": check.distance,
-                    "band": check.band,
-                    "ratio": check.ratio,
-                    "threshold_ratio": tool_threshold,
-                    "uncapped_score": raw_behavioural,
-                    "baseline_excerpt": check.baseline_excerpt,
-                    "observed_excerpt": check.observed_excerpt,
-                },
-            ))
-
-            # -- structural change (weak on its own, by design)
-            if not check.shape_known:
-                signals.append(Signal(
-                    name="structural_change",
-                    score=W_STRUCTURAL,
-                    severity=_severity_for(W_STRUCTURAL),
-                    detail="the response's structure differs from every shape seen at baseline",
-                    evidence={"observed_shape": check.observed_shape_hash},
-                ))
-
-            # -- a security-relevant field changed value
-            field_drift = getattr(check, "field_drift", 0.0)
-            if field_drift > 0.0:
-                score = min(field_drift * W_FIELD_DRIFT, W_BEHAVIOURAL_MAX)
-                signals.append(Signal(
-                    name="field_drift",
-                    score=score,
-                    severity=_severity_for(score),
-                    detail=("a security-relevant field changed value: "
-                            + "; ".join(getattr(check, "field_changes", []) or ["(unspecified)"])),
-                    evidence={"field_drift": field_drift,
-                              "changes": getattr(check, "field_changes", [])},
-                ))
-
-            # -- exact-equality break on a provably deterministic probe
-            if getattr(check, "determinism_break", False):
-                signals.append(Signal(
-                    name="determinism_break",
-                    score=W_DETERMINISM,
-                    severity=_severity_for(W_DETERMINISM),
-                    detail=(
-                        "this probe returned byte-identical text on every sample at "
-                        "baseline, and now returns something different"
-                    ),
-                    evidence={
-                        "baseline_excerpt": check.baseline_excerpt,
-                        "observed_excerpt": check.observed_excerpt,
-                        "distance": check.distance,
-                        "band": check.band,
-                    },
-                ))
-
-            # -- error-rate change
-            if check.became_error:
-                signals.append(Signal(
-                    name="error_behaviour",
-                    score=W_ERROR_RATE,
-                    severity="low",
-                    detail="the tool now errors on a probe that succeeded at baseline",
-                    evidence={"excerpt": check.observed_excerpt[:200]},
-                ))
-
-            # -- signal 3: security rules (differential)
-            for hit in security_rules.evaluate(
-                new_hosts=check.new_hosts,
-                new_files=check.new_files,
-                new_content_flags=check.new_content_flags,
-            ):
-                weight = W_RULE_HIGH if hit.severity == "high" else W_RULE_MEDIUM
-                signals.append(Signal(
-                    name=f"rule:{hit.rule}",
-                    score=weight,
-                    severity=_severity_for(weight),
-                    detail=f"{security_rules.describe_rule(hit.rule)} ({hit.detail})",
-                    evidence={"matches": hit.evidence},
-                ))
-
-            # -- signal 1: definition hash applies to every probe on this server
-            if hash_signal:
-                signals.append(hash_signal)
+            signals = check_signals(check, threshold_ratio=threshold_ratio,
+                                    per_tool=per_tool, hash_signal=hash_signal)
 
             best = max(signals, key=lambda s: s.score)
             probe_scores.append(ProbeScore(
