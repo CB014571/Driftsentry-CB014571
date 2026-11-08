@@ -56,8 +56,22 @@ async def verify_server(
     mimic_host: bool = False,
     mimic_traffic: bool = False,
     subsample_bank: bool = False,
+    update_check: bool = False,
+    per_tool: dict[str, float] | None = None,
 ) -> DriftReport:
     """Re-probe a server and score the result.
+
+    ``update_check`` (T25): when the tool definitions the re-probe observed
+    differ from the baseline's, compute the declared diff and score in
+    residue mode, so declared changes explain the behaviour they cover and
+    only the rest can alert. Definitions are compared in full, not by hash -
+    the hash covers name, description and inputSchema only, so an added
+    output field or a widened annotation would not register as a change at
+    all. Off by default: every existing experiment scores exactly as before.
+
+    Nothing is re-baselined here. The residue outcome names the tools whose
+    changes were fully explained (``residue["explained_tools"]``); deciding
+    to adopt them is left to the caller.
 
     The countermeasure flags are forwarded, not consumed here. An earlier
     revision accepted them and dropped them, which would have made every T20
@@ -78,11 +92,21 @@ async def verify_server(
         threshold_ratio, source = active_threshold(measurement.embedding_backend)
     else:
         source = "explicit (--threshold)"
+    declared_diff = None
+    if update_check:
+        from driftsentry.declared_diff import diff_definitions
+
+        candidate = diff_definitions(baseline.tool_definitions,
+                                     measurement.observed_definitions)
+        if not candidate.empty:
+            declared_diff, mode = candidate, "residue"
     return score_report(
         measurement,
         threshold_ratio=threshold_ratio,
         calibration_source=source,
         mode=mode,
+        per_tool=per_tool,
+        declared_diff=declared_diff,
     )
 
 

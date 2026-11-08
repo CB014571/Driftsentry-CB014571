@@ -133,6 +133,19 @@ W_BEHAVIOURAL_MAX = 3.0
 WATCH_AT = 0.85
 ALERT_AT = 1.0
 
+# T25. An update that widened a declared permission - read-only removed,
+# open-world or destructive added. Between WATCH_AT and ALERT_AT on purpose:
+# the widening is shown to the user every time, but on its own it is a
+# declared, visible change, not evidence of an attack. Scores combine by max,
+# so on a tool that also carries residue the residue is what alerts - that is
+# the only sense in which an escalation is "combined".
+W_ESCALATION = 0.9
+
+# T25. A new outbound host on a tool that declares openWorldHint true. Held
+# for the user to look at, counted separately, and never an alert: zero, so
+# it is logged on the probe and can never decide a verdict.
+W_HELD = 0.0
+
 
 @dataclass
 class Signal:
@@ -199,6 +212,9 @@ class DriftReport:
     baseline_definition_hash: str
     observed_definition_hash: str
     tools: list[ToolScore] = field(default_factory=list)
+    # T25. The residue checker's outcome in mode="residue" with a non-empty
+    # declared diff, as ResidueReport.to_dict(). None otherwise.
+    residue: dict[str, Any] | None = None
 
     @property
     def score(self) -> float:
@@ -235,6 +251,7 @@ class DriftReport:
             "verdict": self.verdict,
             "triggered_by": self.triggered_by,
             "tools": [t.to_dict() for t in self.tools],
+            "residue": self.residue,
         }
 
 
@@ -395,8 +412,19 @@ def score_report(
     calibration_source: str = "provisional",
     mode: str = "full",
     per_tool: dict[str, float] | None = None,
+    declared_diff=None,                      # driftsentry.declared_diff.DeclaredDiff
 ) -> DriftReport:
     """Score a re-probe measurement into a verdict.
+
+    ``mode="residue"`` (T25) scores an update. With a non-empty
+    ``declared_diff`` the re-probe is first passed through the residue
+    checker, and what is scored is its residue view: declared output fields
+    masked out, explained changes neutralised, escalated and held side
+    effects removed. The definition-hash signal does not apply - the changed
+    definition is the declaration under test, not evidence against it.
+    Widened hints add ``declaration_escalation``; held hosts add
+    ``held_for_review`` at zero. With an empty or absent diff there is nothing
+    to explain, and the result is identical to ``mode="full"``.
 
     ``mode="hash-only"`` reproduces the competing method (mcp-scan / Snyk-style
     definition pinning) by discarding every behavioural signal. It is kept here,
@@ -404,8 +432,34 @@ def score_report(
     exactly what the behavioural layer adds rather than comparing against a
     re-implementation that might differ in some incidental way.
     """
+    residue_outcome = None
+    extra: dict[tuple[str, str], list[Signal]] = {}
+    escalated: dict[str, list[str]] = {}
+    if mode == "residue" and declared_diff is not None and not declared_diff.empty:
+        from driftsentry.residue import check_update
+
+        residue_outcome = check_update(report, declared_diff,
+                                       threshold_ratio=threshold_ratio,
+                                       per_tool=per_tool)
+        for tool, name in residue_outcome.escalations:
+            escalated.setdefault(tool, []).append(name)
+        for item in residue_outcome.items:
+            if item.classification == "held_for_review":
+                extra.setdefault((item.tool, item.probe_id), []).append(Signal(
+                    name="held_for_review", score=W_HELD, severity="info",
+                    detail=item.reason, evidence={"signal": item.signal}))
+            elif item.classification == "escalation":
+                extra.setdefault((item.tool, item.probe_id), []).append(Signal(
+                    name="declaration_escalation", score=W_ESCALATION,
+                    severity=_severity_for(W_ESCALATION),
+                    detail=f"a widened declaration was exercised: {item.reason}",
+                    evidence={"signal": item.signal}))
+        scored_report = residue_outcome.residue_view
+    else:
+        scored_report = report
+
     hash_signal = None
-    if report.definition_changed:
+    if report.definition_changed and residue_outcome is None:
         hash_signal = Signal(
             name="definition_hash",
             score=W_DEFINITION_HASH,
@@ -444,7 +498,7 @@ def score_report(
         )
 
     by_tool: dict[str, list] = {}
-    for check in report.checks:
+    for check in scored_report.checks:
         by_tool.setdefault(check.tool, []).append(check)
 
     for tool_name, checks in by_tool.items():
@@ -453,6 +507,13 @@ def score_report(
         for check in checks:
             signals = check_signals(check, threshold_ratio=threshold_ratio,
                                     per_tool=per_tool, hash_signal=hash_signal)
+            signals += extra.get((check.tool, check.probe_id), [])
+            for name in escalated.get(check.tool, []):
+                signals.append(Signal(
+                    name="declaration_escalation", score=W_ESCALATION,
+                    severity=_severity_for(W_ESCALATION),
+                    detail=f"the update widened a declared permission: {name}",
+                    evidence={"escalation": name}))
 
             best = max(signals, key=lambda s: s.score)
             probe_scores.append(ProbeScore(
@@ -478,6 +539,19 @@ def score_report(
             signals=[s for s in worst.signals if s.score >= WATCH_AT],
         ))
 
+    # An escalation on a tool with nothing probed is still shown to the user.
+    probed_tools = {t.tool for t in tools}
+    for tool_name, names in sorted(escalated.items()):
+        if tool_name in probed_tools:
+            continue
+        sigs = [Signal(name="declaration_escalation", score=W_ESCALATION,
+                       severity=_severity_for(W_ESCALATION),
+                       detail=f"the update widened a declared permission: {n}",
+                       evidence={"escalation": n}) for n in names]
+        tools.append(ToolScore(tool=tool_name, score=W_ESCALATION,
+                               verdict=_verdict_for(W_ESCALATION),
+                               triggered_by="declaration_escalation", signals=sigs))
+
     # A definition change with no probeable tools still has to raise an alert.
     if hash_signal and not tools:
         tools.append(ToolScore(
@@ -499,4 +573,5 @@ def score_report(
         baseline_definition_hash=report.baseline_definition_hash,
         observed_definition_hash=report.observed_definition_hash,
         tools=sorted(tools, key=lambda t: t.score, reverse=True),
+        residue=residue_outcome.to_dict() if residue_outcome else None,
     )
