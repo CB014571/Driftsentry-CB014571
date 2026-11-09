@@ -301,6 +301,19 @@ def _cmd_rq3u(ns: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_rq3u_analyse(ns: argparse.Namespace) -> int:
+    """T30: RQ3 statistics and the H3 verdict, from the result files."""
+    _quiet()
+    from eval.rq3u_analyse import main as analyse
+
+    csv_path = Path(ns.csv) if ns.csv else Path(ns.results) / "rq3u" / "rq3u_L1.csv"
+    if not csv_path.is_file():
+        print(f"error: no RQ3a results at {csv_path}", file=sys.stderr)
+        return 2
+    analyse(csv_path, Path(ns.results) / "rq1")
+    return 0
+
+
 def _cmd_real(ns: argparse.Namespace) -> int:
     """Gap 3: does the detector alarm on a genuine version upgrade?
 
@@ -427,6 +440,11 @@ def main(argv: list[str] | None = None) -> int:
     rq3u.add_argument("--quick", action="store_true",
                       help="one family, C0 and C2, one seed - checks the pipeline")
     rq3u.set_defaults(func=_cmd_rq3u)
+
+    rq3a = sub.add_parser("rq3u-analyse", help="RQ3 statistics and the H3 verdict (T30)")
+    rq3a.add_argument("--csv", default=None,
+                      help="an RQ3a results file; default the full sweep")
+    rq3a.set_defaults(func=_cmd_rq3u_analyse)
 
     real = sub.add_parser("real", help="false alarms on real version upgrades (Gap 3)")
     real.add_argument("--servers",

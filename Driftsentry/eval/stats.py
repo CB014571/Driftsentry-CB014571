@@ -38,6 +38,8 @@ from __future__ import annotations
 
 from typing import Any, Sequence
 
+import math
+
 import numpy as np
 
 
@@ -48,10 +50,17 @@ def wilson(k: int, n: int, alpha: float = 0.05) -> tuple[float, float, float]:
     """Point estimate and Wilson score interval for k successes in n trials."""
     if n <= 0:
         return (float("nan"), 0.0, 1.0)
-    from statsmodels.stats.proportion import proportion_confint
+    # The Wilson score formula, computed directly for the same reason as
+    # mcnemar_p's exact path: statsmodels is unavailable whenever Windows
+    # Application Control blocks its pandas DLL. Pinned equal by a test.
+    from statistics import NormalDist
 
-    low, high = proportion_confint(k, n, alpha=alpha, method="wilson")
-    return (k / n, float(low), float(high))
+    z = NormalDist().inv_cdf(1.0 - alpha / 2.0)
+    phat = k / n
+    denom = 1.0 + z * z / n
+    centre = (phat + z * z / (2 * n)) / denom
+    half = z * math.sqrt(phat * (1 - phat) / n + z * z / (4 * n * n)) / denom
+    return (phat, max(0.0, centre - half), min(1.0, centre + half))
 
 
 def mcnemar_p(a: Sequence[bool], b: Sequence[bool], *, exact: bool = True) -> dict[str, Any]:
@@ -62,8 +71,6 @@ def mcnemar_p(a: Sequence[bool], b: Sequence[bool], *, exact: bool = True) -> di
     carry information, and a p-value from two or three of them means little
     however small it is.
     """
-    from statsmodels.stats.contingency_tables import mcnemar
-
     first = np.asarray(a, dtype=bool)
     second = np.asarray(b, dtype=bool)
     if first.shape != second.shape:
@@ -77,9 +84,22 @@ def mcnemar_p(a: Sequence[bool], b: Sequence[bool], *, exact: bool = True) -> di
     table = [[int(np.sum(first & second)), b10],
              [b01, int(np.sum(~first & ~second))]]
 
-    result = mcnemar(table, exact=exact)
+    if exact:
+        # Exact McNemar is a two-sided binomial test on the discordant pairs
+        # with p = 0.5 - computed directly, the same formula statsmodels
+        # uses. Directly because on 9 Nov Windows Application Control blocked
+        # a pandas DLL that statsmodels imports, and every paired test in the
+        # evaluation failed with it; the H3 verdict should not hinge on a
+        # library a security policy can switch off. A test pins the two equal.
+        n_disc = b01 + b10
+        k = min(b01, b10)
+        p = (min(1.0, 2.0 * sum(math.comb(n_disc, i) for i in range(k + 1)) / 2 ** n_disc)
+             if n_disc else 1.0)
+    else:
+        from statsmodels.stats.contingency_tables import mcnemar
+        p = float(mcnemar(table, exact=False).pvalue)
     return {
-        "p": float(result.pvalue),
+        "p": float(p),
         "n": int(first.size),
         "b01": b01,
         "b10": b10,
@@ -91,13 +111,20 @@ def mcnemar_p(a: Sequence[bool], b: Sequence[bool], *, exact: bool = True) -> di
 
 def holm(pvals: Sequence[float], alpha: float = 0.05) -> dict[str, Any]:
     """Holm-corrected p-values and rejections, in the input order."""
-    from statsmodels.stats.multitest import multipletests
-
     if len(pvals) == 0:
         return {"adjusted": [], "reject": [], "alpha": alpha}
-    reject, adjusted, _, _ = multipletests(list(pvals), alpha=alpha, method="holm")
-    return {"adjusted": [float(p) for p in adjusted],
-            "reject": [bool(r) for r in reject],
+    # Holm's step-down, directly (see wilson). The i-th smallest p-value is
+    # scaled by (m - i), then made monotone so an adjusted value never falls
+    # below the one before it.
+    m = len(pvals)
+    order = sorted(range(m), key=lambda i: pvals[i])
+    adjusted = [0.0] * m
+    running = 0.0
+    for rank, i in enumerate(order):
+        running = max(running, min(1.0, (m - rank) * float(pvals[i])))
+        adjusted[i] = running
+    return {"adjusted": adjusted,
+            "reject": [a <= alpha for a in adjusted],
             "alpha": alpha}
 
 

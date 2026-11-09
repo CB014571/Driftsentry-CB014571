@@ -244,3 +244,59 @@ def test_delong_handles_ties_through_midranks():
 def test_delong_needs_both_classes():
     with pytest.raises(ValueError, match="positive and one negative"):
         delong([1, 1, 1], [0.1, 0.2, 0.3], [0.3, 0.2, 0.1])
+
+
+def test_exact_mcnemar_matches_statsmodels_without_needing_it():
+    """Computed directly since Application Control blocked statsmodels' pandas
+    DLL on 9 Nov. Must give exactly what statsmodels gives."""
+    import itertools
+    import random
+
+    from statsmodels.stats.contingency_tables import mcnemar
+
+    from eval.stats import mcnemar_p
+    rng = random.Random(7)
+    for _ in range(200):
+        n = rng.randint(1, 40)
+        a = [rng.random() < 0.5 for _ in range(n)]
+        b = [rng.random() < 0.5 for _ in range(n)]
+        mine = mcnemar_p(a, b)
+        b01 = sum(1 for x, y in zip(a, b) if not x and y)
+        b10 = sum(1 for x, y in zip(a, b) if x and not y)
+        both = sum(1 for x, y in zip(a, b) if x and y)
+        neither = n - b01 - b10 - both
+        ref = mcnemar([[both, b10], [b01, neither]], exact=True).pvalue
+        assert abs(mine["p"] - ref) < 1e-12, (b01, b10, mine["p"], ref)
+
+
+def test_exact_mcnemar_known_value():
+    from eval.stats import mcnemar_p
+    # five discordant pairs all one way: 2 * 0.5**5 = 0.0625
+    assert mcnemar_p([False] * 5 + [True] * 5, [True] * 5 + [True] * 5)["p"] == 0.0625
+
+
+def test_wilson_matches_statsmodels_without_needing_it():
+    from statsmodels.stats.proportion import proportion_confint
+
+    from eval.stats import wilson
+    for n in (1, 2, 5, 10, 33, 100):
+        for k in range(n + 1):
+            for alpha in (0.05, 0.1):
+                _, lo, hi = wilson(k, n, alpha)
+                rlo, rhi = proportion_confint(k, n, alpha=alpha, method="wilson")
+                assert abs(lo - rlo) < 1e-12 and abs(hi - rhi) < 1e-12, (k, n, alpha)
+
+
+def test_holm_matches_statsmodels_without_needing_it():
+    import random
+
+    from statsmodels.stats.multitest import multipletests
+
+    from eval.stats import holm
+    rng = random.Random(11)
+    for _ in range(300):
+        ps = [rng.random() ** rng.choice((1, 3, 6)) for _ in range(rng.randint(1, 8))]
+        mine = holm(ps)
+        rej, adj, _, _ = multipletests(ps, alpha=0.05, method="holm")
+        assert all(abs(a - b) < 1e-12 for a, b in zip(mine["adjusted"], adj))
+        assert mine["reject"] == [bool(r) for r in rej]
