@@ -172,3 +172,60 @@ def test_nothing_measured_produces_no_pooled_rate():
     """A pooled rate over zero runs would print as a number."""
     text = report([_run("sqlite", 0, 0, error="nope")])
     assert "pooled" not in text
+
+
+# --------------------------------------------------------------------------- #
+# T29: RQ3b, the residue outcome of a real upgrade
+# --------------------------------------------------------------------------- #
+def _drift(residue=None, verdict="ok", signals=()):
+    """A minimal stand-in for DriftReport with the fields _fill_residue reads."""
+    from types import SimpleNamespace as NS
+    probe_signals = [NS(name=n, score=s) for n, s in signals]
+    return NS(residue=residue, verdict=verdict,
+              tools=[NS(probes=[NS(signals=probe_signals)])])
+
+
+def test_a_run_with_nothing_declared_takes_the_base_detectors_verdict():
+    from eval.real_upgrades import UpgradeResult, _fill_residue
+    out = UpgradeResult(server="git", phase="new", run=1)
+    _fill_residue(out, _drift(verdict="alert",
+                              signals=[("determinism_break", 1.15),
+                                       ("structural_change", 0.85)]))
+    assert out.residue_verdict == "residue_alert"
+    assert out.residue_signals == ["determinism_break"]     # only what alerts
+
+
+def test_a_quiet_run_with_nothing_declared_is_accepted():
+    from eval.real_upgrades import UpgradeResult, _fill_residue
+    out = UpgradeResult(server="time", phase="new", run=1)
+    _fill_residue(out, _drift())
+    assert out.residue_verdict == "accepted" and out.residue_signals == []
+
+
+def test_a_declared_update_records_the_checkers_outcome():
+    from eval.real_upgrades import UpgradeResult, _fill_residue
+    outcome = {"verdict": "escalation",
+               "escalations": [["fetch", "openWorld_added"]],
+               "items": [{"signal": "new_egress_host",
+                          "classification": "held_for_review"},
+                         {"signal": "behavioural_drift",
+                          "classification": "explained"}]}
+    out = UpgradeResult(server="x", phase="new", run=1)
+    _fill_residue(out, _drift(residue=outcome))
+    assert out.residue_verdict == "escalation"
+    assert out.escalations == ["fetch:openWorld_added"]
+    assert out.held_for_review == 1
+    assert out.residue_signals == []
+
+
+def test_the_noise_phase_is_never_update_checked():
+    """The same release against its own baseline declared nothing; scoring it
+    as an update would only rename the base detector's verdict."""
+    import inspect
+
+    from eval.real_run import run_server
+    src = inspect.getsource(run_server)
+    old_call = src[src.index('phase="old"') - 200: src.index('phase="old"') + 120]
+    new_call = src[src.index('phase="new"') - 200: src.index('phase="new"') + 160]
+    assert "update_check" not in old_call
+    assert "update_check=True" in new_call

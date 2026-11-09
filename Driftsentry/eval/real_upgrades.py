@@ -52,6 +52,12 @@ class UpgradeResult:
     alerted: bool = False
     per_tool: dict[str, float] = field(default_factory=dict)
     error: str | None = None
+    # T29, RQ3b. Filled only for a run scored with update_check.
+    update_check: bool = False
+    residue_verdict: str = ""        # accepted | residue_alert | escalation | held_for_review
+    residue_signals: list[str] = field(default_factory=list)
+    escalations: list[str] = field(default_factory=list)
+    held_for_review: int = 0
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -85,8 +91,16 @@ async def probe_phase(
     threshold_ratio: float | None = None,
     cycle: int = 1,
     key: bytes | None = None,
+    update_check: bool = False,
+    per_tool: dict[str, float] | None = None,
 ) -> UpgradeResult:
-    """Score one release against a baseline captured on the old one."""
+    """Score one release against a baseline captured on the old one.
+
+    ``update_check`` (T29) scores the release as an update: declared
+    definition changes explain the behaviour they cover, and only the residue
+    can alert. That is RQ3b's measurement. Off, it is the plain detector,
+    which is what the same-release noise phase must stay.
+    """
     from driftsentry.verify import verify_server
 
     out = UpgradeResult(server=server_id, phase=phase, run=run)
@@ -94,7 +108,8 @@ async def probe_phase(
         report = await verify_server(
             baseline, launch=launch, samples_per_probe=samples_per_probe,
             monitor_sandbox=True, threshold_ratio=threshold_ratio,
-            cycle=cycle, key=key)
+            cycle=cycle, key=key, update_check=update_check,
+            per_tool=per_tool)
     except Exception as exc:
         out.error = f"{type(exc).__name__}: {exc}"
         return out
@@ -106,7 +121,36 @@ async def probe_phase(
     out.definition_changed = bool(getattr(report, "definition_changed", False))
     out.definition_hash = getattr(report, "observed_definition_hash", "") or ""
     out.per_tool = {t.tool: round(t.score, 4) for t in report.tools}
+    if update_check:
+        _fill_residue(out, report)
     return out
+
+
+def _fill_residue(out: UpgradeResult, report: Any) -> None:
+    """The residue outcome of one update-checked run.
+
+    With nothing declared the residue checker never runs and the base
+    detector decides - row 1 of the rules - so its alerts are the residue.
+    Recording "accepted" there would contradict the alert beside it.
+    """
+    from driftsentry.residue import SIGNAL_NAMES
+    from driftsentry.scorer import ALERT_AT
+
+    out.update_check = True
+    outcome = getattr(report, "residue", None)
+    if outcome is None:
+        signals = {SIGNAL_NAMES.get(s.name, s.name)
+                   for t in report.tools for p in t.probes for s in p.signals
+                   if s.score >= ALERT_AT}
+        out.residue_verdict = "residue_alert" if report.verdict == "alert" else "accepted"
+        out.residue_signals = sorted(signals)
+        return
+    items = outcome.get("items", [])
+    out.residue_verdict = outcome.get("verdict", "")
+    out.residue_signals = sorted({i["signal"] for i in items
+                                  if i["classification"] == "residue"})
+    out.escalations = [f"{t}:{e}" for t, e in outcome.get("escalations", [])]
+    out.held_for_review = sum(1 for i in items if i["classification"] == "held_for_review")
 
 
 def summarise(results: list[UpgradeResult]) -> str:

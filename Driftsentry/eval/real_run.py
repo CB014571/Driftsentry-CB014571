@@ -63,6 +63,11 @@ class ServerRun:
     environments: list[dict[str, Any]] = field(default_factory=list)
     results: list[UpgradeResult] = field(default_factory=list)
     error: str | None = None
+    # T29. Both releases' tools/list as each advertised it, and what the
+    # update declared between them.
+    tools_old: list[dict[str, Any]] = field(default_factory=list)
+    tools_new: list[dict[str, Any]] = field(default_factory=list)
+    declared: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -72,6 +77,7 @@ class ServerRun:
             "probed_tools": self.probed_tools,
             "withheld_tools": self.withheld_tools,
             "environments": self.environments,
+            "declared": self.declared,
             "error": self.error,
             "runs": [r.to_dict() for r in self.results],
         }
@@ -240,11 +246,22 @@ async def run_server(
         out.error = f"new release: {exc}"
         return out
 
+    # T29: what the update declared, from the two tool lists as advertised.
+    from driftsentry.declared_diff import diff_definitions
+
+    out.tools_old = list(_tool_schemas(old_env.python, entry, cwd=cwd).values())
+    out.tools_new = list(_tool_schemas(new_env.python, entry, cwd=cwd).values())
+    out.declared = diff_definitions(out.tools_old, out.tools_new).to_dict()
+
+    # The new phase is scored as an UPDATE (RQ3b); the old phase above stays
+    # the plain detector, because it is the noise floor - the same release
+    # against its own baseline, where nothing was declared or changed.
     launch_new = launch_for(new_env.python, entry, cwd=cwd)
     for run in range(1, runs + 1):
         out.results.append(await probe_phase(
             short, baseline, launch_new, phase="new", run=run,
-            samples_per_probe=samples_per_probe, cycle=runs + run))
+            samples_per_probe=samples_per_probe, cycle=runs + run,
+            update_check=True))
     return out
 
 
@@ -302,6 +319,13 @@ async def run_all(
 
         if result.results:
             save(result.results, out_dir, name=f"rq1_{short}")
+        if result.tools_old or result.tools_new:
+            server_dir = out_dir / short
+            server_dir.mkdir(parents=True, exist_ok=True)
+            for name, tools in (("tools_old", result.tools_old),
+                                ("tools_new", result.tools_new)):
+                (server_dir / f"{name}.json").write_text(
+                    json.dumps(tools, indent=2, sort_keys=True), encoding="utf-8")
         (out_dir / f"rq1_{short}_meta.json").write_text(
             json.dumps(result.to_dict(), indent=2, default=str),
             encoding="utf-8")
@@ -309,6 +333,7 @@ async def run_all(
         if result.error:
             print(f"    NOT MEASURED: {result.error}", flush=True)
         else:
+            verdicts = [r.residue_verdict for r in result.results if r.phase == "new"]
             alarms = sum(1 for r in result.results
                          if r.phase == "new" and r.alerted)
             noise = sum(1 for r in result.results
@@ -318,6 +343,7 @@ async def run_all(
                   f"tools probed {len(result.probed_tools)} "
                   f"of {len(result.probed_tools) + len(result.withheld_tools)}",
                   flush=True)
+            print(f"    residue verdicts after upgrade: {verdicts}", flush=True)
     return done
 
 
