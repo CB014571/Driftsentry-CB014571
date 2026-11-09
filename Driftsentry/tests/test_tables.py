@@ -268,3 +268,53 @@ def test_an_undefined_arm_produces_no_drop_figure(tmp_path, monkeypatch):
     assert "undefined" in row
     assert "-100.0pp" not in row
     assert row.rstrip().endswith("| - |")
+
+
+# --------------------------------------------------------------------------- #
+# T31: one mapping for every printed label, and the new tables
+# --------------------------------------------------------------------------- #
+def test_the_numbering_map_is_the_plans():
+    from eval.tables import LABELS
+    assert LABELS == {"RQ1": "RQ3b", "RQ2": "Validation", "RQ3": "RQ1", "RQ4": "RQ2",
+                      "rq3u": "RQ3a", "H1": "Validation criteria",
+                      "H2": "Validation criteria", "H3": "H1", "H4": "H2"}
+
+
+def test_relabel_is_one_pass_and_leaves_lookalikes_alone():
+    """RQ1 -> RQ3b and RQ3 -> RQ1 must not chain into each other."""
+    from eval.tables import relabel
+    assert relabel("RQ1, RQ3, RQ4, H3, H4") == "RQ3b, RQ1, RQ2, H1, H2"
+    assert relabel("RQ3a RQ10 HRQ1") == "RQ3a RQ10 HRQ1"
+
+
+def test_no_table_title_uses_the_old_numbering(monkeypatch, tmp_path):
+    import re
+
+    from eval import tables
+    monkeypatch.setattr(tables, "RESULTS", tmp_path)
+    monkeypatch.setattr(tables, "RQ3U_CSV", tmp_path / "rq3u" / "rq3u_L1.csv")
+    titles = [line for t in tables.TABLES for line in t().splitlines()
+              if line.startswith("### ")]
+    assert titles
+    for title in titles:
+        assert not re.search(r"\b(RQ4|H4|Gap [34])\b", title), title
+
+
+def test_new_tables_say_not_measured_rather_than_zero(monkeypatch, tmp_path):
+    from eval import tables
+    monkeypatch.setattr(tables, "RESULTS", tmp_path)
+    monkeypatch.setattr(tables, "RQ3U_CSV", tmp_path / "rq3u" / "rq3u_L1.csv")
+    for fn in (tables.table_rq3a_detection, tables.table_rq3a_false_alarms,
+               tables.table_rq3b):
+        text = fn()
+        assert tables.MISSING in text, fn.__name__
+        assert "0.0%" not in text, fn.__name__
+
+
+def test_the_hypothesis_table_never_passes_on_missing_data(monkeypatch, tmp_path):
+    from eval import tables
+    monkeypatch.setattr(tables, "RESULTS", tmp_path)
+    monkeypatch.setattr(tables, "RQ3U_CSV", tmp_path / "rq3u" / "rq3u_L1.csv")
+    text = tables.table_hypotheses()
+    assert "PASS" not in text
+    assert text.count(tables.MISSING) >= 4

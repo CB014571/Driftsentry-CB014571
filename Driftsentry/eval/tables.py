@@ -45,6 +45,43 @@ FAMILIES = ["exfiltration", "silent-tamper", "content-injection",
             "new-egress", "sleeper", "conditional"]
 RQ3_FAMILIES = ["client", "session", "timing", "argument", "environment", "all"]
 
+# --------------------------------------------------------------------------- #
+# Numbering (T31)
+# --------------------------------------------------------------------------- #
+# The report now has two gaps and three research questions; the code, the
+# CLI and every result file keep the original plan's numbering, because
+# renaming them would make old results unreadable. This is the ONE place the
+# two are reconciled, and every printed label goes through it.
+LABELS: dict[str, str] = {
+    "RQ1": "RQ3b",          # false alarms on real upgrades
+    "RQ2": "Validation",    # active vs passive vs hash-only
+    "RQ3": "RQ1",           # probe distinguishability
+    "RQ4": "RQ2",           # countermeasures
+    "rq3u": "RQ3a",         # attacks hidden in legitimate updates
+    "H1": "Validation criteria",
+    "H2": "Validation criteria",
+    "H3": "H1",
+    "H4": "H2",
+}
+
+
+def label(old: str) -> str:
+    """The report's name for something the code calls ``old``."""
+    return LABELS[old]
+
+
+def relabel(text: str) -> str:
+    """Rewrite old-numbered labels in text produced elsewhere, in ONE pass.
+
+    One pass matters: chained replacements would turn RQ1 into RQ3b and then
+    a later RQ3 rule would not touch it, but RQ3 -> RQ1 run after RQ1 -> RQ3b
+    in a loop would rewrite text twice. A single regex substitution looks each
+    token up once.
+    """
+    import re as _re
+
+    return _re.sub(r"\b(RQ[1-4]|H[1-4])\b", lambda m: LABELS[m.group(1)], text)
+
 #: Outcomes where the attack actually executed, so detection is defined.
 FIRED = ("detected", "missed")
 BENIGN = ("benign_ok", "false_alarm")
@@ -256,7 +293,7 @@ def table_three_way() -> str:
     putting one Wilson interval on the total would treat a replication as new
     evidence and report an interval narrower than the design supports.
     """
-    lines = ["### Table 2. Three detectors on the same attacks (Gap 1, Gap 4)",
+    lines = [f"### Table 2. Three detectors on the same attacks ({label('RQ2')})",
              ""]
 
     per_sweep = []
@@ -341,7 +378,7 @@ def table_three_way() -> str:
 # Table 3 - can a server recognise a probe? (RQ3, AUC half)
 # --------------------------------------------------------------------------- #
 def table_rq3_auc() -> str:
-    lines = ["### Table 3. Separating probe traffic from genuine traffic (RQ3)",
+    lines = [f"### Table 3. Separating probe traffic from genuine traffic ({label('RQ3')})",
              ""]
     summary = _json(RESULTS / "rq3" / "rq3_analysis.json")
     if not summary:
@@ -388,7 +425,7 @@ def table_rq3_auc() -> str:
 # Table 4 - what recognition costs the detector (RQ3, recall half)
 # --------------------------------------------------------------------------- #
 def table_evasion() -> str:
-    lines = ["### Table 4. Detection lost to a learned recogniser (RQ3, H3)",
+    lines = [f"### Table 4. Detection lost to a learned recogniser ({label('RQ3')}, {label('H3')})",
              "",
              "The same attack matrix at L1, where the server attacks every",
              "call, and at L6, where it scores each call against a model",
@@ -459,7 +496,7 @@ def table_evasion() -> str:
 # Table 5 - false alarms on real upgrades (Gap 3)
 # --------------------------------------------------------------------------- #
 def table_real_upgrades() -> str:
-    lines = ["### Table 5. Real benign servers and real version upgrades (Gap 3)",
+    lines = [f"### Table 5. Real benign servers and real version upgrades ({label('RQ1')})",
              ""]
     files = sorted((RESULTS / "rq1").glob("rq1_*.jsonl"))
     if not files:
@@ -507,7 +544,7 @@ def table_real_upgrades() -> str:
 # Table 6 - countermeasures (RQ4 / H4)
 # --------------------------------------------------------------------------- #
 def table_countermeasures() -> str:
-    lines = ["### Table 6. Countermeasures, and what they cost (RQ4, H4)", ""]
+    lines = [f"### Table 6. Countermeasures, and what they cost ({label('RQ4')}, {label('H4')})", ""]
     results = _json(RESULTS / "t20" / "t20_results.json")
     if not results or not results.get("conditions"):
         return "\n".join(lines + [
@@ -521,7 +558,183 @@ def table_countermeasures() -> str:
 
     from eval.t20 import report
 
-    return "\n".join(lines + ["```", report(results).strip(), "```", ""])
+    # t20's report speaks the original numbering; relabel it on the way out.
+    return "\n".join(lines + ["```", relabel(report(results).strip()), "```", ""])
+
+
+# --------------------------------------------------------------------------- #
+# Tables 7-10 - declared-diff residue checking (RQ3a, RQ3b) and the hypotheses
+# --------------------------------------------------------------------------- #
+RQ3U_CSV = RESULTS / "rq3u" / "rq3u_L1.csv"
+
+
+def _rq3u() -> dict | None:
+    """The T30 analysis, recomputed from the result files - never transcribed."""
+    if not RQ3U_CSV.is_file() or RQ3U_CSV.stat().st_size == 0:
+        return None
+    from eval.rq3u_analyse import analyse, load_episodes, load_real_upgrades
+
+    return analyse(load_episodes(RQ3U_CSV), load_real_upgrades(RESULTS / "rq1"))
+
+
+def _cell(r: dict) -> str:
+    return _rate(r["k"], r["n"]) if r["n"] else MISSING
+
+
+def table_rq3a_detection() -> str:
+    lines = [f"### Table 7. Attacks hidden in legitimate updates ({label('rq3u')})", ""]
+    out = _rq3u()
+    if out is None:
+        return _lines(lines + [
+            f"**{MISSING}.** Run:", "",
+            "    python -m eval rq3u --families all --covers C0,C1,C2,C3 "
+            "--benign-updates C1,C2 --seeds 1,2,3", ""])
+    from eval.update_conditions import CONDITIONS
+
+    covers = sorted({cov for c in out["detection"].values() for cov in c})
+    lines += ["Attributed detection: an alert naming a signal the hidden change causes.",
+              f"Attacks that fired: {out['fired_attacks']}; never fired, excluded: "
+              f"{out['never_triggered']}.", "",
+              "| condition | " + " | ".join(covers) + " | pooled C0-C2 |",
+              "| --- |" + " --- |" * (len(covers) + 1)]
+    for c in CONDITIONS:
+        cells = [_cell(out["detection"][c][cov]["attributed"]) for cov in covers]
+        lines.append(f"| {c} | " + " | ".join(cells) + f" | {_cell(out['pooled'][c])} |")
+    lines += ["", "Residue against each baseline, paired, exact McNemar with Holm correction:",
+              "", "| baseline | only residue | only baseline | p | Holm p | significant |",
+              "| --- | --- | --- | --- | --- | --- |"]
+    for b, t in out["mcnemar_vs_residue"].items():
+        lines.append(f"| {b} | {t['b01']} | {t['b10']} | {t['p']:.4g} | "
+                     f"{t['p_holm']:.4g} | {'yes' if t['significant'] else 'no'} |")
+    c3 = out["c3"]
+    lines += ["", f"C3, declaration widened to cover the payload: {c3['fired']} fired, "
+                  f"residue attributed {c3['residue_attributed']}, evaded {c3['evaded']}; "
+                  f"of the evasions, escalated: {_cell(c3['evaded_with_escalation'])}.", ""]
+    return _lines(lines)
+
+
+def table_rq3a_false_alarms() -> str:
+    lines = [f"### Table 8. Synthetic benign updates: false alarms ({label('rq3u')})", ""]
+    out = _rq3u()
+    if out is None:
+        return _lines(lines + [f"**{MISSING}.** Produced by the same sweep as Table 7.", ""])
+    lines += ["A legitimate declared change shipped with no attack. Any alert is a false alarm.",
+              "", "| condition | false alarms |", "| --- | --- |"]
+    for c, r in out["synthetic_false_alarms"].items():
+        lines.append(f"| {c} | {_cell(r)} |")
+    return _lines(lines + [""])
+
+
+def table_rq3b() -> str:
+    lines = [f"### Table 9. Residue on real benign upgrades ({label('RQ1')})", ""]
+    from eval.rq3u_analyse import load_real_upgrades
+
+    servers = load_real_upgrades(RESULTS / "rq1")
+    if not servers:
+        return _lines(lines + [
+            f"**{MISSING}.** No update-checked runs of real servers. Run:", "",
+            "    python -m eval real", "",
+            "Seven servers are approved (eval/real_servers.json); H3 asks for",
+            "at least 15, and the shortfall is a stated limitation.", ""])
+    lines += ["| server | runs | residue_alert | escalation | held | residue signals |",
+              "| --- | --- | --- | --- | --- | --- |"]
+    for s_ in servers:
+        lines.append(f"| {s_['server']} | {s_['runs']} | {s_['residue_runs']} | "
+                     f"{s_['escalation_runs']} | {s_['held_runs']} | "
+                     f"{', '.join(s_['residue_signals']) or '-'} |")
+    k = sum(1 for s_ in servers if s_["residue_runs"])
+    lines += ["", f"Upgrades leaving a residue: {_rate(k, len(servers))}. Labels are null by "
+                  "the user's decision, so this rate is reported unlabelled.", ""]
+    return _lines(lines)
+
+
+def _h1() -> tuple[str, str]:
+    """H1: a family other than argument at AUC >= 0.9 whose recall drops >= 50pp."""
+    summary = _json(RESULTS / "rq3" / "rq3_analysis.json") or {}
+    aucs = {n: r["auc"] for n, r in (summary.get("families") or {}).items() if "auc" in r}
+    if not aucs:
+        return MISSING, "no RQ3 analysis"
+    met = []
+    for family in RQ3_FAMILIES:
+        if family == "argument" or aucs.get(family, 0.0) < 0.9:
+            continue
+        l1 = _recall_cell(RESULTS / f"exp3_{family}_L1.csv")
+        l6 = _recall_cell(RESULTS / f"exp3_{family}_L6.csv")
+        if l1[0] == "ok" and l6[0] == "ok":
+            drop = 100.0 * (l1[1][0] / l1[1][1] - l6[1][0] / l6[1][1])
+            if drop >= 50.0:
+                met.append(f"{family} (AUC {aucs[family]:.3f}, recall -{drop:.0f}pp)")
+    if met:
+        return "PASS", "; ".join(met)
+    return "FAIL", "no family other than argument has AUC >= 0.9 and a >= 50pp drop"
+
+
+def _h2() -> tuple[str, str]:
+    results = _json(RESULTS / "t20" / "t20_results.json")
+    if not results or "all" not in (results.get("conditions") or {}):
+        return MISSING, "the countermeasure comparison is incomplete"
+    from eval.conditions import h4_verdict
+
+    v = h4_verdict(results["conditions"])
+    return v["verdict"], (f"best AUC {v['best_auc']:.3f} (needs <= 0.6), recall gap "
+                          f"{v['recall_gap_pp']:+.0f}pp (needs within 10), false alarms "
+                          f"{v['false_alarm_delta_pp']:+.1f}pp (needs <= +2)")
+
+
+def _h3() -> tuple[str, str]:
+    out = _rq3u()
+    if out is None:
+        return MISSING, "the RQ3a sweep has not run"
+    v = out["h3"]
+    # The episode count leads, so a verdict computed while the sweep is still
+    # running cannot be read as the sweep's verdict.
+    return v["result"], "; ".join(
+        [f"on {out['episodes']} episodes ({out['fired_attacks']} attacks fired)"]
+        + v["reasons"] + [f"missing: {m}" for m in v["missing"]])
+
+
+def _validation() -> list[tuple[str, str, str]]:
+    rows = [("Per-tool thresholds halve benign-update false alarms at equal recall",
+             MISSING, "no frozen per-tool threshold file exists")]
+    # Full against hash-only, on ONE replication: the five L1 sweeps repeat the
+    # same twelve configurations, so pooling them would overstate n (Table 2).
+    from eval.stats import mcnemar_p
+
+    best = None
+    for path in sorted(RESULTS.glob("exp3_*_L1.csv")):
+        eps = [c for c in _episodes(_rows(path)).values() if _outcome(c) in FIRED]
+        if eps and (best is None or len(eps) < len(best[1])):
+            best = (path.stem, eps)
+    if best:
+        full = [any(_truthy(r.get("full_detected")) for r in c) for c in best[1]]
+        hashd = [any(_truthy(r.get("hash_detected")) for r in c) for c in best[1]]
+        t = mcnemar_p(hashd, full)
+        rows.append(("Full DriftSentry detects significantly more than hash-only",
+                     "PASS" if t["p"] < 0.05 and t["b01"] > t["b10"] else "FAIL",
+                     f"{best[0]}: full {sum(full)}/{len(full)}, hash {sum(hashd)}/{len(hashd)}, "
+                     f"exact McNemar p={t['p']:.4g}"))
+    else:
+        rows.append(("Full DriftSentry detects significantly more than hash-only",
+                     MISSING, "no exp3 L1 results"))
+    rows.append(("Catches attacks on tools the agent never calls, which passive cannot",
+                 MISSING, "no episode confined to a tool the replayed traffic avoids has been run"))
+    return rows
+
+
+def table_hypotheses() -> str:
+    lines = ["### Table 10. Hypotheses", "",
+             "| | hypothesis | result | basis |", "| --- | --- | --- | --- |"]
+    for name, statement, (result, basis) in (
+            ("H1", "a non-argument family separates probes at AUC >= 0.9, and "
+                   "withholding drops recall >= 50pp", _h1()),
+            ("H2", "mimicry brings AUC <= 0.6, recall within 10pp, false alarms "
+                   "+2pp at most", _h2()),
+            ("H3", "residue detects >= 80% pooled C0-C2, beats three baselines "
+                   "(Holm p<0.05), <= 15% of real upgrades leave residue", _h3())):
+        lines.append(f"| {name} | {statement} | {result} | {basis} |")
+    for statement, result, basis in _validation():
+        lines.append(f"| Validation | {statement} | {result} | {basis} |")
+    return _lines(lines + ["", "A FAIL is a result, not a defect; nothing was tuned to pass.", ""])
 
 
 # --------------------------------------------------------------------------- #
@@ -529,7 +742,8 @@ def table_countermeasures() -> str:
 # --------------------------------------------------------------------------- #
 TABLES = (table_probe_modes, table_paired_demonstration, table_three_way,
           table_rq3_auc, table_evasion, table_real_upgrades,
-          table_countermeasures)
+          table_countermeasures, table_rq3a_detection, table_rq3a_false_alarms,
+          table_rq3b, table_hypotheses)
 
 
 def build(out_path: str | Path | None = None) -> str:
