@@ -1,0 +1,173 @@
+{
+  "server": "alchemy",
+  "old_version": "2026.10.6.103105",
+  "new_version": "2026.10.15.202659",
+  "probed_tools": [
+    "schema_definitions"
+  ],
+  "withheld_tools": {
+    "all_table_names": "strict policy: no read-only annotation or verb",
+    "filter_table_names": "strict policy: no read-only annotation or verb",
+    "execute_query": "name suggests state change ('execute')"
+  },
+  "environments": [
+    {
+      "server": "alchemy",
+      "version": "2026.10.6.103105",
+      "root": "F:\\fyp project\\Driftsentry\\.eval_workspace\\real\\alchemy-old",
+      "sdk_version": "2.1.1",
+      "sdk_resolved_by": "pip",
+      "attempts": [
+        {
+          "mcp": "2.1.1",
+          "source": "pip",
+          "ok": true,
+          "detail": "started"
+        }
+      ]
+    },
+    {
+      "server": "alchemy",
+      "version": "2026.10.15.202659",
+      "root": "F:\\fyp project\\Driftsentry\\.eval_workspace\\real\\alchemy-new",
+      "sdk_version": "2.3.0",
+      "sdk_resolved_by": "pip",
+      "attempts": [
+        {
+          "mcp": "2.3.0",
+          "source": "pip",
+          "ok": true,
+          "detail": "started"
+        }
+      ]
+    }
+  ],
+  "declared": {
+    "tools_added": [],
+    "tools_removed": [],
+    "tools": {}
+  },
+  "error": null,
+  "runs": [
+    {
+      "server": "alchemy",
+      "phase": "old",
+      "run": 1,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:c55b080bc50a295358d47a6e19a3bc2e3c945183ba37d64384f25d93d09b5dae",
+      "alerted": false,
+      "per_tool": {
+        "schema_definitions": 0.0
+      },
+      "error": null,
+      "update_check": false,
+      "residue_verdict": "",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "alchemy",
+      "phase": "old",
+      "run": 2,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:c55b080bc50a295358d47a6e19a3bc2e3c945183ba37d64384f25d93d09b5dae",
+      "alerted": false,
+      "per_tool": {
+        "schema_definitions": 0.0
+      },
+      "error": null,
+      "update_check": false,
+      "residue_verdict": "",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "alchemy",
+      "phase": "old",
+      "run": 3,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:c55b080bc50a295358d47a6e19a3bc2e3c945183ba37d64384f25d93d09b5dae",
+      "alerted": false,
+      "per_tool": {
+        "schema_definitions": 0.0
+      },
+      "error": null,
+      "update_check": false,
+      "residue_verdict": "",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "alchemy",
+      "phase": "new",
+      "run": 1,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:c55b080bc50a295358d47a6e19a3bc2e3c945183ba37d64384f25d93d09b5dae",
+      "alerted": false,
+      "per_tool": {
+        "schema_definitions": 0.0
+      },
+      "error": null,
+      "update_check": true,
+      "residue_verdict": "accepted",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "alchemy",
+      "phase": "new",
+      "run": 2,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:c55b080bc50a295358d47a6e19a3bc2e3c945183ba37d64384f25d93d09b5dae",
+      "alerted": false,
+      "per_tool": {
+        "schema_definitions": 0.0
+      },
+      "error": null,
+      "update_check": true,
+      "residue_verdict": "accepted",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "alchemy",
+      "phase": "new",
+      "run": 3,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:c55b080bc50a295358d47a6e19a3bc2e3c945183ba37d64384f25d93d09b5dae",
+      "alerted": false,
+      "per_tool": {
+        "schema_definitions": 0.0
+      },
+      "error": null,
+      "update_check": true,
+      "residue_verdict": "accepted",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+[
+  {
+    "_meta": null,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": null
+    },
+    "description": "Get current time in a specific timezone",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "timezone": {
+          "description": "IANA timezone name (e.g., 'America/New_York', 'Europe/London'). Use 'Asia/Colombo' as local timezone if no timezone provided by the user.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "timezone"
+      ],
+      "type": "object"
+    },
+    "name": "get_current_time",
+    "outputSchema": null,
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": null
+    },
+    "description": "Convert time between timezones",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "source_timezone": {
+          "description": "Source IANA timezone name (e.g., 'America/New_York', 'Europe/London'). Use 'Asia/Colombo' as local timezone if no source timezone provided by the user.",
+          "type": "string"
+        },
+        "target_timezone": {
+          "description": "Target IANA timezone name (e.g., 'Asia/Tokyo', 'America/San_Francisco'). Use 'Asia/Colombo' as local timezone if no target timezone provided by the user.",
+          "type": "string"
+        },
+        "time": {
+          "description": "Time to convert in 24-hour format (HH:MM)",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_timezone",
+        "time",
+        "target_timezone"
+      ],
+      "type": "object"
+    },
+    "name": "convert_time",
+    "outputSchema": null,
+    "title": null
+  }
+]

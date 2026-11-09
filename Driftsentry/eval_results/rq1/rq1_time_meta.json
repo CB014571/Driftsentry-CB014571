@@ -1,0 +1,232 @@
+{
+  "server": "time",
+  "old_version": "2026.8.18",
+  "new_version": "2026.10.28",
+  "probed_tools": [
+    "get_current_time",
+    "convert_time"
+  ],
+  "withheld_tools": {},
+  "environments": [
+    {
+      "server": "time",
+      "version": "2026.8.18",
+      "root": "F:\\fyp project\\Driftsentry\\.eval_workspace\\real\\time-old",
+      "sdk_version": "1.30.0",
+      "sdk_resolved_by": "pip",
+      "attempts": [
+        {
+          "mcp": "1.30.0",
+          "source": "pip",
+          "ok": true,
+          "detail": "started"
+        }
+      ]
+    },
+    {
+      "server": "time",
+      "version": "2026.10.28",
+      "root": "F:\\fyp project\\Driftsentry\\.eval_workspace\\real\\time-new",
+      "sdk_version": "2.3.0",
+      "sdk_resolved_by": "pip",
+      "attempts": [
+        {
+          "mcp": "2.3.0",
+          "source": "pip",
+          "ok": true,
+          "detail": "started"
+        }
+      ]
+    }
+  ],
+  "declared": {
+    "tools_added": [],
+    "tools_removed": [],
+    "tools": {
+      "convert_time": {
+        "name": "convert_time",
+        "description_changed": false,
+        "input_changes": [],
+        "output_changes": [
+          {
+            "path": "source",
+            "kind": "added"
+          },
+          {
+            "path": "target",
+            "kind": "added"
+          },
+          {
+            "path": "time_difference",
+            "kind": "added"
+          }
+        ],
+        "annotations": {},
+        "escalations": []
+      },
+      "get_current_time": {
+        "name": "get_current_time",
+        "description_changed": false,
+        "input_changes": [],
+        "output_changes": [
+          {
+            "path": "datetime",
+            "kind": "added"
+          },
+          {
+            "path": "day_of_week",
+            "kind": "added"
+          },
+          {
+            "path": "is_dst",
+            "kind": "added"
+          },
+          {
+            "path": "timezone",
+            "kind": "added"
+          }
+        ],
+        "annotations": {},
+        "escalations": []
+      }
+    }
+  },
+  "error": null,
+  "runs": [
+    {
+      "server": "time",
+      "phase": "old",
+      "run": 1,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:05cc6a79a702381ff13ffa0ac102f1aaccf729c9891548b6722f525a33e4dc83",
+      "alerted": false,
+      "per_tool": {
+        "get_current_time": 0.0,
+        "convert_time": 0.0
+      },
+      "error": null,
+      "update_check": false,
+      "residue_verdict": "",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "time",
+      "phase": "old",
+      "run": 2,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:05cc6a79a702381ff13ffa0ac102f1aaccf729c9891548b6722f525a33e4dc83",
+      "alerted": false,
+      "per_tool": {
+        "get_current_time": 0.0,
+        "convert_time": 0.0
+      },
+      "error": null,
+      "update_check": false,
+      "residue_verdict": "",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "time",
+      "phase": "old",
+      "run": 3,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:05cc6a79a702381ff13ffa0ac102f1aaccf729c9891548b6722f525a33e4dc83",
+      "alerted": false,
+      "per_tool": {
+        "get_current_time": 0.0,
+        "convert_time": 0.0
+      },
+      "error": null,
+      "update_check": false,
+      "residue_verdict": "",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "time",
+      "phase": "new",
+      "run": 1,
+      "score": 2.2607,
+      "verdict": "alert",
+      "triggered_by": "behavioural_drift",
+      "definition_changed": true,
+      "definition_hash": "sha256:3f4ed241612dd62a4e7163badf7a5bee9ff34afbb5c198b155da55f898dcec9a",
+      "alerted": true,
+      "per_tool": {
+        "convert_time": 2.2607,
+        "get_current_time": 2.1091
+      },
+      "error": null,
+      "update_check": true,
+      "residue_verdict": "residue_alert",
+      "residue_signals": [
+        "behavioural_drift",
+        "determinism_break"
+      ],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "time",
+      "phase": "new",
+      "run": 2,
+      "score": 2.2607,
+      "verdict": "alert",
+      "triggered_by": "behavioural_drift",
+      "definition_changed": true,
+      "definition_hash": "sha256:3f4ed241612dd62a4e7163badf7a5bee9ff34afbb5c198b155da55f898dcec9a",
+      "alerted": true,
+      "per_tool": {
+        "convert_time": 2.2607,
+        "get_current_time": 2.1091
+      },
+      "error": null,
+      "update_check": true,
+      "residue_verdict": "residue_alert",
+      "residue_signals": [
+        "behavioural_drift",
+        "determinism_break"
+      ],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "time",
+      "phase": "new",
+      "run": 3,
+      "score": 2.2607,
+      "verdict": "alert",
+      "triggered_by": "behavioural_drift",
+      "definition_changed": true,
+      "definition_hash": "sha256:3f4ed241612dd62a4e7163badf7a5bee9ff34afbb5c198b155da55f898dcec9a",
+      "alerted": true,
+      "per_tool": {
+        "convert_time": 2.2607,
+        "get_current_time": 2.1091
+      },
+      "error": null,
+      "update_check": true,
+      "residue_verdict": "residue_alert",
+      "residue_signals": [
+        "behavioural_drift",
+        "determinism_break"
+      ],
+      "escalations": [],
+      "held_for_review": 0
+    }
+  ]
+}

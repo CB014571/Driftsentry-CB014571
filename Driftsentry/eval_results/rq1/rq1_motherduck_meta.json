@@ -1,0 +1,190 @@
+{
+  "server": "motherduck",
+  "old_version": "1.0.8",
+  "new_version": "1.1.0",
+  "probed_tools": [
+    "execute_query",
+    "list_databases",
+    "list_tables",
+    "list_columns"
+  ],
+  "withheld_tools": {},
+  "environments": [
+    {
+      "server": "motherduck",
+      "version": "1.0.8",
+      "root": "F:\\fyp project\\Driftsentry\\.eval_workspace\\real\\motherduck-old",
+      "sdk_version": "2.3.0",
+      "sdk_resolved_by": "pip",
+      "attempts": [
+        {
+          "mcp": "2.3.0",
+          "source": "pip",
+          "ok": true,
+          "detail": "started"
+        }
+      ]
+    },
+    {
+      "server": "motherduck",
+      "version": "1.1.0",
+      "root": "F:\\fyp project\\Driftsentry\\.eval_workspace\\real\\motherduck-new",
+      "sdk_version": "2.3.0",
+      "sdk_resolved_by": "pip",
+      "attempts": [
+        {
+          "mcp": "2.3.0",
+          "source": "pip",
+          "ok": true,
+          "detail": "started"
+        }
+      ]
+    }
+  ],
+  "declared": {
+    "tools_added": [],
+    "tools_removed": [],
+    "tools": {}
+  },
+  "error": null,
+  "runs": [
+    {
+      "server": "motherduck",
+      "phase": "old",
+      "run": 1,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:715aee8dc71b0d982ccd1c591a4694fc4e1188198cde915ad306b089e06c7640",
+      "alerted": false,
+      "per_tool": {
+        "execute_query": 0.0,
+        "list_databases": 0.0,
+        "list_tables": 0.0,
+        "list_columns": 0.0
+      },
+      "error": null,
+      "update_check": false,
+      "residue_verdict": "",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "motherduck",
+      "phase": "old",
+      "run": 2,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:715aee8dc71b0d982ccd1c591a4694fc4e1188198cde915ad306b089e06c7640",
+      "alerted": false,
+      "per_tool": {
+        "execute_query": 0.0,
+        "list_databases": 0.0,
+        "list_tables": 0.0,
+        "list_columns": 0.0
+      },
+      "error": null,
+      "update_check": false,
+      "residue_verdict": "",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "motherduck",
+      "phase": "old",
+      "run": 3,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:715aee8dc71b0d982ccd1c591a4694fc4e1188198cde915ad306b089e06c7640",
+      "alerted": false,
+      "per_tool": {
+        "execute_query": 0.0,
+        "list_databases": 0.0,
+        "list_tables": 0.0,
+        "list_columns": 0.0
+      },
+      "error": null,
+      "update_check": false,
+      "residue_verdict": "",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "motherduck",
+      "phase": "new",
+      "run": 1,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:715aee8dc71b0d982ccd1c591a4694fc4e1188198cde915ad306b089e06c7640",
+      "alerted": false,
+      "per_tool": {
+        "execute_query": 0.0,
+        "list_databases": 0.0,
+        "list_tables": 0.0,
+        "list_columns": 0.0
+      },
+      "error": null,
+      "update_check": true,
+      "residue_verdict": "accepted",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "motherduck",
+      "phase": "new",
+      "run": 2,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:715aee8dc71b0d982ccd1c591a4694fc4e1188198cde915ad306b089e06c7640",
+      "alerted": false,
+      "per_tool": {
+        "execute_query": 0.0,
+        "list_databases": 0.0,
+        "list_tables": 0.0,
+        "list_columns": 0.0
+      },
+      "error": null,
+      "update_check": true,
+      "residue_verdict": "accepted",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "motherduck",
+      "phase": "new",
+      "run": 3,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:715aee8dc71b0d982ccd1c591a4694fc4e1188198cde915ad306b089e06c7640",
+      "alerted": false,
+      "per_tool": {
+        "execute_query": 0.0,
+        "list_databases": 0.0,
+        "list_tables": 0.0,
+        "list_columns": 0.0
+      },
+      "error": null,
+      "update_check": true,
+      "residue_verdict": "accepted",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    }
+  ]
+}

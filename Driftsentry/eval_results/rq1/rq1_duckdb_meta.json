@@ -1,0 +1,11 @@
+{
+  "server": "duckdb",
+  "old_version": "1.0.1",
+  "new_version": "1.1.0",
+  "probed_tools": [],
+  "withheld_tools": {},
+  "environments": [],
+  "declared": {},
+  "error": "old release: duckdb 1.0.1 started under no mcp version tried (9 attempts). Last error: no handshake within 60s",
+  "runs": []
+}

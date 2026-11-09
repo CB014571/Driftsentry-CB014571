@@ -1,0 +1,11 @@
+{
+  "server": "calculator",
+  "old_version": "0.1.2",
+  "new_version": "0.2.1",
+  "probed_tools": [],
+  "withheld_tools": {},
+  "environments": [],
+  "declared": {},
+  "error": "old release: calculator 0.1.2 started under no mcp version tried (9 attempts). Last error: install failed: pip install mcp-server-calculator==0.1.2 mcp==1.2.1 failed: ERROR: Cannot install mcp-server-calculator==0.1.2 and mcp==1.2.1 because these package versions have conflicting dependencies.\nERROR: ResolutionImpossible: for help visit https://pip.pypa.io/en/latest/topics/dependency-resolution/#dealing-with-dependency-conflicts",
+  "runs": []
+}
