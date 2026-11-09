@@ -494,14 +494,27 @@ def _fill_update_columns(row: ExperimentRow, scored, cover: str) -> None:
 
     from eval.update_conditions import CONDITIONS
 
+    from eval.update_conditions import alerting_signals
+
     residue = scored.residue.residue or {}
     items = residue.get("items", [])
     row.release = "v2"
     row.cover = cover
     row.declared_changes = json.dumps(scored.diff.to_dict(), sort_keys=True)
-    row.residue_verdict = residue.get("verdict", "accepted" if scored.diff.empty else "")
-    row.residue_signals = ",".join(sorted({i["signal"] for i in items
-                                           if i["classification"] == "residue"}))
+    if scored.diff.empty:
+        # Nothing declared, so the residue checker never ran: row 1 of the
+        # rules, the check reduces to the base detector and everything it
+        # alerts on is residue. Recording "accepted" here, as the first live
+        # C0 episode did, contradicted alert_residue on the same row.
+        signals = set().union(*alerting_signals(scored.residue).values()) \
+            if scored.residue.tools else set()
+        row.residue_verdict = ("residue_alert" if scored.residue.verdict == "alert"
+                               else "accepted")
+        row.residue_signals = ",".join(sorted(signals))
+    else:
+        row.residue_verdict = residue.get("verdict", "")
+        row.residue_signals = ",".join(sorted({i["signal"] for i in items
+                                               if i["classification"] == "residue"}))
     row.escalations = ",".join(f"{t}:{e}" for t, e in residue.get("escalations", []))
     row.held_for_review = sum(1 for i in items if i["classification"] == "held_for_review")
     for name in CONDITIONS:

@@ -82,17 +82,33 @@ def attribution_signals(family: str, payload: str | None = None) -> set[str]:
     return set(ATTRIBUTION.get(delivered, set()))
 
 
+# Side effects belong to the server PROCESS, not to a tool. Measured in the
+# first live update episodes: the attacker keeps its exfiltration sink open
+# and its egress sockets connected on purpose (attacker/sink.py), and the
+# sandbox monitor observes the process, so once the attack has fired its open
+# file is seen during the next probe of whatever tool comes next. In a C3
+# exfiltration episode the alert landed on read_document, a tool the attack
+# never touches. No monitor can localise these to a tool, so they are
+# attributed wherever they appear. A cover change cannot cause them - every
+# cover is pure - so this cannot credit the cover as the attack.
+PROCESS_SIGNALS = {"new_file", "new_egress_host"}
+
+
 def attributed(signals_on_tool: dict[str, set[str]], *, attacked_tool: str,
                family: str, payload: str | None = None) -> bool:
-    """Does any alerting signal on the attacked tool name what the attack did?
+    """Does an alerting signal name what the attack did?
 
     ``signals_on_tool`` maps tool -> the residue-vocabulary names of signals
-    that alerted on it. Signals on any other tool are not the attack's, which
-    is exactly what separates detecting the hidden change from alarming on
-    the cover change beside it.
+    that alerted on it. Content signals must be on the attacked tool: that is
+    what separates detecting the hidden change from alarming on a cover
+    change made to a different tool (C1). Side-effect signals count on any
+    tool, because they are the process's, not a tool's - see PROCESS_SIGNALS.
     """
-    return bool(signals_on_tool.get(attacked_tool, set())
-                & attribution_signals(family, payload))
+    wanted = attribution_signals(family, payload)
+    if signals_on_tool.get(attacked_tool, set()) & wanted:
+        return True
+    anywhere = set().union(*signals_on_tool.values()) if signals_on_tool else set()
+    return bool(anywhere & wanted & PROCESS_SIGNALS)
 
 
 def events_path(attacker_home: str | Path | None = None) -> Path:

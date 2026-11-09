@@ -87,13 +87,28 @@ def test_no_content_family_is_attributed_by_a_structural_change():
         assert "structural_change" not in ground_truth.attribution_signals(family)
 
 
-def test_attribution_requires_the_attacked_tool():
-    signals = {"search_orders": {"new_egress_host"}}
+def test_a_content_signal_must_be_on_the_attacked_tool():
+    """What keeps a C1 cover change on another tool from being credited."""
+    signals = {"search_orders": {"determinism_break"}}
     assert not ground_truth.attributed(signals, attacked_tool=ATTACKED,
-                                       family="new-egress")
-    signals[ATTACKED] = {"new_egress_host"}
+                                       family="silent-tamper")
+    signals[ATTACKED] = {"determinism_break"}
     assert ground_truth.attributed(signals, attacked_tool=ATTACKED,
-                                   family="new-egress")
+                                   family="silent-tamper")
+
+
+def test_a_side_effect_is_the_process_and_counts_on_any_tool():
+    """Measured: the attacker keeps its sink file and egress sockets open, so
+    in a live C3 exfiltration the alert landed on read_document."""
+    for family, signal in (("exfiltration", "new_file"),
+                           ("new-egress", "new_egress_host")):
+        assert ground_truth.attributed({"read_document": {signal}},
+                                       attacked_tool=ATTACKED, family=family)
+
+
+def test_a_side_effect_the_family_does_not_cause_is_still_not_attribution():
+    assert not ground_truth.attributed({"read_document": {"new_egress_host"}},
+                                       attacked_tool=ATTACKED, family="silent-tamper")
 
 
 def test_the_wrong_signal_is_not_attribution():
@@ -278,3 +293,35 @@ def test_rq3u_refuses_a_per_tool_file_that_was_never_frozen(tmp_path, capsys):
                      encoding="utf-8")
     assert cli.main(["rq3u", "--quick", "--per-tool", str(loose)]) == 2
     assert "do not verify" in capsys.readouterr().err
+
+
+
+def test_a_c0_row_says_the_base_detector_decided():
+    """The first live C0 episode wrote residue_verdict=accepted beside
+    alert_residue=True. With nothing declared the checker never runs and the
+    base detector's alerts are the residue."""
+    from eval.harness import _fill_update_columns
+    from eval.record import ExperimentRow, now
+    m = ReprobeReport(server="s", baseline_definition_hash="h",
+                      observed_definition_hash="h",
+                      checks=[probe(new_files=["/tmp/sink.log"])],
+                      embedding_backend="hash", observed_definitions=V1)
+    scored = score_update(m, V1, threshold_ratio=T, family="exfiltration",
+                          attacked_tool=ATTACKED)
+    row = ExperimentRow(experiment_id="e", episode_id="ep", timestamp=now())
+    _fill_update_columns(row, scored, "C0")
+    assert row.alert_residue is True
+    assert row.residue_verdict == "residue_alert"
+    assert row.residue_signals == "new_file"
+
+
+def test_a_quiet_c0_row_is_accepted():
+    from eval.harness import _fill_update_columns
+    from eval.record import ExperimentRow, now
+    m = ReprobeReport(server="s", baseline_definition_hash="h",
+                      observed_definition_hash="h", checks=[probe()],
+                      embedding_backend="hash", observed_definitions=V1)
+    row = ExperimentRow(experiment_id="e", episode_id="ep", timestamp=now())
+    _fill_update_columns(row, score_update(m, V1, threshold_ratio=T,
+                                           attacked_tool=ATTACKED), "C0")
+    assert row.residue_verdict == "accepted" and row.residue_signals == ""
