@@ -58,9 +58,9 @@ def test_label_is_still_the_users_call():
 # --------------------------------------------------------------------------- #
 def _stub_server(monkeypatch, offered, schemas=None):
     monkeypatch.setattr(real_run, "starts_and_lists",
-                        lambda p, e, cwd=None: (True, json.dumps(offered)))
+                        lambda p, e, cwd=None, env=None: (True, json.dumps(offered)))
     monkeypatch.setattr(real_run, "_tool_schemas",
-                        lambda p, e, cwd=None: schemas or {})
+                        lambda p, e, cwd=None, env=None: schemas or {})
 
 
 def test_a_writing_tool_is_withheld_with_the_reason(monkeypatch):
@@ -112,7 +112,7 @@ def test_a_read_only_annotation_is_positive_evidence(monkeypatch):
 def test_a_server_that_will_not_start_is_not_silently_empty(monkeypatch):
     from eval.real_envs import EnvError
     monkeypatch.setattr(real_run, "starts_and_lists",
-                        lambda p, e, cwd=None: (False, "AttributeError: ..."))
+                        lambda p, e, cwd=None, env=None: (False, "AttributeError: ..."))
     with pytest.raises(EnvError):
         confirm_read_only(Path("py"), ["-m", "x"])
 
@@ -229,3 +229,72 @@ def test_the_noise_phase_is_never_update_checked():
     new_call = src[src.index('phase="new"') - 200: src.index('phase="new"') + 160]
     assert "update_check" not in old_call
     assert "update_check=True" in new_call
+
+
+# --------------------------------------------------------------------------- #
+# T29: the approved database servers - fixtures, placeholders, environment
+# --------------------------------------------------------------------------- #
+def test_the_default_run_is_exactly_the_approved_servers():
+    import json
+
+    from eval import real_run
+    data = json.loads(real_run.SERVERS_JSON.read_text(encoding="utf-8"))
+    approved = set(data["_decisions"]["run_scope"]["approved"]) | set(
+        data["_decisions"]["rq3b_scope"]["approved"])
+    specs = load_specs(only=("time", "calculator", "git", "sqlite",
+                             "duckdb", "motherduck", "alchemy"))
+    assert {s["name"] for s in specs} == approved
+    assert all(not s.get("network") and not s.get("needs_key") for s in specs)
+
+
+def test_the_cli_default_is_the_approved_set():
+    import argparse
+
+    import eval.__main__ as cli
+    src = (cli.__file__ and open(cli.__file__, encoding="utf-8").read())
+    assert 'default="time,calculator,git,sqlite,duckdb,motherduck,alchemy"' in src
+
+
+def test_motherduck_never_points_at_the_cloud():
+    spec = load_specs(only=("motherduck",))[0]
+    joined = " ".join(spec["entry"])
+    assert "{db}" in joined and "md:" not in joined
+    assert "motherduck_token" not in json.dumps(spec).lower()
+
+
+def test_placeholders_fill_from_the_fixture(tmp_path):
+    from eval.real_run import _fill
+    db = tmp_path / "fixture.sqlite"
+    assert _fill("--db-path={db}", db) == f"--db-path={db}"
+    assert _fill("sqlite:///{db_posix}", db) == f"sqlite:///{db.as_posix()}"
+    assert _fill("{db_dir}", db) == str(tmp_path)
+    assert _fill("plain", None) == "plain"
+
+
+def test_a_sqlite_fixture_is_created_once_and_holds_the_seed(tmp_path):
+    import sqlite3
+    import sys as _sys
+
+    from eval.real_run import make_fixture
+    path = make_fixture("sqlite", tmp_path, Path(_sys.executable))
+    first = path.stat().st_mtime_ns
+    assert make_fixture("sqlite", tmp_path, Path(_sys.executable)) == path
+    assert path.stat().st_mtime_ns == first, "both releases must read the same file"
+    rows = sqlite3.connect(path).execute("select count(*) from customers").fetchone()
+    assert rows == (3,)
+
+
+def test_an_unknown_fixture_kind_is_refused(tmp_path):
+    import sys as _sys
+
+    from eval.real_envs import EnvError
+    from eval.real_run import make_fixture
+    with pytest.raises(EnvError):
+        make_fixture("postgres", tmp_path, Path(_sys.executable))
+
+
+def test_the_launch_carries_only_the_servers_own_environment():
+    from eval.real_upgrades import launch_for
+    launch = launch_for(Path("py"), ["-c", "x"], env={"DB_URL": "sqlite:///x"})
+    assert launch["env"] == {"DB_URL": "sqlite:///x"}
+    assert launch_for(Path("py"), ["-c", "x"])["env"] == {}

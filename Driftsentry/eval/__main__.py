@@ -429,9 +429,11 @@ def main(argv: list[str] | None = None) -> int:
     rq3u.set_defaults(func=_cmd_rq3u)
 
     real = sub.add_parser("real", help="false alarms on real version upgrades (Gap 3)")
-    real.add_argument("--servers", default="time,calculator,git,sqlite",
+    real.add_argument("--servers",
+                      default="time,calculator,git,sqlite,duckdb,motherduck,alchemy",
                       help="comma-separated short names from real_servers.json; "
-                           "the default is the local, no-network set")
+                           "the default is every approved server - the local four "
+                           "(7 Nov) and the three databases (9 Nov)")
     real.add_argument("--runs", type=int, default=3,
                       help="probe runs per phase (noise, then upgrade)")
     real.add_argument("--no-sdk-walk", action="store_true",

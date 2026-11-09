@@ -70,14 +70,17 @@ def venv_python(root: Path) -> Path:
     raise FileNotFoundError(f"no interpreter in {root}")
 
 
-def launch_for(python: Path, entry: list[str], cwd: str | None = None) -> dict[str, Any]:
+def launch_for(python: Path, entry: list[str], cwd: str | None = None,
+               env: dict[str, str] | None = None) -> dict[str, Any]:
     """A launch dict for a real server.
 
-    The environment is empty: the MCP SDK adds its own default set, which is
-    what a real client gives a server. Passing anything more would be the
-    launch-parity mistake from T4 in a new place.
+    The environment is empty apart from what the server itself requires to
+    start (a database URL, say): the MCP SDK adds its own default set, which
+    is what a real client gives a server. Passing a copy of this process's
+    environment would be the launch-parity mistake from T4 in a new place.
     """
-    return {"command": str(python), "args": list(entry), "cwd": cwd, "env": {}}
+    return {"command": str(python), "args": list(entry), "cwd": cwd,
+            "env": dict(env or {})}
 
 
 async def probe_phase(

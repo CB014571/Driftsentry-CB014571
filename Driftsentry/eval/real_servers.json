@@ -1,5 +1,5 @@
 {
-  "_status": "APPROVED for the local four; the network four remain a proposal",
+  "_status": "APPROVED: the local four (7 Nov) and three databases (9 Nov); the network four remain a proposal",
   "_decisions": {
     "_what": "Calls that were the user's to make, recorded here rather than left in a chat log.",
     "run_scope": {
@@ -25,6 +25,28 @@
       "decision": "Leave every label null and state it as a limitation.",
       "consequence": "Gap 3's false-alarm rate is reported UNLABELLED. The measurement stands - an alarm on an upgrade where nothing malicious happened is a false alarm either way - but the benign versus benign-security-relevant split is not available, so no claim is made about whether the detector is noisier on security-relevant upgrades than on ordinary ones. This must appear in the write-up's limitations, not be quietly omitted.",
       "why_not_assigned": "The label is a reading of intent out of each changelog. Assigning it from a package summary would be asserting something about eight changelogs nobody read closely, and it is the label the rate is measured against."
+    },
+    "rq3b_scope": {
+      "decided": "2026-11-09",
+      "by": "user",
+      "approved": [
+        "mcp-server-duckdb",
+        "mcp-server-motherduck",
+        "mcp-alchemy"
+      ],
+      "not_approved": [
+        "mcp-server-spreadsheet",
+        "excel-mcp-server",
+        "mcp-server-office",
+        "office-word-mcp-server",
+        "mcp-text-editor",
+        "mcp-server-tree-sitter",
+        "mcp-sequential-thinking",
+        "mcp-units",
+        "mcp-math"
+      ],
+      "conditions": "mcp-server-motherduck in local DuckDB mode only, never its cloud mode; all three against throwaway database files.",
+      "consequence": "RQ3b has 7 real servers (4 + 3), short of the 15 H3 asks for. Per GAPS_PLAN_v2's own fallback, RQ3b is reported on the approved servers and the shortfall is stated in the report's limitations; the false-alarm rate carries a wide interval and is not claimed to generalise."
     }
   },
   "_what_this_is": [
@@ -268,6 +290,81 @@
       "changelog": "https://pypi.org/project/arxiv-mcp-server/#history",
       "why_shortlisted": "41 releases, so upgrade pairs are plentiful and a patch-level pair is available - useful for showing a small upgrade is not automatically quiet.",
       "caution": "download_paper writes files. Must not be probed."
+    },
+    {
+      "name": "mcp-server-duckdb",
+      "launcher": "pip",
+      "package": "mcp-server-duckdb",
+      "entry": [
+        "-c",
+        "import sys; from mcp_server_duckdb import main; sys.exit(main())",
+        "--db-path",
+        "{db}",
+        "--readonly"
+      ],
+      "env": {},
+      "fixture": "duckdb",
+      "old": "1.0.1",
+      "new": "1.1.0",
+      "releases": 8,
+      "licence": "MIT",
+      "needs_key": false,
+      "network": false,
+      "read_only_tools": [],
+      "read_only_tools_confirmed": false,
+      "label": null,
+      "approved": "2026-11-09",
+      "why_shortlisted": "Local DuckDB file, opened --readonly so probes cannot change it."
+    },
+    {
+      "name": "mcp-server-motherduck",
+      "launcher": "pip",
+      "package": "mcp-server-motherduck",
+      "entry": [
+        "-c",
+        "from mcp_server_motherduck import main; main()",
+        "--db-path",
+        "{db}",
+        "--home-dir",
+        "{db_dir}"
+      ],
+      "env": {},
+      "fixture": "duckdb",
+      "old": "1.0.8",
+      "new": "1.1.0",
+      "releases": 34,
+      "licence": "confirm before citing",
+      "needs_key": false,
+      "network": false,
+      "read_only_tools": [],
+      "read_only_tools_confirmed": false,
+      "label": null,
+      "approved": "2026-11-09",
+      "why_shortlisted": "Local DuckDB mode only: --db-path is a local file, so the MotherDuck cloud is never contacted. Read-only by default for local files; --home-dir keeps DuckDB out of the user's real home."
+    },
+    {
+      "name": "mcp-alchemy",
+      "launcher": "pip",
+      "package": "mcp-alchemy",
+      "entry": [
+        "-c",
+        "from mcp_alchemy.server import main; main()"
+      ],
+      "env": {
+        "DB_URL": "sqlite:///{db_posix}"
+      },
+      "fixture": "sqlite",
+      "old": "2026.10.6.103105",
+      "new": "2026.10.15.202659",
+      "releases": 37,
+      "licence": "confirm before citing",
+      "needs_key": false,
+      "network": false,
+      "read_only_tools": [],
+      "read_only_tools_confirmed": false,
+      "label": null,
+      "approved": "2026-11-09",
+      "why_shortlisted": "SQLAlchemy over a throwaway SQLite file, given through DB_URL."
     }
   ],
   "excluded": [
@@ -312,7 +409,7 @@
         "kind": "database",
         "needs_key": false,
         "network": false,
-        "approved": false,
+        "approved": true,
         "tools_changed": null,
         "entry": null,
         "note": "Local DuckDB file. Licence MIT."
@@ -327,7 +424,7 @@
         "kind": "database",
         "needs_key": false,
         "network": false,
-        "approved": false,
+        "approved": true,
         "tools_changed": null,
         "entry": null,
         "note": "Local DuckDB mode only; its MotherDuck cloud mode needs a token and must not be used. Licence '?' on PyPI."
@@ -342,7 +439,7 @@
         "kind": "database",
         "needs_key": false,
         "network": false,
-        "approved": false,
+        "approved": true,
         "tools_changed": null,
         "entry": null,
         "note": "SQLAlchemy against a throwaway local SQLite file. Licence '?' on PyPI."

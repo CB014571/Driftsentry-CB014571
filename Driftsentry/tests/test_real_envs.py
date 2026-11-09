@@ -57,7 +57,7 @@ def test_pips_own_resolution_is_tried_first_and_costs_nothing(monkeypatch):
     installs: list[list[str]] = []
     monkeypatch.setattr(real_envs, "installed_version", lambda p, k: "1.28.1")
     monkeypatch.setattr(real_envs, "starts_and_lists",
-                        lambda p, e, cwd=None: (True, '["a"]'))
+                        lambda p, e, cwd=None, env=None: (True, '["a"]'))
     monkeypatch.setattr(real_envs, "pip_install",
                         lambda p, specs: installs.append(list(specs)))
 
@@ -75,7 +75,7 @@ def test_the_walk_takes_the_newest_sdk_that_starts(monkeypatch):
     works_from = "1.2.0"
     seen: list[str] = []
 
-    def fake_start(python, entry, cwd=None):
+    def fake_start(python, entry, cwd=None, env=None):
         if not seen:
             return False, "AttributeError: 'Server' object has no attribute"
         return (seen[-1] == works_from), "started" if seen[-1] == works_from \
@@ -100,7 +100,7 @@ def test_the_walk_is_bounded(monkeypatch):
     monkeypatch.setattr(real_envs, "installed_version", lambda p, k: "1.28.1")
     monkeypatch.setattr(real_envs, "pip_install", lambda p, specs: None)
     monkeypatch.setattr(real_envs, "starts_and_lists",
-                        lambda p, e, cwd=None: (False, "never works"))
+                        lambda p, e, cwd=None, env=None: (False, "never works"))
 
     sdk, attempts = resolve_sdk_pin(
         Path("py"), "pkg", "0.1.2", ["-m", "pkg"],
@@ -115,7 +115,7 @@ def test_every_attempt_keeps_the_servers_own_error(monkeypatch):
     monkeypatch.setattr(real_envs, "pip_install", lambda p, specs: None)
     monkeypatch.setattr(
         real_envs, "starts_and_lists",
-        lambda p, e, cwd=None: (False, "AttributeError: no list_resources"))
+        lambda p, e, cwd=None, env=None: (False, "AttributeError: no list_resources"))
 
     sdk, attempts = resolve_sdk_pin(Path("py"), "pkg", "0.1.2", ["-m", "pkg"],
                                     candidates=["1.1.0"], max_attempts=2)
@@ -127,7 +127,7 @@ def test_an_install_failure_during_the_walk_is_recorded_not_raised(monkeypatch):
     """One unbuildable SDK must not end the search for a working one."""
     monkeypatch.setattr(real_envs, "installed_version", lambda p, k: "1.28.1")
     monkeypatch.setattr(real_envs, "starts_and_lists",
-                        lambda p, e, cwd=None: (False, "nope"))
+                        lambda p, e, cwd=None, env=None: (False, "nope"))
 
     def fake_install(python, specs):
         if specs[-1].endswith("1.5.0"):
@@ -152,7 +152,7 @@ def test_no_sdk_walk_reproduces_the_unmeasurable_result(monkeypatch, tmp_path):
     monkeypatch.setattr(real_envs, "installed_version", lambda p, k: "1.28.1")
     monkeypatch.setattr(
         real_envs, "starts_and_lists",
-        lambda p, e, cwd=None: (False,
+        lambda p, e, cwd=None, env=None: (False,
                                 "AttributeError: 'Server' object has no "
                                 "attribute 'list_resources'"))
     with pytest.raises(EnvError, match="list_resources"):

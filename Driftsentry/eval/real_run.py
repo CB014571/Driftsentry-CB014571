@@ -34,6 +34,7 @@ return commit hashes and timestamps that move between calls.
 from __future__ import annotations
 
 import json
+import sys
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -88,6 +89,7 @@ class ServerRun:
 # --------------------------------------------------------------------------- #
 def confirm_read_only(python: Path, entry: Sequence[str],
                       *, cwd: str | None = None,
+                      env: dict[str, str] | None = None,
                       declared: Sequence[str] = ()) -> tuple[list[str], dict[str, str]]:
     """Ask the server what it offers, then ask the classifier what is safe.
 
@@ -103,12 +105,12 @@ def confirm_read_only(python: Path, entry: Sequence[str],
     """
     from driftsentry.probes import classify_tool_safety
 
-    ok, detail = starts_and_lists(python, entry, cwd=cwd)
+    ok, detail = starts_and_lists(python, entry, cwd=cwd, env=env)
     if not ok:
         raise EnvError(f"could not list tools: {detail}")
 
     offered = tool_names(detail)
-    schemas = _tool_schemas(python, entry, cwd=cwd)
+    schemas = _tool_schemas(python, entry, cwd=cwd, env=env)
 
     probed: list[str] = []
     withheld: dict[str, str] = {}
@@ -135,7 +137,8 @@ def confirm_read_only(python: Path, entry: Sequence[str],
 
 
 def _tool_schemas(python: Path, entry: Sequence[str],
-                  *, cwd: str | None = None) -> dict[str, dict[str, Any]]:
+                  *, cwd: str | None = None,
+                  env: dict[str, str] | None = None) -> dict[str, dict[str, Any]]:
     """Full tool dicts, annotations included.
 
     Separate from starts_and_lists because that one answers a yes/no question
@@ -152,7 +155,8 @@ def _tool_schemas(python: Path, entry: Sequence[str],
         "async def main():\n"
         "    params = StdioServerParameters(command=sys.argv[1],\n"
         "                                   args=json.loads(sys.argv[2]),\n"
-        "                                   cwd=(sys.argv[3] or None), env={})\n"
+        "                                   cwd=(sys.argv[3] or None),\n"
+        "                                   env=json.loads(sys.argv[4]))\n"
         "    async with stdio_client(params) as (r, w):\n"
         "        async with ClientSession(r, w) as session:\n"
             "            await session.initialize()\n"
@@ -162,7 +166,7 @@ def _tool_schemas(python: Path, entry: Sequence[str],
         "anyio.run(main)\n"
     )
     done = subprocess.run([str(python), "-c", script, str(python),
-                           json.dumps(list(entry)), cwd or ""],
+                           json.dumps(list(entry)), cwd or "", json.dumps(env or {})],
                           capture_output=True, text=True, timeout=60,
                           check=False)
     if done.returncode != 0:
@@ -172,6 +176,71 @@ def _tool_schemas(python: Path, entry: Sequence[str],
     except ValueError:
         return {}
     return {t.get("name", ""): t for t in payload if isinstance(t, dict)}
+
+
+# --------------------------------------------------------------------------- #
+# The throwaway database a server is pointed at
+# --------------------------------------------------------------------------- #
+# Small and fixed. Both releases read the SAME file, opened read-only where the
+# server allows it, so the upgrade is the only thing that differs between the
+# two phases. A database that changed between them would be measured as drift.
+_FIXTURE_SQL = [
+    "CREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT, city TEXT, account TEXT)",
+    "INSERT INTO customers VALUES (1, 'Dana Whitfield', 'Leeds', 'ACC-44120')",
+    "INSERT INTO customers VALUES (2, 'Marcus Silva', 'Bristol', 'ACC-44121')",
+    "INSERT INTO customers VALUES (3, 'Priya Raman', 'Cardiff', 'ACC-44122')",
+    "CREATE TABLE orders (id TEXT PRIMARY KEY, customer_id INTEGER, item TEXT, total REAL)",
+    "INSERT INTO orders VALUES ('ORD-8801', 1, 'hex bolts', 42.50)",
+    "INSERT INTO orders VALUES ('ORD-8802', 2, 'drive belt', 118.00)",
+]
+
+
+def make_fixture(kind: str, directory: Path, python: Path) -> Path:
+    """Create the throwaway database once, before either release runs.
+
+    duckdb files are written with the OLD release's own duckdb: a newer duckdb
+    reads an older file, but an older one cannot read a newer file, so writing
+    with the newer version could fail the old phase for a reason that has
+    nothing to do with the server.
+    """
+    import sqlite3
+    import subprocess
+
+    directory.mkdir(parents=True, exist_ok=True)
+    if kind == "sqlite":
+        path = directory / "fixture.sqlite"
+        if not path.exists():
+            con = sqlite3.connect(path)
+            for stmt in _FIXTURE_SQL:
+                con.execute(stmt)
+            con.commit()
+            con.close()
+        return path
+    if kind == "duckdb":
+        path = directory / "fixture.duckdb"
+        if not path.exists():
+            script = ("import duckdb, json, sys\n"
+                      "con = duckdb.connect(sys.argv[1])\n"
+                      "for stmt in json.loads(sys.argv[2]):\n"
+                      "    con.execute(stmt)\n"
+                      "con.close()\n")
+            done = subprocess.run([str(python), "-c", script, str(path),
+                                   json.dumps(_FIXTURE_SQL)],
+                                  capture_output=True, text=True, timeout=120,
+                                  check=False)
+            if done.returncode != 0:
+                raise EnvError(f"duckdb fixture failed: {done.stderr.strip()[-400:]}")
+        return path
+    raise EnvError(f"unknown fixture kind {kind!r}")
+
+
+def _fill(value: Any, db: Path | None) -> Any:
+    """Substitute {db} in a launch argument or environment value."""
+    if db is None or not isinstance(value, str):
+        return value
+    return (value.replace("{db_posix}", db.as_posix())
+                 .replace("{db_dir}", str(db.parent))
+                 .replace("{db}", str(db)))
 
 
 # --------------------------------------------------------------------------- #
@@ -198,12 +267,31 @@ async def run_server(
                     old_version=entry_spec["old"],
                     new_version=entry_spec["new"])
     package = entry_spec["package"]
-    entry = list(entry_spec["entry"])
+    raw_entry = list(entry_spec["entry"])
+    raw_env = dict(entry_spec.get("env") or {})
+    fixture_kind = entry_spec.get("fixture")
+    fixture_dir = workspace / f"{short}-fixture"
+    db: Path | None = None
+    if fixture_kind == "sqlite":
+        db = make_fixture("sqlite", fixture_dir, Path(sys.executable))
+    elif fixture_kind == "duckdb":
+        # Seeded by the old release's own duckdb, so install that first.
+        from eval.real_envs import create_venv, pip_install
+        try:
+            seed_python = create_venv(workspace / f"{short}-old", clean=clean)
+            pip_install(seed_python, [f"{package}=={entry_spec['old']}"])
+            db = make_fixture("duckdb", fixture_dir, seed_python)
+        except EnvError as exc:
+            out.error = f"fixture: {exc}"
+            return out
+    entry = [_fill(a, db) for a in raw_entry]
+    env = {k: _fill(v, db) for k, v in raw_env.items()}
 
     try:
         old_env = build(short, package, entry_spec["old"], entry,
                         workspace / f"{short}-old", cwd=cwd, sdk=sdk_old,
-                        resolve=resolve, clean=clean)
+                        resolve=resolve,
+                        clean=clean and fixture_kind != "duckdb", env=env)
         out.environments.append(old_env.to_dict())
     except EnvError as exc:
         out.error = f"old release: {exc}"
@@ -211,14 +299,14 @@ async def run_server(
 
     try:
         probed, withheld = confirm_read_only(
-            old_env.python, entry, cwd=cwd,
+            old_env.python, entry, cwd=cwd, env=env,
             declared=entry_spec.get("read_only_tools") or ())
     except (EnvError, ToolsUnconfirmed) as exc:
         out.error = f"tool confirmation: {exc}"
         return out
     out.probed_tools, out.withheld_tools = probed, withheld
 
-    launch_old = launch_for(old_env.python, entry, cwd=cwd)
+    launch_old = launch_for(old_env.python, entry, cwd=cwd, env=env)
     try:
         baseline = await capture_baseline(
             short, launch_old["command"], launch_old["args"],
@@ -240,7 +328,7 @@ async def run_server(
     try:
         new_env = build(short, package, entry_spec["new"], entry,
                         workspace / f"{short}-new", cwd=cwd, sdk=sdk_new,
-                        resolve=resolve, clean=clean)
+                        resolve=resolve, clean=clean, env=env)
         out.environments.append(new_env.to_dict())
     except EnvError as exc:
         out.error = f"new release: {exc}"
@@ -249,14 +337,14 @@ async def run_server(
     # T29: what the update declared, from the two tool lists as advertised.
     from driftsentry.declared_diff import diff_definitions
 
-    out.tools_old = list(_tool_schemas(old_env.python, entry, cwd=cwd).values())
-    out.tools_new = list(_tool_schemas(new_env.python, entry, cwd=cwd).values())
+    out.tools_old = list(_tool_schemas(old_env.python, entry, cwd=cwd, env=env).values())
+    out.tools_new = list(_tool_schemas(new_env.python, entry, cwd=cwd, env=env).values())
     out.declared = diff_definitions(out.tools_old, out.tools_new).to_dict()
 
     # The new phase is scored as an UPDATE (RQ3b); the old phase above stays
     # the plain detector, because it is the noise floor - the same release
     # against its own baseline, where nothing was declared or changed.
-    launch_new = launch_for(new_env.python, entry, cwd=cwd)
+    launch_new = launch_for(new_env.python, entry, cwd=cwd, env=env)
     for run in range(1, runs + 1):
         out.results.append(await probe_phase(
             short, baseline, launch_new, phase="new", run=run,

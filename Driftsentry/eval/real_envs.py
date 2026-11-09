@@ -174,7 +174,8 @@ def installed_version(python: Path, package: str) -> str | None:
 # Does it start?
 # --------------------------------------------------------------------------- #
 def starts_and_lists(python: Path, entry: Sequence[str],
-                     *, cwd: str | None = None) -> tuple[bool, str]:
+                     *, cwd: str | None = None,
+                     env: dict[str, str] | None = None) -> tuple[bool, str]:
     """Start the server over stdio and ask for its tool list.
 
     This is the only acceptance test. A package that imports is not a server
@@ -193,7 +194,8 @@ def starts_and_lists(python: Path, entry: Sequence[str],
         "async def main():\n"
         "    params = StdioServerParameters(command=sys.argv[1],\n"
         "                                   args=json.loads(sys.argv[2]),\n"
-        "                                   cwd=(sys.argv[3] or None), env={})\n"
+        "                                   cwd=(sys.argv[3] or None),\n"
+        "                                   env=json.loads(sys.argv[4]))\n"
         "    async with stdio_client(params) as (r, w):\n"
         "        async with ClientSession(r, w) as session:\n"
         "            await session.initialize()\n"
@@ -203,7 +205,7 @@ def starts_and_lists(python: Path, entry: Sequence[str],
     )
     try:
         done = _run([str(python), "-c", probe, str(python),
-                     json.dumps(list(entry)), cwd or ""],
+                     json.dumps(list(entry)), cwd or "", json.dumps(env or {})],
                     timeout=HANDSHAKE_TIMEOUT_S)
     except subprocess.TimeoutExpired:
         return False, f"no handshake within {HANDSHAKE_TIMEOUT_S}s"
@@ -234,6 +236,7 @@ def resolve_sdk_pin(
     cwd: str | None = None,
     candidates: Sequence[str] | None = None,
     max_attempts: int = MAX_SDK_ATTEMPTS,
+    env: dict[str, str] | None = None,
 ) -> tuple[str | None, list[dict[str, Any]]]:
     """Find the newest ``mcp`` under which this release starts.
 
@@ -249,7 +252,7 @@ def resolve_sdk_pin(
     attempts: list[dict[str, Any]] = []
 
     resolved = installed_version(python, "mcp")
-    ok, detail = starts_and_lists(python, entry, cwd=cwd)
+    ok, detail = starts_and_lists(python, entry, cwd=cwd, env=env)
     attempts.append({"mcp": resolved, "source": "pip", "ok": ok,
                      "detail": detail if not ok else "started"})
     if ok:
@@ -275,7 +278,7 @@ def resolve_sdk_pin(
             attempts.append({"mcp": sdk, "source": "walk", "ok": False,
                              "detail": f"install failed: {exc}"[-600:]})
             continue
-        ok, detail = starts_and_lists(python, entry, cwd=cwd)
+        ok, detail = starts_and_lists(python, entry, cwd=cwd, env=env)
         attempts.append({"mcp": sdk, "source": "walk", "ok": ok,
                          "detail": detail if not ok else "started"})
         if ok:
@@ -295,6 +298,7 @@ def build(
     sdk: str | None = None,
     clean: bool = False,
     resolve: bool = True,
+    env: dict[str, str] | None = None,
 ) -> Installed:
     """One release, installed and confirmed to start.
 
@@ -315,7 +319,7 @@ def build(
                     sdk_resolved_by="pinned" if sdk else "pip")
 
     if sdk or not resolve:
-        ok, detail = starts_and_lists(python, entry, cwd=cwd)
+        ok, detail = starts_and_lists(python, entry, cwd=cwd, env=env)
         out.attempts = [{"mcp": out.sdk_version,
                          "source": out.sdk_resolved_by, "ok": ok,
                          "detail": detail if not ok else "started"}]
@@ -324,7 +328,8 @@ def build(
                            f"{out.sdk_version}: {detail}")
         return out
 
-    found, attempts = resolve_sdk_pin(python, package, version, entry, cwd=cwd)
+    found, attempts = resolve_sdk_pin(python, package, version, entry, cwd=cwd,
+                                      env=env)
     out.attempts = attempts
     if found is None:
         raise EnvError(
