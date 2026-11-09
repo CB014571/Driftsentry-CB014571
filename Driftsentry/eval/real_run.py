@@ -161,7 +161,10 @@ def _tool_schemas(python: Path, entry: Sequence[str],
         "        async with ClientSession(r, w) as session:\n"
             "            await session.initialize()\n"
         "            tools = await session.list_tools()\n"
-        "            print(json.dumps([t.model_dump(mode='json')\n"
+        # by_alias: the wire format. This runs inside the SERVER's venv, which
+        # may carry mcp 2.x, whose models dump input_schema / read_only_hint;
+        # measured on 9 Nov, that made every parameter read as removed.
+        "            print(json.dumps([t.model_dump(mode='json', by_alias=True)\n"
         "                              for t in tools.tools]))\n"
         "anyio.run(main)\n"
     )

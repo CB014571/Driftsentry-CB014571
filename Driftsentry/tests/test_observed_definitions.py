@@ -239,3 +239,32 @@ def test_an_unset_hint_comes_back_as_none_not_as_a_missing_key():
     annotations = base.tool_definitions[0]["annotations"]
     assert "destructiveHint" in annotations
     assert annotations["destructiveHint"] is None
+
+
+# --------------------------------------------------------------------------- #
+# Definitions are recorded in the wire format, whatever the SDK version
+# --------------------------------------------------------------------------- #
+# Measured 9 Nov: a server venv carrying mcp 2.3.0 dumped its tools as
+# input_schema / read_only_hint - the model's field names - and the declared
+# diff of mcp-server-time read every input parameter as removed and every hint
+# as reverted to its default. by_alias gives the wire names on every version.
+def test_definitions_are_dumped_with_wire_names():
+    import inspect
+
+    from driftsentry import baseline
+    src = inspect.getsource(baseline)
+    assert 'definitions = [t.model_dump(mode="json", by_alias=True)' in src
+    assert 'observed_definitions = [t.model_dump(mode="json", by_alias=True)' in src
+
+
+def test_by_alias_changes_nothing_the_hash_or_differ_read_on_this_sdk():
+    from mcp.types import Tool, ToolAnnotations
+
+    from driftsentry.hashing import tools_definition_hash
+    t = Tool(name="x", description="d",
+             inputSchema={"type": "object", "properties": {"a": {"type": "string"}}},
+             annotations=ToolAnnotations(readOnlyHint=True))
+    plain, alias = t.model_dump(mode="json"), t.model_dump(mode="json", by_alias=True)
+    for key in ("name", "description", "inputSchema", "outputSchema", "annotations"):
+        assert plain[key] == alias[key], key
+    assert tools_definition_hash([plain]) == tools_definition_hash([alias])

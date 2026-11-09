@@ -197,7 +197,11 @@ async def capture_baseline(
                 log.warning("sandbox monitoring unavailable (no pid); side-effect signals disabled")
 
             listed = await session.list_tools()
-            definitions = [t.model_dump(mode="json") for t in listed.tools]
+            # by_alias: the WIRE format. Without it an mcp 2.x client dumps
+            # input_schema / read_only_hint instead of inputSchema /
+            # readOnlyHint, and the hash, the differ and the residue rules
+            # would all see every field vanish. Identical output on 1.x.
+            definitions = [t.model_dump(mode="json", by_alias=True) for t in listed.tools]
             definition_hash = tools_definition_hash(definitions)
             log.info("server %r advertises %d tools (%s)", server, len(definitions), definition_hash[:19])
 
@@ -732,7 +736,9 @@ async def reprobe(
             monitor = SandboxMonitor(pids) if (monitor_sandbox and pids) else None
 
             listed = await session.list_tools()
-            observed_definitions = [t.model_dump(mode="json") for t in listed.tools]
+            # Wire format, as at capture - see capture_baseline.
+            observed_definitions = [t.model_dump(mode="json", by_alias=True)
+                                    for t in listed.tools]
             observed_hash = tools_definition_hash(observed_definitions)
             declared_output = _declared_output_paths(baseline, observed_definitions)
 
