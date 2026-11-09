@@ -1,51 +1,100 @@
 {
- "conditions": {
-  "none": {
-   "condition": "none",
-   "l1_recall_pct": 100.0,
-   "l1_detected": "11/11",
-   "recall_pct": 0.0,
-   "l6_detected": "0/10",
-   "recall_gap_pp": -100.0,
-   "false_alarm_pct": 50.0,
-   "false_alarms": "6/12",
-   "cycle_seconds": 18.97,
-   "calls_per_cycle": 18.0,
-   "best_auc": 1.0,
-   "best_family": "client",
-   "cycle_seconds_note": "mean over 60 cycles; per-cycle durations were not stored by the code of this run. The console log shows 18.9-19.0s/cycle at every one of the twelve progress prints, so the mean is not carrying a stall."
+  "conditions": {
+    "none": {
+      "condition": "none",
+      "l1_recall_pct": 100.0,
+      "l1_detected": "11/11",
+      "recall_pct": 0.0,
+      "l6_detected": "0/10",
+      "recall_gap_pp": -100.0,
+      "false_alarm_pct": 50.0,
+      "false_alarms": "6/12",
+      "cycle_seconds": 18.97,
+      "calls_per_cycle": 18.0,
+      "best_auc": 1.0,
+      "best_family": "client",
+      "cycle_seconds_note": "mean over 60 cycles; per-cycle durations were not stored by the code of this run. The console log shows 18.9-19.0s/cycle at every one of the twelve progress prints, so the mean is not carrying a stall."
+    },
+    "host": {
+      "condition": "host",
+      "l1_recall_pct": 100.0,
+      "l1_detected": "11/11",
+      "recall_pct": 0.0,
+      "l6_detected": "0/10",
+      "recall_gap_pp": -100.0,
+      "false_alarm_pct": 50.0,
+      "false_alarms": "6/12",
+      "cycle_seconds": 19.28,
+      "cycle_seconds_mean": 20.37,
+      "cycle_outliers": 0,
+      "calls_per_cycle": 18.0,
+      "best_auc": 0.9942985409652076,
+      "best_family": "all"
+    },
+    "mimic": {
+      "condition": "mimic",
+      "l1_recall_pct": 100.0,
+      "l1_detected": "12/12",
+      "recall_pct": 50.0,
+      "l6_detected": "5/10",
+      "recall_gap_pp": -50.0,
+      "false_alarm_pct": 50.0,
+      "false_alarms": "6/12",
+      "cycle_seconds": 17.46,
+      "cycle_seconds_mean": 17.76,
+      "cycle_outliers": 0,
+      "calls_per_cycle": 18.0,
+      "best_auc": 0.9928787878787879,
+      "best_family": "all"
+    },
+    "subsample": {
+      "condition": "subsample",
+      "l1_recall_pct": 100.0,
+      "l1_detected": "10/10",
+      "recall_pct": 0.0,
+      "l6_detected": "0/10",
+      "recall_gap_pp": -100.0,
+      "false_alarm_pct": 50.0,
+      "false_alarms": "6/12",
+      "cycle_seconds": 13.27,
+      "cycle_seconds_mean": 13.67,
+      "cycle_outliers": 0,
+      "calls_per_cycle": 18.0,
+      "best_auc": 1.0,
+      "best_family": "client"
+    },
+    "all": {
+      "condition": "all",
+      "l1_recall_pct": 100.0,
+      "l1_detected": "12/12",
+      "recall_pct": 50.0,
+      "l6_detected": "5/10",
+      "recall_gap_pp": -50.0,
+      "false_alarm_pct": 50.0,
+      "false_alarms": "6/12",
+      "cycle_seconds": 24.54,
+      "cycle_seconds_mean": 24.62,
+      "cycle_outliers": 0,
+      "calls_per_cycle": 18.0,
+      "best_auc": 0.9944332210998877,
+      "best_family": "all"
+    }
   },
-  "host": {
-   "condition": "host",
-   "l1_recall_pct": 100.0,
-   "l1_detected": "11/11",
-   "recall_pct": 0.0,
-   "l6_detected": "0/10",
-   "recall_gap_pp": -100.0,
-   "false_alarm_pct": 50.0,
-   "false_alarms": "6/12",
-   "cycle_seconds": 19.28,
-   "cycle_seconds_mean": 20.37,
-   "cycle_outliers": 0,
-   "calls_per_cycle": 18.0,
-   "best_auc": 0.9942985409652076,
-   "best_family": "all"
-  },
-  "mimic": {
-   "condition": "mimic",
-   "l1_recall_pct": 100.0,
-   "l1_detected": "12/12",
-   "recall_pct": 50.0,
-   "l6_detected": "5/10",
-   "recall_gap_pp": -50.0,
-   "false_alarm_pct": 50.0,
-   "false_alarms": "6/12",
-   "cycle_seconds": 17.46,
-   "cycle_seconds_mean": 17.76,
-   "cycle_outliers": 0,
-   "calls_per_cycle": 18.0,
-   "best_auc": 0.9928787878787879,
-   "best_family": "all"
+  "h4": {
+    "verdict": "FAIL",
+    "checks": {
+      "auc_at_or_below_ceiling": false,
+      "recall_within_tolerance": false,
+      "false_alarms_contained": true
+    },
+    "best_auc": 0.9944332210998877,
+    "recall_gap_pp": -50.0,
+    "false_alarm_delta_pp": 0.0,
+    "thresholds": {
+      "auc_ceiling": 0.6,
+      "recall_within": 10.0,
+      "false_alarm_rise": 2.0
+    },
+    "note": "A failed hypothesis is a result. The countermeasures are not to be tuned until it passes."
   }
- }
 }

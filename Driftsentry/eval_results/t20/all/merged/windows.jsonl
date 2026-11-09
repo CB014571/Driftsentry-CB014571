@@ -1,0 +1,180 @@
+{"label": 0, "start": 1793681826.082897, "end": 1793681841.2724009, "task": "t01", "model": "llama3.1:8b", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793681857.6819375, "end": 1793681864.0264225, "task": "t02", "model": "llama3.1:8b", "style": "detailed", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793681879.6630883, "end": 1793681893.8380332, "task": "t03", "model": "qwen2.5:7b", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793681910.2874372, "end": 1793681916.3782387, "task": "t04", "model": "qwen2.5:7b", "style": "detailed", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793681932.3598247, "end": 1793681951.9166381, "task": "t05", "model": "mistral-nemo:latest", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793681968.5966845, "end": 1793681976.2908592, "task": "t06", "model": "mistral-nemo:latest", "style": "detailed", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793681992.9583454, "end": 1793682001.8841896, "task": "t07", "model": "llama3.1:8b", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793682017.642239, "end": 1793682025.602905, "task": "t08", "model": "llama3.1:8b", "style": "detailed", "n_calls": 4, "error": null}
+{"label": 0, "start": 1793682041.14122, "end": 1793682050.25912, "task": "t09", "model": "qwen2.5:7b", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793682065.9150112, "end": 1793682071.8382926, "task": "t10", "model": "qwen2.5:7b", "style": "detailed", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793682087.6473024, "end": 1793682105.2832747, "task": "t11", "model": "mistral-nemo:latest", "style": "short", "n_calls": 0, "error": null}
+{"label": 0, "start": 1793682121.0782003, "end": 1793682129.2924824, "task": "t12", "model": "mistral-nemo:latest", "style": "detailed", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793682145.7861567, "end": 1793682154.4671376, "task": "t13", "model": "llama3.1:8b", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793682170.1340013, "end": 1793682176.682182, "task": "t14", "model": "llama3.1:8b", "style": "detailed", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793682192.2576466, "end": 1793682201.0733364, "task": "t15", "model": "qwen2.5:7b", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793682216.5791762, "end": 1793682222.8049104, "task": "t16", "model": "qwen2.5:7b", "style": "detailed", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793682238.3703184, "end": 1793682249.6205146, "task": "t17", "model": "mistral-nemo:latest", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793682266.0557747, "end": 1793682273.2408545, "task": "t18", "model": "mistral-nemo:latest", "style": "detailed", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793682289.5422118, "end": 1793682298.3739216, "task": "t19", "model": "llama3.1:8b", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793682314.049809, "end": 1793682320.1812582, "task": "t20", "model": "llama3.1:8b", "style": "detailed", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793682335.7644076, "end": 1793682344.2137418, "task": "t21", "model": "qwen2.5:7b", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793682359.8549175, "end": 1793682366.225576, "task": "t22", "model": "qwen2.5:7b", "style": "detailed", "n_calls": 2, "error": null}
+{"label": 0, "start": 1793682381.7971916, "end": 1793682392.093081, "task": "t23", "model": "mistral-nemo:latest", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793682408.22307, "end": 1793682419.6499665, "task": "t24", "model": "mistral-nemo:latest", "style": "detailed", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793682435.768665, "end": 1793682444.7932162, "task": "t25", "model": "llama3.1:8b", "style": "short", "n_calls": 2, "error": null}
+{"label": 0, "start": 1793682460.3762376, "end": 1793682466.400741, "task": "t26", "model": "llama3.1:8b", "style": "detailed", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793682481.9076512, "end": 1793682491.6666963, "task": "t27", "model": "qwen2.5:7b", "style": "short", "n_calls": 2, "error": null}
+{"label": 0, "start": 1793682507.0672688, "end": 1793682513.7277384, "task": "t28", "model": "qwen2.5:7b", "style": "detailed", "n_calls": 2, "error": null}
+{"label": 0, "start": 1793682529.3207755, "end": 1793682542.6971443, "task": "t29", "model": "mistral-nemo:latest", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793682558.7104023, "end": 1793682567.4689622, "task": "t30", "model": "mistral-nemo:latest", "style": "detailed", "n_calls": 3, "error": null}
+{"label": 0, "start": 1793682583.6363227, "end": 1793682592.0723553, "task": "t31", "model": "llama3.1:8b", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793682607.701372, "end": 1793682615.7293117, "task": "t32", "model": "llama3.1:8b", "style": "detailed", "n_calls": 5, "error": null}
+{"label": 0, "start": 1793682631.3785737, "end": 1793682643.9333918, "task": "t33", "model": "qwen2.5:7b", "style": "short", "n_calls": 3, "error": null}
+{"label": 0, "start": 1793682659.5314012, "end": 1793682665.8267045, "task": "t34", "model": "qwen2.5:7b", "style": "detailed", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793682681.5474186, "end": 1793682696.009766, "task": "t35", "model": "mistral-nemo:latest", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793682712.837868, "end": 1793682718.3956068, "task": "t36", "model": "mistral-nemo:latest", "style": "detailed", "n_calls": 0, "error": null}
+{"label": 0, "start": 1793682735.2283962, "end": 1793682743.9782956, "task": "t37", "model": "llama3.1:8b", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793682760.5433922, "end": 1793682766.868864, "task": "t38", "model": "llama3.1:8b", "style": "detailed", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793682782.68142, "end": 1793682791.6083539, "task": "t39", "model": "qwen2.5:7b", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793682807.4912164, "end": 1793682813.803286, "task": "t40", "model": "qwen2.5:7b", "style": "detailed", "n_calls": 2, "error": null}
+{"label": 0, "start": 1793682829.748032, "end": 1793682841.899245, "task": "t01", "model": "mistral-nemo:latest", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793682858.2542868, "end": 1793682867.1184075, "task": "t02", "model": "mistral-nemo:latest", "style": "detailed", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793682882.7793083, "end": 1793682891.325244, "task": "t03", "model": "llama3.1:8b", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793682907.3419054, "end": 1793682913.2904742, "task": "t04", "model": "llama3.1:8b", "style": "detailed", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793682928.9402544, "end": 1793682937.74327, "task": "t05", "model": "qwen2.5:7b", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793682953.2361984, "end": 1793682959.1489449, "task": "t06", "model": "qwen2.5:7b", "style": "detailed", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793682974.671477, "end": 1793682985.8229656, "task": "t07", "model": "mistral-nemo:latest", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793683001.6165104, "end": 1793683009.166898, "task": "t08", "model": "mistral-nemo:latest", "style": "detailed", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793683024.9849272, "end": 1793683033.486705, "task": "t09", "model": "llama3.1:8b", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793683049.4750116, "end": 1793683055.2869313, "task": "t10", "model": "llama3.1:8b", "style": "detailed", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793683070.8580086, "end": 1793683079.5093892, "task": "t11", "model": "qwen2.5:7b", "style": "short", "n_calls": 0, "error": null}
+{"label": 0, "start": 1793683095.1790333, "end": 1793683101.283111, "task": "t12", "model": "qwen2.5:7b", "style": "detailed", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793683116.9845614, "end": 1793683129.4726343, "task": "t13", "model": "mistral-nemo:latest", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793683146.5287554, "end": 1793683153.9661727, "task": "t14", "model": "mistral-nemo:latest", "style": "detailed", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793683170.50064, "end": 1793683179.3367703, "task": "t15", "model": "llama3.1:8b", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793683195.990667, "end": 1793683202.055137, "task": "t16", "model": "llama3.1:8b", "style": "detailed", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793683218.2019162, "end": 1793683226.9635608, "task": "t17", "model": "qwen2.5:7b", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793683243.085646, "end": 1793683248.9629543, "task": "t18", "model": "qwen2.5:7b", "style": "detailed", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793683266.243564, "end": 1793683277.6855068, "task": "t19", "model": "mistral-nemo:latest", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793683297.1133175, "end": 1793683305.4098651, "task": "t20", "model": "mistral-nemo:latest", "style": "detailed", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793683323.3217237, "end": 1793683332.8019392, "task": "t21", "model": "llama3.1:8b", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793683349.7757108, "end": 1793683355.9690511, "task": "t22", "model": "llama3.1:8b", "style": "detailed", "n_calls": 2, "error": null}
+{"label": 0, "start": 1793683372.7213645, "end": 1793683384.3303661, "task": "t23", "model": "qwen2.5:7b", "style": "short", "n_calls": 2, "error": null}
+{"label": 0, "start": 1793683401.5463398, "end": 1793683408.691799, "task": "t24", "model": "qwen2.5:7b", "style": "detailed", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793683425.3691278, "end": 1793683437.9797084, "task": "t25", "model": "mistral-nemo:latest", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793683455.1505482, "end": 1793683463.641854, "task": "t26", "model": "mistral-nemo:latest", "style": "detailed", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793683481.7418277, "end": 1793683494.7823246, "task": "t27", "model": "llama3.1:8b", "style": "short", "n_calls": 2, "error": null}
+{"label": 0, "start": 1793683511.6208577, "end": 1793683518.9384074, "task": "t28", "model": "llama3.1:8b", "style": "detailed", "n_calls": 2, "error": null}
+{"label": 0, "start": 1793683535.7652953, "end": 1793683548.9659176, "task": "t29", "model": "qwen2.5:7b", "style": "short", "n_calls": 4, "error": null}
+{"label": 0, "start": 1793683565.6116292, "end": 1793683572.906368, "task": "t30", "model": "qwen2.5:7b", "style": "detailed", "n_calls": 3, "error": null}
+{"label": 0, "start": 1793683589.532341, "end": 1793683604.7499676, "task": "t31", "model": "mistral-nemo:latest", "style": "short", "n_calls": 2, "error": null}
+{"label": 0, "start": 1793683621.555008, "end": 1793683634.6596339, "task": "t32", "model": "mistral-nemo:latest", "style": "detailed", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793683653.3534377, "end": 1793683661.7689428, "task": "t33", "model": "llama3.1:8b", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793683679.3291507, "end": 1793683688.196397, "task": "t34", "model": "llama3.1:8b", "style": "detailed", "n_calls": 3, "error": null}
+{"label": 0, "start": 1793683705.2594473, "end": 1793683715.1479545, "task": "t35", "model": "qwen2.5:7b", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793683732.8249016, "end": 1793683738.191642, "task": "t36", "model": "qwen2.5:7b", "style": "detailed", "n_calls": 0, "error": null}
+{"label": 0, "start": 1793683755.1247246, "end": 1793683768.396636, "task": "t37", "model": "mistral-nemo:latest", "style": "short", "n_calls": 0, "error": null}
+{"label": 0, "start": 1793683785.2859347, "end": 1793683813.8037033, "task": "t38", "model": "mistral-nemo:latest", "style": "detailed", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793683831.3069053, "end": 1793683840.3045647, "task": "t39", "model": "llama3.1:8b", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793683857.096963, "end": 1793683864.3941476, "task": "t40", "model": "llama3.1:8b", "style": "detailed", "n_calls": 2, "error": null}
+{"label": 0, "start": 1793683881.0957794, "end": 1793683890.0986485, "task": "t01", "model": "qwen2.5:7b", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793683906.8267975, "end": 1793683914.0745533, "task": "t02", "model": "qwen2.5:7b", "style": "detailed", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793683930.8735127, "end": 1793683941.7682352, "task": "t03", "model": "mistral-nemo:latest", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793683959.4367285, "end": 1793683967.3268743, "task": "t04", "model": "mistral-nemo:latest", "style": "detailed", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793683984.467894, "end": 1793683992.9626846, "task": "t05", "model": "llama3.1:8b", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793684009.8360379, "end": 1793684016.7414763, "task": "t06", "model": "llama3.1:8b", "style": "detailed", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793684033.555613, "end": 1793684042.858725, "task": "t07", "model": "qwen2.5:7b", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793684059.6998382, "end": 1793684066.804397, "task": "t08", "model": "qwen2.5:7b", "style": "detailed", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793684083.6757154, "end": 1793684111.089077, "task": "t09", "model": "mistral-nemo:latest", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793684129.480944, "end": 1793684136.7322853, "task": "t10", "model": "mistral-nemo:latest", "style": "detailed", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793684154.2898192, "end": 1793684164.3435671, "task": "t11", "model": "llama3.1:8b", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793684181.2800434, "end": 1793684187.5278583, "task": "t12", "model": "llama3.1:8b", "style": "detailed", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793684204.3675056, "end": 1793684213.930243, "task": "t13", "model": "qwen2.5:7b", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793684230.8483212, "end": 1793684236.9977813, "task": "t14", "model": "qwen2.5:7b", "style": "detailed", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793684253.956372, "end": 1793684266.588035, "task": "t15", "model": "mistral-nemo:latest", "style": "short", "n_calls": 2, "error": null}
+{"label": 0, "start": 1793684284.2376256, "end": 1793684294.1670058, "task": "t16", "model": "mistral-nemo:latest", "style": "detailed", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793684311.8501446, "end": 1793684321.3471181, "task": "t17", "model": "llama3.1:8b", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793684338.392766, "end": 1793684344.4912727, "task": "t18", "model": "llama3.1:8b", "style": "detailed", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793684363.0436273, "end": 1793684371.978635, "task": "t19", "model": "qwen2.5:7b", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793684389.507588, "end": 1793684395.7283032, "task": "t20", "model": "qwen2.5:7b", "style": "detailed", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793684413.1902184, "end": 1793684425.0560348, "task": "t21", "model": "mistral-nemo:latest", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793684443.6586845, "end": 1793684453.603213, "task": "t22", "model": "mistral-nemo:latest", "style": "detailed", "n_calls": 2, "error": null}
+{"label": 0, "start": 1793684471.4028327, "end": 1793684482.6708102, "task": "t23", "model": "llama3.1:8b", "style": "short", "n_calls": 2, "error": null}
+{"label": 0, "start": 1793684501.1402, "end": 1793684507.970131, "task": "t24", "model": "llama3.1:8b", "style": "detailed", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793684525.729981, "end": 1793684536.8244228, "task": "t25", "model": "qwen2.5:7b", "style": "short", "n_calls": 2, "error": null}
+{"label": 0, "start": 1793684555.2840087, "end": 1793684563.4071229, "task": "t26", "model": "qwen2.5:7b", "style": "detailed", "n_calls": 2, "error": null}
+{"label": 0, "start": 1793684581.5469382, "end": 1793684595.9130678, "task": "t27", "model": "mistral-nemo:latest", "style": "short", "n_calls": 2, "error": null}
+{"label": 0, "start": 1793684614.116602, "end": 1793684630.072079, "task": "t28", "model": "mistral-nemo:latest", "style": "detailed", "n_calls": 4, "error": null}
+{"label": 0, "start": 1793684648.0194154, "end": 1793684657.8525846, "task": "t29", "model": "llama3.1:8b", "style": "short", "n_calls": 2, "error": null}
+{"label": 0, "start": 1793684675.59863, "end": 1793684683.0147104, "task": "t30", "model": "llama3.1:8b", "style": "detailed", "n_calls": 3, "error": null}
+{"label": 0, "start": 1793684701.6154926, "end": 1793684714.0656514, "task": "t31", "model": "qwen2.5:7b", "style": "short", "n_calls": 2, "error": null}
+{"label": 0, "start": 1793684732.2492423, "end": 1793684740.355187, "task": "t32", "model": "qwen2.5:7b", "style": "detailed", "n_calls": 3, "error": null}
+{"label": 0, "start": 1793684757.4940195, "end": 1793684768.3216739, "task": "t33", "model": "mistral-nemo:latest", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793684785.7926674, "end": 1793684794.9168005, "task": "t34", "model": "mistral-nemo:latest", "style": "detailed", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793684812.56862, "end": 1793684821.4715433, "task": "t35", "model": "llama3.1:8b", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793684838.1013494, "end": 1793684844.120017, "task": "t36", "model": "llama3.1:8b", "style": "detailed", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793684861.2094922, "end": 1793684875.652479, "task": "t37", "model": "qwen2.5:7b", "style": "short", "n_calls": 5, "error": null}
+{"label": 0, "start": 1793684892.3015094, "end": 1793684898.681503, "task": "t38", "model": "qwen2.5:7b", "style": "detailed", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793684915.2756937, "end": 1793684926.888384, "task": "t39", "model": "mistral-nemo:latest", "style": "short", "n_calls": 1, "error": null}
+{"label": 0, "start": 1793684944.8298144, "end": 1793684958.7939506, "task": "t40", "model": "mistral-nemo:latest", "style": "detailed", "n_calls": 3, "error": null}
+{"label": 1, "start": 1794156281.3618116, "end": 1794156306.468426, "cycle": 1}
+{"label": 1, "start": 1794156306.4690614, "end": 1794156328.7719352, "cycle": 2}
+{"label": 1, "start": 1794156328.773119, "end": 1794156350.9463165, "cycle": 3}
+{"label": 1, "start": 1794156350.94681, "end": 1794156379.199812, "cycle": 4}
+{"label": 1, "start": 1794156379.2004647, "end": 1794156406.7086005, "cycle": 5}
+{"label": 1, "start": 1794156406.7090514, "end": 1794156432.2878058, "cycle": 6}
+{"label": 1, "start": 1794156432.2881927, "end": 1794156455.7197092, "cycle": 7}
+{"label": 1, "start": 1794156455.720165, "end": 1794156476.1187234, "cycle": 8}
+{"label": 1, "start": 1794156476.119142, "end": 1794156501.323749, "cycle": 9}
+{"label": 1, "start": 1794156501.337072, "end": 1794156524.0326667, "cycle": 10}
+{"label": 1, "start": 1794156524.0332654, "end": 1794156547.043977, "cycle": 11}
+{"label": 1, "start": 1794156547.044443, "end": 1794156570.609345, "cycle": 12}
+{"label": 1, "start": 1794156570.609775, "end": 1794156596.202541, "cycle": 13}
+{"label": 1, "start": 1794156596.2030287, "end": 1794156623.6033933, "cycle": 14}
+{"label": 1, "start": 1794156623.6038125, "end": 1794156644.0238023, "cycle": 15}
+{"label": 1, "start": 1794156644.0242956, "end": 1794156670.767165, "cycle": 16}
+{"label": 1, "start": 1794156670.76765, "end": 1794156696.1715233, "cycle": 17}
+{"label": 1, "start": 1794156696.1719024, "end": 1794156716.2819552, "cycle": 18}
+{"label": 1, "start": 1794156716.2824407, "end": 1794156743.2290208, "cycle": 19}
+{"label": 1, "start": 1794156743.2294853, "end": 1794156773.915801, "cycle": 20}
+{"label": 1, "start": 1794156773.9163678, "end": 1794156793.454957, "cycle": 21}
+{"label": 1, "start": 1794156793.4553459, "end": 1794156826.7777991, "cycle": 22}
+{"label": 1, "start": 1794156826.7781596, "end": 1794156853.9929554, "cycle": 23}
+{"label": 1, "start": 1794156853.993457, "end": 1794156882.5765162, "cycle": 24}
+{"label": 1, "start": 1794156882.5768769, "end": 1794156908.9784772, "cycle": 25}
+{"label": 1, "start": 1794156908.9789515, "end": 1794156934.4967222, "cycle": 26}
+{"label": 1, "start": 1794156934.4971573, "end": 1794156957.6456096, "cycle": 27}
+{"label": 1, "start": 1794156957.646057, "end": 1794156983.2691545, "cycle": 28}
+{"label": 1, "start": 1794156983.269593, "end": 1794157009.1802108, "cycle": 29}
+{"label": 1, "start": 1794157009.180592, "end": 1794157031.610795, "cycle": 30}
+{"label": 1, "start": 1794157031.6112518, "end": 1794157056.049907, "cycle": 31}
+{"label": 1, "start": 1794157056.0502841, "end": 1794157081.8219697, "cycle": 32}
+{"label": 1, "start": 1794157081.8226588, "end": 1794157103.2253277, "cycle": 33}
+{"label": 1, "start": 1794157103.2258193, "end": 1794157123.7635365, "cycle": 34}
+{"label": 1, "start": 1794157123.764074, "end": 1794157148.632301, "cycle": 35}
+{"label": 1, "start": 1794157148.6328018, "end": 1794157170.0925326, "cycle": 36}
+{"label": 1, "start": 1794157170.0929673, "end": 1794157191.8053505, "cycle": 37}
+{"label": 1, "start": 1794157191.805812, "end": 1794157219.3162713, "cycle": 38}
+{"label": 1, "start": 1794157219.31666, "end": 1794157242.2030954, "cycle": 39}
+{"label": 1, "start": 1794157242.2034724, "end": 1794157265.5991223, "cycle": 40}
+{"label": 1, "start": 1794157265.599612, "end": 1794157287.3930066, "cycle": 41}
+{"label": 1, "start": 1794157287.3934848, "end": 1794157310.861853, "cycle": 42}
+{"label": 1, "start": 1794157310.8623226, "end": 1794157333.6931896, "cycle": 43}
+{"label": 1, "start": 1794157333.69356, "end": 1794157358.9235985, "cycle": 44}
+{"label": 1, "start": 1794157358.9241006, "end": 1794157381.5275688, "cycle": 45}
+{"label": 1, "start": 1794157381.5280824, "end": 1794157404.194915, "cycle": 46}
+{"label": 1, "start": 1794157404.1953728, "end": 1794157432.2923493, "cycle": 47}
+{"label": 1, "start": 1794157432.2928421, "end": 1794157455.2259014, "cycle": 48}
+{"label": 1, "start": 1794157455.226336, "end": 1794157480.5714517, "cycle": 49}
+{"label": 1, "start": 1794157480.571836, "end": 1794157505.2104235, "cycle": 50}
+{"label": 1, "start": 1794157505.2109573, "end": 1794157529.1895401, "cycle": 51}
+{"label": 1, "start": 1794157529.1899352, "end": 1794157556.1739936, "cycle": 52}
+{"label": 1, "start": 1794157556.1744952, "end": 1794157575.799877, "cycle": 53}
+{"label": 1, "start": 1794157575.8003354, "end": 1794157599.4019914, "cycle": 54}
+{"label": 1, "start": 1794157599.402441, "end": 1794157626.2940385, "cycle": 55}
+{"label": 1, "start": 1794157626.2944472, "end": 1794157651.630947, "cycle": 56}
+{"label": 1, "start": 1794157651.6313124, "end": 1794157679.537713, "cycle": 57}
+{"label": 1, "start": 1794157679.538156, "end": 1794157714.3455336, "cycle": 58}
+{"label": 1, "start": 1794157714.345992, "end": 1794157736.2387161, "cycle": 59}
+{"label": 1, "start": 1794157736.2392013, "end": 1794157758.7934833, "cycle": 60}
