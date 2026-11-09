@@ -1,15 +1,22 @@
 {
   "_status": "APPROVED for the local four; the network four remain a proposal",
-
   "_decisions": {
     "_what": "Calls that were the user's to make, recorded here rather than left in a chat log.",
     "run_scope": {
       "decided": "2026-11-07",
       "by": "user",
-      "approved": ["mcp-server-time", "mcp-server-calculator",
-                   "mcp-server-git", "mcp-server-sqlite"],
-      "not_approved": ["mcp-server-fetch", "mcp-simple-arxiv",
-                       "duckduckgo-mcp-server", "arxiv-mcp-server"],
+      "approved": [
+        "mcp-server-time",
+        "mcp-server-calculator",
+        "mcp-server-git",
+        "mcp-server-sqlite"
+      ],
+      "not_approved": [
+        "mcp-server-fetch",
+        "mcp-simple-arxiv",
+        "duckduckgo-mcp-server",
+        "arxiv-mcp-server"
+      ],
       "note": "The approved four are local: no network, no credentials. The other four send real traffic to someone else's service when their tools are called, so they stay unapproved and `eval real` does not include them in its default set."
     },
     "label": {
@@ -20,7 +27,6 @@
       "why_not_assigned": "The label is a reading of intent out of each changelog. Assigning it from a package summary would be asserting something about eight changelogs nobody read closely, and it is the label the rate is measured against."
     }
   },
-
   "_what_this_is": [
     "Candidate real MCP servers for Gap 3: the false-alarm rate of a",
     "behavioural detector across genuine version upgrades.",
@@ -43,28 +49,37 @@
     "                  side effect on the machine, so these must be confirmed",
     "                  before any run, not assumed."
   ],
-
   "_blocked_on": {
     "permission": "Installing and running these requires executing third-party code from PyPI. Auto mode refused it as 'Code from External', which is the correct default: Gap 3 means downloading and running roughly twenty unknown MCP servers.",
     "needed": "Explicit approval to pip-install pinned versions into throwaway virtual environments and start each server over stdio.",
     "scope_if_granted": "Install only; no network egress beyond PyPI except where a server's own tools reach out, which is why the network-touching candidates are separated below."
   },
-
   "_safety_notes": {
     "probe_values_are_harmless": "The keyed generator emits .invalid hostnames and loopback port 9 (RFC 863 discard), and relative paths only. A fetch server probed this way attempts a request that cannot leave the machine.",
     "but_some_servers_reach_out": "arxiv and duckduckgo servers send real queries to third-party services when called. The queries are benign, but that is outbound traffic to someone else's infrastructure and should be a deliberate choice rather than a side effect.",
     "recommended_first_set": "time, calculator, git, sqlite. Purely local, no network, no credentials - enough to prove the pipeline before anything reaches outward."
   },
-
   "servers": [
     {
       "name": "mcp-server-time",
-      "launcher": "pip", "package": "mcp-server-time",
-      "entry": ["-m", "mcp_server_time"],
-      "old": "2026.8.18", "new": "2026.10.28",
-      "releases": 15, "first_release": "2024-11-29", "last_release": "2026-10-28",
-      "licence": "MIT", "needs_key": false, "network": false,
-      "read_only_tools": ["get_current_time", "convert_time"],
+      "launcher": "pip",
+      "package": "mcp-server-time",
+      "entry": [
+        "-m",
+        "mcp_server_time"
+      ],
+      "old": "2026.8.18",
+      "new": "2026.10.28",
+      "releases": 15,
+      "first_release": "2024-11-29",
+      "last_release": "2026-10-28",
+      "licence": "MIT",
+      "needs_key": false,
+      "network": false,
+      "read_only_tools": [
+        "get_current_time",
+        "convert_time"
+      ],
       "read_only_tools_confirmed": false,
       "label": null,
       "changelog": "https://github.com/modelcontextprotocol/servers/commits/main/src/time",
@@ -72,12 +87,23 @@
     },
     {
       "name": "mcp-server-calculator",
-      "launcher": "pip", "package": "mcp-server-calculator",
-      "entry": ["-m", "mcp_server_calculator"],
-      "old": "0.1.2", "new": "0.2.1",
-      "releases": 5, "first_release": "2025-03-19", "last_release": "2026-08-08",
-      "licence": "MIT", "needs_key": false, "network": false,
-      "read_only_tools": ["calculate"],
+      "launcher": "pip",
+      "package": "mcp-server-calculator",
+      "entry": [
+        "-m",
+        "mcp_server_calculator"
+      ],
+      "old": "0.1.2",
+      "new": "0.2.1",
+      "releases": 5,
+      "first_release": "2025-03-19",
+      "last_release": "2026-08-08",
+      "licence": "MIT",
+      "needs_key": false,
+      "network": false,
+      "read_only_tools": [
+        "calculate"
+      ],
       "read_only_tools_confirmed": false,
       "label": null,
       "changelog": "https://pypi.org/project/mcp-server-calculator/#history",
@@ -85,12 +111,26 @@
     },
     {
       "name": "mcp-server-git",
-      "launcher": "pip", "package": "mcp-server-git",
-      "entry": ["-m", "mcp_server_git"],
-      "old": "2026.8.18", "new": "2026.10.28",
-      "releases": 22, "first_release": "2024-11-21", "last_release": "2026-10-28",
-      "licence": "MIT", "needs_key": false, "network": false,
-      "read_only_tools": ["git_status", "git_diff", "git_log", "git_show"],
+      "launcher": "pip",
+      "package": "mcp-server-git",
+      "entry": [
+        "-m",
+        "mcp_server_git"
+      ],
+      "old": "2026.8.18",
+      "new": "2026.10.28",
+      "releases": 22,
+      "first_release": "2024-11-21",
+      "last_release": "2026-10-28",
+      "licence": "MIT",
+      "needs_key": false,
+      "network": false,
+      "read_only_tools": [
+        "git_status",
+        "git_diff",
+        "git_log",
+        "git_show"
+      ],
       "read_only_tools_confirmed": false,
       "label": null,
       "changelog": "https://github.com/modelcontextprotocol/servers/commits/main/src/git",
@@ -99,13 +139,26 @@
     },
     {
       "name": "mcp-server-sqlite",
-      "launcher": "pip", "package": "mcp-server-sqlite",
-      "entry": ["-m", "mcp_server_sqlite"],
-      "old": "0.6.2", "new": "2025.4.25",
-      "releases": 12, "first_release": "2024-11-21", "last_release": "2025-04-25",
-      "licence": "see classifiers - confirm before citing", "needs_key": false, "network": false,
+      "launcher": "pip",
+      "package": "mcp-server-sqlite",
+      "entry": [
+        "-m",
+        "mcp_server_sqlite"
+      ],
+      "old": "0.6.2",
+      "new": "2025.4.25",
+      "releases": 12,
+      "first_release": "2024-11-21",
+      "last_release": "2025-04-25",
+      "licence": "see classifiers - confirm before citing",
+      "needs_key": false,
+      "network": false,
       "network_note": "local database file only",
-      "read_only_tools": ["read_query", "list_tables", "describe_table"],
+      "read_only_tools": [
+        "read_query",
+        "list_tables",
+        "describe_table"
+      ],
       "read_only_tools_confirmed": false,
       "label": null,
       "changelog": "https://github.com/modelcontextprotocol/servers/commits/main/src/sqlite",
@@ -114,12 +167,23 @@
     },
     {
       "name": "mcp-server-fetch",
-      "launcher": "pip", "package": "mcp-server-fetch",
-      "entry": ["-m", "mcp_server_fetch"],
-      "old": "2026.10.10", "new": "2026.10.28",
-      "releases": 14, "first_release": "2024-11-22", "last_release": "2026-10-28",
-      "licence": "MIT", "needs_key": false, "network": true,
-      "read_only_tools": ["fetch"],
+      "launcher": "pip",
+      "package": "mcp-server-fetch",
+      "entry": [
+        "-m",
+        "mcp_server_fetch"
+      ],
+      "old": "2026.10.10",
+      "new": "2026.10.28",
+      "releases": 14,
+      "first_release": "2024-11-22",
+      "last_release": "2026-10-28",
+      "licence": "MIT",
+      "needs_key": false,
+      "network": true,
+      "read_only_tools": [
+        "fetch"
+      ],
       "read_only_tools_confirmed": false,
       "label": null,
       "changelog": "https://github.com/modelcontextprotocol/servers/commits/main/src/fetch",
@@ -128,12 +192,24 @@
     },
     {
       "name": "mcp-simple-arxiv",
-      "launcher": "pip", "package": "mcp-simple-arxiv",
-      "entry": ["-m", "mcp_simple_arxiv"],
-      "old": "0.5.0", "new": "0.6.0",
-      "releases": 8, "first_release": "2024-12-07", "last_release": "2026-01-29",
-      "licence": "see classifiers - confirm before citing", "needs_key": false, "network": true,
-      "read_only_tools": ["search_papers", "get_paper_data"],
+      "launcher": "pip",
+      "package": "mcp-simple-arxiv",
+      "entry": [
+        "-m",
+        "mcp_simple_arxiv"
+      ],
+      "old": "0.5.0",
+      "new": "0.6.0",
+      "releases": 8,
+      "first_release": "2024-12-07",
+      "last_release": "2026-01-29",
+      "licence": "see classifiers - confirm before citing",
+      "needs_key": false,
+      "network": true,
+      "read_only_tools": [
+        "search_papers",
+        "get_paper_data"
+      ],
       "read_only_tools_confirmed": false,
       "label": null,
       "changelog": "https://pypi.org/project/mcp-simple-arxiv/#history",
@@ -142,12 +218,24 @@
     },
     {
       "name": "duckduckgo-mcp-server",
-      "launcher": "pip", "package": "duckduckgo-mcp-server",
-      "entry": ["-m", "duckduckgo_mcp_server"],
-      "old": "0.6.1", "new": "0.7.0",
-      "releases": 9, "first_release": "2025-02-22", "last_release": "2026-09-04",
-      "licence": "see classifiers - confirm before citing", "needs_key": false, "network": true,
-      "read_only_tools": ["search", "fetch_content"],
+      "launcher": "pip",
+      "package": "duckduckgo-mcp-server",
+      "entry": [
+        "-m",
+        "duckduckgo_mcp_server"
+      ],
+      "old": "0.6.1",
+      "new": "0.7.0",
+      "releases": 9,
+      "first_release": "2025-02-22",
+      "last_release": "2026-09-04",
+      "licence": "see classifiers - confirm before citing",
+      "needs_key": false,
+      "network": true,
+      "read_only_tools": [
+        "search",
+        "fetch_content"
+      ],
       "read_only_tools_confirmed": false,
       "label": null,
       "changelog": "https://pypi.org/project/duckduckgo-mcp-server/#history",
@@ -156,12 +244,25 @@
     },
     {
       "name": "arxiv-mcp-server",
-      "launcher": "pip", "package": "arxiv-mcp-server",
-      "entry": ["-m", "arxiv_mcp_server"],
-      "old": "0.8.0", "new": "0.8.2",
-      "releases": 41, "first_release": "2024-12-03", "last_release": "2026-10-08",
-      "licence": "see classifiers - confirm before citing", "needs_key": false, "network": true,
-      "read_only_tools": ["search_papers", "download_paper", "read_paper"],
+      "launcher": "pip",
+      "package": "arxiv-mcp-server",
+      "entry": [
+        "-m",
+        "arxiv_mcp_server"
+      ],
+      "old": "0.8.0",
+      "new": "0.8.2",
+      "releases": 41,
+      "first_release": "2024-12-03",
+      "last_release": "2026-10-08",
+      "licence": "see classifiers - confirm before citing",
+      "needs_key": false,
+      "network": true,
+      "read_only_tools": [
+        "search_papers",
+        "download_paper",
+        "read_paper"
+      ],
       "read_only_tools_confirmed": false,
       "label": null,
       "changelog": "https://pypi.org/project/arxiv-mcp-server/#history",
@@ -169,7 +270,6 @@
       "caution": "download_paper writes files. Must not be probed."
     }
   ],
-
   "excluded": [
     {
       "name": "mcp-server-sentry",
@@ -188,10 +288,230 @@
       "reason": "Node.js is not installed on this machine, and the plan notes the sandbox monitor sees Python processes fully but Node only roughly - so their side-effect signals would not be comparable."
     }
   ],
-
   "_shortfall": {
     "proposed": 8,
     "plan_target": "15 to 25",
     "note": "Eight is short of the target. Python MCP servers with two or more published releases are scarcer than the plan assumed - a search of the obvious candidates found eleven, and three were excluded for credentials or tooling. Reaching fifteen would mean either installing Node.js to take in the npm ecosystem, or relaxing to servers with only two releases. Both are decisions for the user, and the shortfall should be stated in the write-up rather than quietly met by padding the list."
+  },
+  "_candidates": {
+    "_status": "T29 candidates - NOT APPROVED. Read from the PyPI JSON API on 2026-11-09; nothing installed or run.",
+    "_why": "H3 needs at least 15 real upgrades for a credible false-alarm rate; 4 servers are approved.",
+    "_unknowns": [
+      "tools_changed is null on every entry: whether tools/list differs between the two releases can only be seen by installing both, which needs approval. A pair whose definitions did not change still counts (its residue is ordinary drift), as the plan allows.",
+      "entry is null: the launch arguments (a database path, a working directory) are read from each package's --help after approval, not guessed.",
+      "Licences marked '?' on PyPI must be confirmed before the package is cited."
+    ],
+    "candidates": [
+      {
+        "name": "mcp-server-duckdb",
+        "package": "mcp-server-duckdb",
+        "old": "1.0.1",
+        "new": "1.1.0",
+        "releases": 8,
+        "release_span": "2024-11-30..2025-05-05",
+        "kind": "database",
+        "needs_key": false,
+        "network": false,
+        "approved": false,
+        "tools_changed": null,
+        "entry": null,
+        "note": "Local DuckDB file. Licence MIT."
+      },
+      {
+        "name": "mcp-server-motherduck",
+        "package": "mcp-server-motherduck",
+        "old": "1.0.8",
+        "new": "1.1.0",
+        "releases": 34,
+        "release_span": "2024-11-26..2026-10-07",
+        "kind": "database",
+        "needs_key": false,
+        "network": false,
+        "approved": false,
+        "tools_changed": null,
+        "entry": null,
+        "note": "Local DuckDB mode only; its MotherDuck cloud mode needs a token and must not be used. Licence '?' on PyPI."
+      },
+      {
+        "name": "mcp-alchemy",
+        "package": "mcp-alchemy",
+        "old": "2026.10.6.103105",
+        "new": "2026.10.15.202659",
+        "releases": 37,
+        "release_span": "2025-04-08..2026-10-15",
+        "kind": "database",
+        "needs_key": false,
+        "network": false,
+        "approved": false,
+        "tools_changed": null,
+        "entry": null,
+        "note": "SQLAlchemy against a throwaway local SQLite file. Licence '?' on PyPI."
+      },
+      {
+        "name": "mcp-server-spreadsheet",
+        "package": "mcp-server-spreadsheet",
+        "old": "0.3.1",
+        "new": "0.3.3",
+        "releases": 5,
+        "release_span": "2026-03-01..2026-08-11",
+        "kind": "files",
+        "needs_key": false,
+        "network": false,
+        "approved": false,
+        "tools_changed": null,
+        "entry": null,
+        "note": "Reads and writes xlsx/csv/ods; point it at a throwaway directory."
+      },
+      {
+        "name": "excel-mcp-server",
+        "package": "excel-mcp-server",
+        "old": "2.2.8",
+        "new": "2.2.9",
+        "releases": 25,
+        "release_span": "2025-04-04..2026-11-09",
+        "kind": "files",
+        "needs_key": false,
+        "network": false,
+        "approved": false,
+        "tools_changed": null,
+        "entry": null,
+        "note": "Reads and writes xlsx; throwaway directory. Licence MIT."
+      },
+      {
+        "name": "mcp-server-office",
+        "package": "mcp-server-office",
+        "old": "0.1.1",
+        "new": "0.2.0",
+        "releases": 3,
+        "release_span": "2025-01-30..2025-02-09",
+        "kind": "files",
+        "needs_key": false,
+        "network": false,
+        "approved": false,
+        "tools_changed": null,
+        "entry": null,
+        "note": "Reads and writes docx; throwaway directory. Licence '?' on PyPI."
+      },
+      {
+        "name": "office-word-mcp-server",
+        "package": "office-word-mcp-server",
+        "old": "1.1.10",
+        "new": "1.1.11",
+        "releases": 14,
+        "release_span": "2025-03-25..2025-12-31",
+        "kind": "files",
+        "needs_key": false,
+        "network": false,
+        "approved": false,
+        "tools_changed": null,
+        "entry": null,
+        "note": "docx; its PDF conversion tool needs Microsoft Word and would simply fail. Licence MIT."
+      },
+      {
+        "name": "mcp-text-editor",
+        "package": "mcp-text-editor",
+        "old": "1.2.1",
+        "new": "1.2.2",
+        "releases": 14,
+        "release_span": "2024-12-13..2026-09-12",
+        "kind": "files",
+        "needs_key": false,
+        "network": false,
+        "approved": false,
+        "tools_changed": null,
+        "entry": null,
+        "note": "Edits text files; edit tools are withheld by the strict classifier, read tools probed. Licence MIT."
+      },
+      {
+        "name": "mcp-server-tree-sitter",
+        "package": "mcp-server-tree-sitter",
+        "old": "0.6.0",
+        "new": "0.7.0",
+        "releases": 7,
+        "release_span": "2025-03-16..2026-04-09",
+        "kind": "code",
+        "needs_key": false,
+        "network": false,
+        "approved": false,
+        "tools_changed": null,
+        "entry": null,
+        "note": "Static code analysis over a local directory. Licence MIT."
+      },
+      {
+        "name": "mcp-sequential-thinking",
+        "package": "mcp-sequential-thinking",
+        "old": "0.6.1",
+        "new": "0.7.0",
+        "releases": 3,
+        "release_span": "2026-07-03..2026-10-21",
+        "kind": "notes",
+        "needs_key": false,
+        "network": false,
+        "approved": false,
+        "tools_changed": null,
+        "entry": null,
+        "note": "Local work notes on disk. Licence MIT."
+      },
+      {
+        "name": "mcp-units",
+        "package": "mcp-units",
+        "old": "0.3.2",
+        "new": "0.3.3",
+        "releases": 4,
+        "release_span": "2025-09-26..2025-09-26",
+        "kind": "compute",
+        "needs_key": false,
+        "network": false,
+        "approved": false,
+        "tools_changed": null,
+        "entry": null,
+        "note": "Pure unit conversion. Both releases the same day, so the change is likely small."
+      },
+      {
+        "name": "mcp-math",
+        "package": "mcp-math",
+        "old": "0.1.0",
+        "new": "0.1.1",
+        "releases": 2,
+        "release_span": "2025-06-22..2025-06-22",
+        "kind": "compute",
+        "needs_key": false,
+        "network": false,
+        "approved": false,
+        "tools_changed": null,
+        "entry": null,
+        "note": "Pure arithmetic. Two releases, same day."
+      }
+    ],
+    "excluded": [
+      {
+        "name": "chroma-mcp",
+        "reason": "Downloads an embedding model on first use, and depends on the OpenAI, Cohere and Voyage clients. Not offline."
+      },
+      {
+        "name": "basic-memory",
+        "reason": "Depends on fastembed, which downloads models; also logfire and httpx. Not cleanly offline. AGPL."
+      },
+      {
+        "name": "markitdown-mcp",
+        "reason": "convert_to_markdown accepts http URIs, so it is a network tool."
+      },
+      {
+        "name": "mcp-pandoc",
+        "reason": "Needs a system pandoc binary that is not installed."
+      },
+      {
+        "name": "lancedb-mcp",
+        "reason": "Embeddings through OpenAI: needs an API key."
+      },
+      {
+        "name": "mcp-server-ocr",
+        "reason": "Needs a Zhipu AI key; one release only."
+      },
+      {
+        "name": "docx-mcp",
+        "reason": "Depends on requests and can fetch images from URLs, so not reliably offline."
+      }
+    ]
   }
 }
