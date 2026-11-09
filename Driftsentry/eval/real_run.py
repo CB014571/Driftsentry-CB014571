@@ -310,7 +310,7 @@ async def run_server(
     try:
         baseline = await capture_baseline(
             short, launch_old["command"], launch_old["args"],
-            cwd=cwd, env={}, safety_policy="strict", monitor_sandbox=True,
+            cwd=cwd, env=env, safety_policy="strict", monitor_sandbox=True,
             probe_mode="fixed")
     except Exception as exc:                                  # noqa: BLE001
         out.error = f"baseline: {type(exc).__name__}: {exc}"

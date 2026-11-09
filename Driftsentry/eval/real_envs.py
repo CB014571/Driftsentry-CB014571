@@ -89,19 +89,50 @@ class Installed:
 # --------------------------------------------------------------------------- #
 # PyPI
 # --------------------------------------------------------------------------- #
-def released_versions(package: str, *, timeout: float = 30.0) -> list[str]:
-    """Every version of a package, newest first, from the PyPI JSON API.
-
-    Read rather than remembered. A version list in a source file goes stale
-    and a guessed version number is not a measurement.
-    """
+def release_dates(package: str, *, timeout: float = 30.0) -> dict[str, str]:
+    """Version -> first upload time (ISO), for every live release, from PyPI."""
     url = PYPI.format(package=package)
     with urllib.request.urlopen(url, timeout=timeout) as response:  # noqa: S310
         payload = json.load(response)
     releases = payload.get("releases") or {}
-    live = [v for v, files in releases.items()
-            if files and not all(f.get("yanked") for f in files)]
+    return {v: min((f.get("upload_time_iso_8601") or f.get("upload_time") or "")
+                   for f in files)
+            for v, files in releases.items()
+            if files and not all(f.get("yanked") for f in files)}
+
+
+def released_versions(package: str, *, timeout: float = 30.0,
+                      before: str | None = None) -> list[str]:
+    """Every version of a package, newest first, from the PyPI JSON API.
+
+    Read rather than remembered. A version list in a source file goes stale
+    and a guessed version number is not a measurement.
+
+    ``before`` (an ISO timestamp) keeps only versions published by then.
+    """
+    dates = release_dates(package, timeout=timeout)
+    live = [v for v, when in dates.items() if before is None or when <= before]
     return sorted(live, key=_version_key, reverse=True)
+
+
+def sdk_candidates(package: str, version: str) -> list[str]:
+    """The mcp SDK versions to try for one server release, newest first.
+
+    Anchored at the server release's OWN publication date. The first version
+    of the walk simply took the newest SDKs, and measured on 9 Nov it could
+    never work: calculator 0.1.2, sqlite 0.6.2 and duckdb 1.0.1 were all
+    published against SDKs dozens of releases older than today's, and a walk
+    bounded at eight attempts from the newest end never reached one. The SDK
+    that existed when a release was published is what it was written against;
+    newest-of-those first is the closest to how it was actually deployed.
+    SDKs released after it follow, in case the release only ran on a later one.
+    """
+    published = release_dates(package).get(version)
+    every = released_versions("mcp")
+    if not published:
+        return every
+    then = released_versions("mcp", before=published)
+    return then + [v for v in every if v not in set(then)]
 
 
 def _version_key(version: str) -> tuple:
@@ -259,7 +290,7 @@ def resolve_sdk_pin(
         return resolved, attempts
 
     if candidates is None:
-        candidates = released_versions("mcp")
+        candidates = sdk_candidates(package, version)
     tried = {resolved} if resolved else set()
 
     for sdk in candidates:

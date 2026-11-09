@@ -228,3 +228,23 @@ def test_a_yanked_release_is_not_offered(monkeypatch):
     monkeypatch.setattr(real_envs.json, "load",
                         lambda fh: json.loads(fh.read().decode()))
     assert real_envs.released_versions("mcp") == ["1.0.0"]
+
+
+def test_the_sdk_walk_starts_at_the_releases_own_date(monkeypatch):
+    """Measured 9 Nov: newest-first from today, bounded at eight attempts,
+    never reached the SDK an early-2025 release was written against."""
+    dates = {
+        "mcp-server-x": {"0.1.0": "2025-03-01T00:00:00Z"},
+        "mcp": {"1.0.0": "2024-11-01T00:00:00Z", "1.3.0": "2025-02-15T00:00:00Z",
+                "1.6.0": "2025-04-01T00:00:00Z", "1.28.1": "2026-10-01T00:00:00Z"},
+    }
+    monkeypatch.setattr(real_envs, "release_dates", lambda pkg, **k: dates[pkg])
+    order = real_envs.sdk_candidates("mcp-server-x", "0.1.0")
+    assert order[:2] == ["1.3.0", "1.0.0"], "contemporary SDKs first, newest of them first"
+    assert order[2:] == ["1.28.1", "1.6.0"], "later SDKs only after"
+
+
+def test_an_unknown_release_date_falls_back_to_every_sdk(monkeypatch):
+    monkeypatch.setattr(real_envs, "release_dates",
+                        lambda pkg, **k: {} if pkg != "mcp" else {"1.0.0": "2024", "1.1.0": "2025"})
+    assert real_envs.sdk_candidates("mcp-server-x", "9.9") == ["1.1.0", "1.0.0"]
