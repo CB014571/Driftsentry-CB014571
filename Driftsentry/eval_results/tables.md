@@ -1,6 +1,6 @@
 # DriftSentry - measured results
 
-Generated 2026-11-08 from the files in `eval_results/`. Where a result has not been measured this says so and gives the command that would produce it. Nothing here is transcribed by hand.
+Generated 2026-11-10 from the files in `eval_results/`. Where a result has not been measured this says so and gives the command that would produce it. Nothing here is transcribed by hand.
 
 ### Table 1. Fixed against keyed probe values
 
@@ -43,7 +43,7 @@ put on a single episode. Superseded by Table 1 once Experiment
 | exfiltration/L4 | never_triggered | 0.074 | detected | 1.100 |
 | silent-tamper/L4 | never_triggered | 0.087 | detected | 2.228 |
 
-### Table 2. Three detectors on the same attacks (Gap 1, Gap 4)
+### Table 2. Three detectors on the same attacks (Validation)
 
 Each row is one sweep of the same twelve attack configurations
 (six families, two seeds). The sweeps differ only in which
@@ -80,7 +80,7 @@ Passive monitoring was available in every episode, so its
 zero is a genuine non-detection and not an absence of
 monitoring.
 
-### Table 3. Separating probe traffic from genuine traffic (RQ3)
+### Table 3. Separating probe traffic from genuine traffic (RQ1)
 
 2325 calls (165 genuine, 2160 probe) across 235 process instances; 5-fold GroupKFold on the process, so no session spans a split.
 
@@ -98,7 +98,7 @@ over calls, because calls inside one process share a client, a
 working directory and a session counter and are not
 independent.
 
-### Table 4. Detection lost to a learned recogniser (RQ3, H3)
+### Table 4. Detection lost to a learned recogniser (RQ1, H1)
 
 The same attack matrix at L1, where the server attacks every
 call, and at L6, where it scores each call against a model
@@ -138,7 +138,7 @@ separate probe traffic from genuine traffic, and guesses
 as -100.0pp it would read as perfect evasion, which is the
 opposite of what happened.
 
-### Table 5. Real benign servers and real version upgrades (Gap 3)
+### Table 5. Real benign servers and real version upgrades (RQ3b)
 
 Nothing malicious happens in any of these runs. Every alert is
 a false alarm. The `same release` column changes nothing at all
@@ -146,7 +146,9 @@ between the baseline and the re-probe.
 
 | server | same release | after upgrade | hash fired | n per cell |
 | --- | --- | --- | --- | --- |
-| git | 100.0% [0.44, 1.00] (3/3) | 100.0% [0.44, 1.00] (3/3) | 3/3 | 3/3 |
+| alchemy | 0.0% [0.00, 0.56] (0/3) | 0.0% [0.00, 0.56] (0/3) | 0/3 | 3/3 |
+| git | 0.0% [0.00, 0.56] (0/3) | 100.0% [0.44, 1.00] (3/3) | 3/3 | 3/3 |
+| motherduck | 0.0% [0.00, 0.56] (0/3) | 0.0% [0.00, 0.56] (0/3) | 0/3 | 3/3 |
 | time | 0.0% [0.00, 0.56] (0/3) | 100.0% [0.44, 1.00] (3/3) | 3/3 | 3/3 |
 
 The candidate list in `eval/real_servers.json` holds 8 servers
@@ -158,11 +160,11 @@ releases of MCP servers do not necessarily run against a
 current SDK, which bounds how far back any upgrade pair can
 reach and belongs in threats to validity.
 
-### Table 6. Countermeasures, and what they cost (RQ4, H4)
+### Table 6. Countermeasures, and what they cost (RQ2, H2)
 
 ```
 ========================================================================
-  T20 - countermeasures against a learned recogniser (RQ4 / H4)
+  T20 - countermeasures against a learned recogniser (RQ2 / H2)
 ========================================================================
 
   condition     best AUC    recall  false alarms   cycle s   calls
@@ -170,19 +172,83 @@ reach and belongs in threats to validity.
   none             1.000      0.0%         50.0%      19.0    18.0
   host             0.994      0.0%         50.0%      19.3    18.0
   mimic            0.993     50.0%         50.0%      17.5    18.0
-  subsample   not measured
-  all         not measured
+  subsample        1.000      0.0%         50.0%      13.3    18.0
+  all              0.994     50.0%         50.0%      24.5    18.0
 
   condition          channel   L1 recall   L6 recall      gap
   ------------------------------------------------------------
   none                client      100.0%        0.0% -100.0pp
   host                   all      100.0%        0.0% -100.0pp
   mimic                  all      100.0%       50.0%  -50.0pp
-  subsample     not measured
-  all           not measured
+  subsample           client      100.0%        0.0% -100.0pp
+  all                    all      100.0%       50.0%  -50.0pp
 
-  H4: UNDEFINED
+  H2: FAIL
+    FAIL  auc_at_or_below_ceiling
+    FAIL  recall_within_tolerance
+    pass  false_alarms_contained
+
+  A failed hypothesis is a result. The countermeasures are not to be tuned until it passes.
 ```
+
+### Table 7. Attacks hidden in legitimate updates (RQ3a)
+
+Attributed detection: an alert naming a signal the hidden change causes.
+Attacks that fired: 60; never fired, excluded: 12.
+
+| condition | C0 | C1 | C2 | C3 | pooled C0-C2 |
+| --- | --- | --- | --- | --- | --- |
+| accept_rebaseline | 100.0% [0.80, 1.00] (15/15) | 0.0% [0.00, 0.20] (0/15) | 0.0% [0.00, 0.20] (0/15) | 0.0% [0.00, 0.20] (0/15) | 33.3% [0.21, 0.48] (15/45) |
+| refuse_all | 100.0% [0.80, 1.00] (15/15) | 100.0% [0.80, 1.00] (15/15) | 100.0% [0.80, 1.00] (15/15) | 100.0% [0.80, 1.00] (15/15) | 100.0% [0.92, 1.00] (45/45) |
+| definition_diff | 0.0% [0.00, 0.20] (0/15) | 0.0% [0.00, 0.20] (0/15) | 0.0% [0.00, 0.20] (0/15) | 0.0% [0.00, 0.20] (0/15) | 0.0% [0.00, 0.08] (0/45) |
+| new_host_only | 20.0% [0.07, 0.45] (3/15) | 20.0% [0.07, 0.45] (3/15) | 20.0% [0.07, 0.45] (3/15) | 20.0% [0.07, 0.45] (3/15) | 20.0% [0.11, 0.34] (9/45) |
+| residue | 100.0% [0.80, 1.00] (15/15) | 100.0% [0.80, 1.00] (15/15) | 100.0% [0.80, 1.00] (15/15) | 100.0% [0.80, 1.00] (15/15) | 100.0% [0.92, 1.00] (45/45) |
+
+Residue against each baseline, paired, exact McNemar with Holm correction:
+
+| baseline | only residue | only baseline | p | Holm p | significant |
+| --- | --- | --- | --- | --- | --- |
+| accept_rebaseline | 30 | 0 | 1.863e-09 | 1.863e-09 | yes |
+| definition_diff | 45 | 0 | 5.684e-14 | 1.705e-13 | yes |
+| new_host_only | 36 | 0 | 2.91e-11 | 5.821e-11 | yes |
+
+C3, declaration widened to cover the payload: 15 fired, residue attributed 15, evaded 0; no attack evaded, so there is no share to report.
+
+### Table 8. Synthetic benign updates: false alarms (RQ3a)
+
+A legitimate declared change shipped with no attack. Any alert is a false alarm.
+
+| condition | false alarms |
+| --- | --- |
+| accept_rebaseline | 0.0% [0.00, 0.39] (0/6) |
+| refuse_all | 100.0% [0.61, 1.00] (6/6) |
+| definition_diff | 100.0% [0.61, 1.00] (6/6) |
+| new_host_only | 0.0% [0.00, 0.39] (0/6) |
+| residue | 0.0% [0.00, 0.39] (0/6) |
+
+### Table 9. Residue on real benign upgrades (RQ3b)
+
+| server | runs | residue_alert | escalation | held | residue signals |
+| --- | --- | --- | --- | --- | --- |
+| alchemy | 3 | 0 | 0 | 0 | - |
+| git | 3 | 3 | 0 | 0 | behavioural_drift, determinism_break |
+| motherduck | 3 | 0 | 0 | 0 | - |
+| time | 3 | 3 | 0 | 0 | behavioural_drift, determinism_break |
+
+Upgrades leaving a residue: 50.0% [0.15, 0.85] (2/4). Labels are null by the user's decision, so this rate is reported unlabelled.
+
+### Table 10. Hypotheses
+
+| | hypothesis | result | basis |
+| --- | --- | --- | --- |
+| H1 | a non-argument family separates probes at AUC >= 0.9, and withholding drops recall >= 50pp | PASS | client (AUC 1.000, recall -100pp); session (AUC 0.983, recall -100pp); timing (AUC 0.951, recall -100pp) |
+| H2 | mimicry brings AUC <= 0.6, recall within 10pp, false alarms +2pp at most | FAIL | best AUC 0.994 (needs <= 0.6), recall gap -50pp (needs within 10), false alarms +0.0pp (needs <= +2) |
+| H3 | residue detects >= 80% pooled C0-C2, beats three baselines (Holm p<0.05), <= 15% of real upgrades leave residue | FAIL | on 78 episodes (60 attacks fired); residue detects 45/45 = 100.0% pooled C0-C2 (needs >= 80%): met; vs accept_rebaseline: b01=30 b10=0 p=1.863e-09 Holm p=1.863e-09: significant; vs definition_diff: b01=45 b10=0 p=5.684e-14 Holm p=1.705e-13: significant; vs new_host_only: b01=36 b10=0 p=2.91e-11 Holm p=5.821e-11: significant; 2/4 real upgrades left a residue = 50.0% (needs <= 15%): NOT met |
+| Validation | Per-tool thresholds halve benign-update false alarms at equal recall | NOT MEASURED | no frozen per-tool threshold file exists |
+| Validation | Full DriftSentry detects significantly more than hash-only | PASS | exp3_argument_L1: full 10/10, hash 0/10, exact McNemar p=0.001953 |
+| Validation | Catches attacks on tools the agent never calls, which passive cannot | NOT MEASURED | no episode confined to a tool the replayed traffic avoids has been run |
+
+A FAIL is a result, not a defect; nothing was tuned to pass.
 
 ## Outstanding
 
@@ -192,3 +258,5 @@ reach and belongs in threats to validity.
 - | L3 | NOT MEASURED | NOT MEASURED |
 - | L4 | NOT MEASURED | NOT MEASURED |
 - | L5 | NOT MEASURED | NOT MEASURED |
+- | Validation | Per-tool thresholds halve benign-update false alarms at equal recall | NOT MEASURED | no frozen per-tool threshold file exists |
+- | Validation | Catches attacks on tools the agent never calls, which passive cannot | NOT MEASURED | no episode confined to a tool the replayed traffic avoids has been run |

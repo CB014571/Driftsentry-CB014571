@@ -607,9 +607,15 @@ def table_rq3a_detection() -> str:
         lines.append(f"| {b} | {t['b01']} | {t['b10']} | {t['p']:.4g} | "
                      f"{t['p_holm']:.4g} | {'yes' if t['significant'] else 'no'} |")
     c3 = out["c3"]
+    # Zero evasions is a measurement, not a gap: there is no share to take of
+    # nothing, and printing NOT MEASURED here would send a reader looking for
+    # a run that does not need to exist.
+    escalated = ("no attack evaded, so there is no share to report"
+                 if c3["fired"] and not c3["evaded"]
+                 else f"of the evasions, escalated: {_cell(c3['evaded_with_escalation'])}")
     lines += ["", f"C3, declaration widened to cover the payload: {c3['fired']} fired, "
                   f"residue attributed {c3['residue_attributed']}, evaded {c3['evaded']}; "
-                  f"of the evasions, escalated: {_cell(c3['evaded_with_escalation'])}.", ""]
+                  f"{escalated}.", ""]
     return _lines(lines)
 
 
