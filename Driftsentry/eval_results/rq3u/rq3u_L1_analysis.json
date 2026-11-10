@@ -1,0 +1,527 @@
+{
+  "episodes": 78,
+  "fired_attacks": 60,
+  "never_triggered": 12,
+  "detection": {
+    "accept_rebaseline": {
+      "C0": {
+        "attributed": {
+          "k": 15,
+          "n": 15,
+          "rate": 1.0,
+          "low": 0.7961166989641514,
+          "high": 0.9999999999999999
+        },
+        "any_alert": {
+          "k": 15,
+          "n": 15,
+          "rate": 1.0,
+          "low": 0.7961166989641514,
+          "high": 0.9999999999999999
+        }
+      },
+      "C1": {
+        "attributed": {
+          "k": 0,
+          "n": 15,
+          "rate": 0.0,
+          "low": 0.0,
+          "high": 0.20388330103584854
+        },
+        "any_alert": {
+          "k": 0,
+          "n": 15,
+          "rate": 0.0,
+          "low": 0.0,
+          "high": 0.20388330103584854
+        }
+      },
+      "C2": {
+        "attributed": {
+          "k": 0,
+          "n": 15,
+          "rate": 0.0,
+          "low": 0.0,
+          "high": 0.20388330103584854
+        },
+        "any_alert": {
+          "k": 0,
+          "n": 15,
+          "rate": 0.0,
+          "low": 0.0,
+          "high": 0.20388330103584854
+        }
+      },
+      "C3": {
+        "attributed": {
+          "k": 0,
+          "n": 15,
+          "rate": 0.0,
+          "low": 0.0,
+          "high": 0.20388330103584854
+        },
+        "any_alert": {
+          "k": 0,
+          "n": 15,
+          "rate": 0.0,
+          "low": 0.0,
+          "high": 0.20388330103584854
+        }
+      }
+    },
+    "refuse_all": {
+      "C0": {
+        "attributed": {
+          "k": 15,
+          "n": 15,
+          "rate": 1.0,
+          "low": 0.7961166989641514,
+          "high": 0.9999999999999999
+        },
+        "any_alert": {
+          "k": 15,
+          "n": 15,
+          "rate": 1.0,
+          "low": 0.7961166989641514,
+          "high": 0.9999999999999999
+        }
+      },
+      "C1": {
+        "attributed": {
+          "k": 15,
+          "n": 15,
+          "rate": 1.0,
+          "low": 0.7961166989641514,
+          "high": 0.9999999999999999
+        },
+        "any_alert": {
+          "k": 15,
+          "n": 15,
+          "rate": 1.0,
+          "low": 0.7961166989641514,
+          "high": 0.9999999999999999
+        }
+      },
+      "C2": {
+        "attributed": {
+          "k": 15,
+          "n": 15,
+          "rate": 1.0,
+          "low": 0.7961166989641514,
+          "high": 0.9999999999999999
+        },
+        "any_alert": {
+          "k": 15,
+          "n": 15,
+          "rate": 1.0,
+          "low": 0.7961166989641514,
+          "high": 0.9999999999999999
+        }
+      },
+      "C3": {
+        "attributed": {
+          "k": 15,
+          "n": 15,
+          "rate": 1.0,
+          "low": 0.7961166989641514,
+          "high": 0.9999999999999999
+        },
+        "any_alert": {
+          "k": 15,
+          "n": 15,
+          "rate": 1.0,
+          "low": 0.7961166989641514,
+          "high": 0.9999999999999999
+        }
+      }
+    },
+    "definition_diff": {
+      "C0": {
+        "attributed": {
+          "k": 0,
+          "n": 15,
+          "rate": 0.0,
+          "low": 0.0,
+          "high": 0.20388330103584854
+        },
+        "any_alert": {
+          "k": 0,
+          "n": 15,
+          "rate": 0.0,
+          "low": 0.0,
+          "high": 0.20388330103584854
+        }
+      },
+      "C1": {
+        "attributed": {
+          "k": 0,
+          "n": 15,
+          "rate": 0.0,
+          "low": 0.0,
+          "high": 0.20388330103584854
+        },
+        "any_alert": {
+          "k": 15,
+          "n": 15,
+          "rate": 1.0,
+          "low": 0.7961166989641514,
+          "high": 0.9999999999999999
+        }
+      },
+      "C2": {
+        "attributed": {
+          "k": 0,
+          "n": 15,
+          "rate": 0.0,
+          "low": 0.0,
+          "high": 0.20388330103584854
+        },
+        "any_alert": {
+          "k": 15,
+          "n": 15,
+          "rate": 1.0,
+          "low": 0.7961166989641514,
+          "high": 0.9999999999999999
+        }
+      },
+      "C3": {
+        "attributed": {
+          "k": 0,
+          "n": 15,
+          "rate": 0.0,
+          "low": 0.0,
+          "high": 0.20388330103584854
+        },
+        "any_alert": {
+          "k": 15,
+          "n": 15,
+          "rate": 1.0,
+          "low": 0.7961166989641514,
+          "high": 0.9999999999999999
+        }
+      }
+    },
+    "new_host_only": {
+      "C0": {
+        "attributed": {
+          "k": 3,
+          "n": 15,
+          "rate": 0.2,
+          "low": 0.07047549346981555,
+          "high": 0.4518544871516935
+        },
+        "any_alert": {
+          "k": 3,
+          "n": 15,
+          "rate": 0.2,
+          "low": 0.07047549346981555,
+          "high": 0.4518544871516935
+        }
+      },
+      "C1": {
+        "attributed": {
+          "k": 3,
+          "n": 15,
+          "rate": 0.2,
+          "low": 0.07047549346981555,
+          "high": 0.4518544871516935
+        },
+        "any_alert": {
+          "k": 3,
+          "n": 15,
+          "rate": 0.2,
+          "low": 0.07047549346981555,
+          "high": 0.4518544871516935
+        }
+      },
+      "C2": {
+        "attributed": {
+          "k": 3,
+          "n": 15,
+          "rate": 0.2,
+          "low": 0.07047549346981555,
+          "high": 0.4518544871516935
+        },
+        "any_alert": {
+          "k": 3,
+          "n": 15,
+          "rate": 0.2,
+          "low": 0.07047549346981555,
+          "high": 0.4518544871516935
+        }
+      },
+      "C3": {
+        "attributed": {
+          "k": 3,
+          "n": 15,
+          "rate": 0.2,
+          "low": 0.07047549346981555,
+          "high": 0.4518544871516935
+        },
+        "any_alert": {
+          "k": 3,
+          "n": 15,
+          "rate": 0.2,
+          "low": 0.07047549346981555,
+          "high": 0.4518544871516935
+        }
+      }
+    },
+    "residue": {
+      "C0": {
+        "attributed": {
+          "k": 15,
+          "n": 15,
+          "rate": 1.0,
+          "low": 0.7961166989641514,
+          "high": 0.9999999999999999
+        },
+        "any_alert": {
+          "k": 15,
+          "n": 15,
+          "rate": 1.0,
+          "low": 0.7961166989641514,
+          "high": 0.9999999999999999
+        }
+      },
+      "C1": {
+        "attributed": {
+          "k": 15,
+          "n": 15,
+          "rate": 1.0,
+          "low": 0.7961166989641514,
+          "high": 0.9999999999999999
+        },
+        "any_alert": {
+          "k": 15,
+          "n": 15,
+          "rate": 1.0,
+          "low": 0.7961166989641514,
+          "high": 0.9999999999999999
+        }
+      },
+      "C2": {
+        "attributed": {
+          "k": 15,
+          "n": 15,
+          "rate": 1.0,
+          "low": 0.7961166989641514,
+          "high": 0.9999999999999999
+        },
+        "any_alert": {
+          "k": 15,
+          "n": 15,
+          "rate": 1.0,
+          "low": 0.7961166989641514,
+          "high": 0.9999999999999999
+        }
+      },
+      "C3": {
+        "attributed": {
+          "k": 15,
+          "n": 15,
+          "rate": 1.0,
+          "low": 0.7961166989641514,
+          "high": 0.9999999999999999
+        },
+        "any_alert": {
+          "k": 15,
+          "n": 15,
+          "rate": 1.0,
+          "low": 0.7961166989641514,
+          "high": 0.9999999999999999
+        }
+      }
+    }
+  },
+  "pooled": {
+    "accept_rebaseline": {
+      "k": 15,
+      "n": 45,
+      "rate": 0.3333333333333333,
+      "low": 0.2135887493433004,
+      "high": 0.4792951169009958
+    },
+    "refuse_all": {
+      "k": 45,
+      "n": 45,
+      "rate": 1.0,
+      "low": 0.9213484012671117,
+      "high": 1.0
+    },
+    "definition_diff": {
+      "k": 0,
+      "n": 45,
+      "rate": 0.0,
+      "low": 6.938893903907228e-18,
+      "high": 0.07865159873288832
+    },
+    "new_host_only": {
+      "k": 9,
+      "n": 45,
+      "rate": 0.2,
+      "low": 0.1089612680783129,
+      "high": 0.33822969116142015
+    },
+    "residue": {
+      "k": 45,
+      "n": 45,
+      "rate": 1.0,
+      "low": 0.9213484012671117,
+      "high": 1.0
+    }
+  },
+  "mcnemar_vs_residue": {
+    "accept_rebaseline": {
+      "p": 1.862645149230957e-09,
+      "n": 45,
+      "b01": 30,
+      "b10": 0,
+      "discordant": 30,
+      "a_rate": 0.3333333333333333,
+      "b_rate": 1.0,
+      "p_holm": 1.862645149230957e-09,
+      "significant": true
+    },
+    "definition_diff": {
+      "p": 5.684341886080802e-14,
+      "n": 45,
+      "b01": 45,
+      "b10": 0,
+      "discordant": 45,
+      "a_rate": 0.0,
+      "b_rate": 1.0,
+      "p_holm": 1.7053025658242404e-13,
+      "significant": true
+    },
+    "new_host_only": {
+      "p": 2.9103830456733704e-11,
+      "n": 45,
+      "b01": 36,
+      "b10": 0,
+      "discordant": 36,
+      "a_rate": 0.2,
+      "b_rate": 1.0,
+      "p_holm": 5.820766091346741e-11,
+      "significant": true
+    }
+  },
+  "synthetic_false_alarms": {
+    "accept_rebaseline": {
+      "k": 0,
+      "n": 6,
+      "rate": 0.0,
+      "low": 0.0,
+      "high": 0.39033428790216523
+    },
+    "refuse_all": {
+      "k": 6,
+      "n": 6,
+      "rate": 1.0,
+      "low": 0.6096657120978348,
+      "high": 1.0
+    },
+    "definition_diff": {
+      "k": 6,
+      "n": 6,
+      "rate": 1.0,
+      "low": 0.6096657120978348,
+      "high": 1.0
+    },
+    "new_host_only": {
+      "k": 0,
+      "n": 6,
+      "rate": 0.0,
+      "low": 0.0,
+      "high": 0.39033428790216523
+    },
+    "residue": {
+      "k": 0,
+      "n": 6,
+      "rate": 0.0,
+      "low": 0.0,
+      "high": 0.39033428790216523
+    }
+  },
+  "c3": {
+    "fired": 15,
+    "residue_attributed": 15,
+    "evaded": 0,
+    "evaded_with_escalation": {
+      "k": 0,
+      "n": 0,
+      "rate": NaN,
+      "low": 0.0,
+      "high": 1.0
+    }
+  },
+  "real_upgrades": {
+    "servers": [
+      {
+        "server": "alchemy",
+        "runs": 3,
+        "residue_runs": 0,
+        "escalation_runs": 0,
+        "held_runs": 0,
+        "residue_signals": []
+      },
+      {
+        "server": "git",
+        "runs": 3,
+        "residue_runs": 3,
+        "escalation_runs": 0,
+        "held_runs": 0,
+        "residue_signals": [
+          "behavioural_drift",
+          "determinism_break"
+        ]
+      },
+      {
+        "server": "motherduck",
+        "runs": 3,
+        "residue_runs": 0,
+        "escalation_runs": 0,
+        "held_runs": 0,
+        "residue_signals": []
+      },
+      {
+        "server": "time",
+        "runs": 3,
+        "residue_runs": 3,
+        "escalation_runs": 0,
+        "held_runs": 0,
+        "residue_signals": [
+          "behavioural_drift",
+          "determinism_break"
+        ]
+      }
+    ],
+    "upgrades_with_residue": {
+      "k": 2,
+      "n": 4,
+      "rate": 0.5,
+      "low": 0.15003898915214958,
+      "high": 0.8499610108478504
+    },
+    "runs_with_residue": {
+      "k": 6,
+      "n": 12,
+      "rate": 0.5,
+      "low": 0.2537815976337061,
+      "high": 0.7462184023662939
+    },
+    "escalation_runs": 0,
+    "held_runs": 0
+  },
+  "h3": {
+    "result": "FAIL",
+    "reasons": [
+      "residue detects 45/45 = 100.0% pooled C0-C2 (needs >= 80%): met",
+      "vs accept_rebaseline: b01=30 b10=0 p=1.863e-09 Holm p=1.863e-09: significant",
+      "vs definition_diff: b01=45 b10=0 p=5.684e-14 Holm p=1.705e-13: significant",
+      "vs new_host_only: b01=36 b10=0 p=2.91e-11 Holm p=5.821e-11: significant",
+      "2/4 real upgrades left a residue = 50.0% (needs <= 15%): NOT met"
+    ],
+    "missing": []
+  }
+}
