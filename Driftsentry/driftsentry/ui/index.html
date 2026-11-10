@@ -478,6 +478,31 @@ function renderGraph(){
   }
 }
 
+// Gap 2 - declared-diff residue checking. Renders the daemon's outcome only;
+// nothing about the verdict is computed here.
+function esc(t){ return String(t??'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function updatePanel(u){
+  const head = {
+    accepted:        ['ok',    'UPDATE EXPLAINED',  'Every behaviour change is covered by what the update declared.'],
+    residue_alert:   ['alert', 'UNDECLARED BEHAVIOUR', 'The update changed behaviour it did not declare. That residue is the alert.'],
+    escalation:      ['watch', 'PERMISSION WIDENED', 'The update widened a declared permission. Shown every time, never silently accepted.'],
+    held_for_review: ['watch', 'HELD FOR REVIEW',   'An open-world tool contacted a new host; held for you to look at.'],
+  }[u.verdict] || ['off', (u.verdict||'').toUpperCase(), ''];
+  const line = (icon, colour, i) => `<div style="margin:3px 0;font-size:11.5px">
+      <span style="color:var(--${colour});font-weight:bold">${icon}</span>
+      <b>${esc(i.tool)}</b> · ${esc(i.signal||i.escalation)}
+      ${i.reason?`<span style="color:var(--dim)"> — ${esc(i.reason)}</span>`:''}</div>`;
+  return `<div style="border-left:3px solid var(--${head[0]==='off'?'line2':head[0]});padding:6px 10px;margin:2px 0 8px">
+    <span class="badge b-${head[0]}">${head[1]}</span>
+    <span style="color:var(--dim);font-size:11px;margin-left:6px">update check · ${head[2]}</span>
+    ${(u.escalations||[]).map(e=>line('!', 'watch', e)).join('')}
+    ${(u.residue||[]).map(i=>line('x', 'alert', i)).join('')}
+    ${(u.held_for_review||[]).map(i=>line('?', 'watch', i)).join('')}
+    ${(u.explained||[]).map(i=>line('ok', 'ok', i)).join('')}
+    ${(u.needs_baseline||[]).length?`<div style="color:var(--dim);font-size:11px">new tools needing their own baseline: ${esc(u.needs_baseline.join(', '))}</div>`:''}
+  </div>`;
+}
+
 function serverRows(full){
   const s = STATE.servers;
   if(!s.length) return `<div class="empty">No servers connected yet.<br><br>
@@ -501,7 +526,7 @@ function serverRows(full){
       <button onclick="act('enforce','${x.name}?on=${x.enforce?'false':'true'}')">${x.enforce?'Stop blocking':'Block'}</button>
       <button class="danger" onclick="removeServer('${x.name}')">Remove</button>
     </td>`:''}
-  </tr>`).join('') + '</table>';
+  </tr>${x.update?`<tr><td colspan="${full?6:5}">${updatePanel(x.update)}</td></tr>`:''}`).join('') + '</table>';
 }
 
 async function act(a, s){ await post(`/api/${a}/${s}`); refresh(); }

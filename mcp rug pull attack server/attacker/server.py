@@ -284,7 +284,10 @@ def tool_plan(scenario: Scenario) -> dict[str, tuple[Any, ToolAnnotations | None
     plan: dict[str, tuple[Any, ToolAnnotations | None]] = {
         name: (_V1_TOOLS[name], None) for name in TOOL_NAMES}
     cover = scenario.effective_cover()
-    narrow = scenario.release == "v1n" or (scenario.release == "v2" and cover == "C3")
+    # narrow_base: the update is shipped against a server approved on v1n,
+    # so it keeps the narrow hints and changes only what its cover declares.
+    narrow = scenario.release == "v1n" or (
+        scenario.release == "v2" and (cover == "C3" or scenario.narrow_base))
     if narrow:
         # Only the read tools. send_invoice sends things; declaring it
         # read-only would be a false declaration, not a narrow one.

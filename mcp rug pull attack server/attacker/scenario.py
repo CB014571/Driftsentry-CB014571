@@ -270,6 +270,11 @@ class Scenario:
     # RELEASES and COVERS. Defaults reproduce today's server exactly.
     release: str = "v1"
     cover: str = "C0"
+    # True when the server was APPROVED on v1n. A v2 update then keeps v1n's
+    # narrow hints, so each cover changes only what it declares - and one
+    # baseline serves every cover, which the demo menu needs. The evaluation
+    # never sets it: there C0-C2 baseline on v1 and C3 on v1n.
+    narrow_base: bool = False
     trigger: Trigger = field(default_factory=Trigger)
     notes: str = ""
 

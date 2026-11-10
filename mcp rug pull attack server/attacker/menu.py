@@ -193,8 +193,8 @@ def _set_seed(scenario: Scenario) -> None:
     print(f"  -> seed is now {scenario.seed}. The same seed replays the same run exactly.")
 
 
-def run(path: Path) -> int:
-    """Run the interactive menu against the scenario file at ``path``."""
+def run_advanced(path: Path) -> int:
+    """The knob menu: type, strength, bypass and the rest, one at a time."""
     scenario = Scenario.load(path)
     # Make sure the file exists from the start, so a server launched with
     # --reuse never falls back to a default and silently refuses to attack.
@@ -209,7 +209,7 @@ def run(path: Path) -> int:
         choice = _prompt("  Choice: ").lower()
 
         if choice == "q":
-            print("\n  Leaving the scenario as it is. The server keeps using it.\n")
+            print("\n  Back to the test menu. The server keeps the scenario as it is.\n")
             return 0
         if choice == "1":
             _choose_family(scenario)
@@ -255,3 +255,200 @@ def run(path: Path) -> int:
             scenario = Scenario.load(path)
             continue
         scenario.save(path)
+
+
+# --------------------------------------------------------------------------- #
+# The test menu - the default
+# --------------------------------------------------------------------------- #
+# Each test is a complete scenario plus what the DriftSentry dashboard should
+# show for it. The menu only ARMS the server. It never tells the dashboard
+# anything: the dashboard has to find out for itself by probing, which is the
+# whole point of the demonstration. If this menu reported results to the
+# defender, the defender would be displaying the attacker's own confession.
+#
+# What this window shows instead is GROUND TRUTH - what the server actually
+# did, read from its own event log - so the two windows can be compared.
+#
+# Every expectation below was MEASURED, by running each test through the
+# dashboard's own detection path, not written from what ought to happen. Four
+# of the first draft's were wrong, and are corrected rather than kept:
+# injection and tamper alert on behavioural_drift, the strongest signal, not on
+# the rule first written down; rewording is a real false alarm; and a sleeper
+# counting calls never turns, because DriftSentry starts a fresh server process
+# every check and the count starts again each time.
+#
+# Every test runs on a server approved on the v1n release (read-only hints
+# declared explicitly), so one baseline serves both gaps: the Gap 2 updates
+# keep those hints and change only what each declares.
+
+DEMO_BASE = "v1n"
+
+TESTS: list[dict] = [
+    {"key": "1", "group": 1, "name": "Clean server",
+     "expect": "OK",
+     "why": "approved and behaving; nothing should alarm",
+     "set": {"mode": "benign"}},
+    {"key": "2", "group": 1, "name": "Content injection",
+     "expect": "ALERT  behavioural_drift",
+     "why": "instructions aimed at the AI appended to normal answers",
+     "set": {"mode": "rug-pull", "family": "content-injection"}},
+    {"key": "3", "group": 1, "name": "Silent tamper",
+     "expect": "ALERT  behavioural_drift",
+     "why": "an account number and email quietly swapped",
+     "set": {"mode": "rug-pull", "family": "silent-tamper"}},
+    {"key": "4", "group": 1, "name": "Data exfiltration",
+     "expect": "ALERT  new_file_access",
+     "why": "answers copied to a sink file; the user sees nothing change",
+     "set": {"mode": "rug-pull", "family": "exfiltration"}},
+    {"key": "5", "group": 1, "name": "New egress host",
+     "expect": "ALERT  new_egress_host",
+     "why": "connects to a host it never contacted at approval",
+     "set": {"mode": "rug-pull", "family": "new-egress"}},
+    {"key": "6", "group": 1, "name": "Sleeper",
+     "expect": "OK for about 45 s, then ALERT",
+     "why": "behaves for 45 seconds after arming, then turns",
+     "set": {"mode": "rug-pull", "family": "sleeper", "level": "L3"},
+     "after_seconds": 45},
+    {"key": "7", "group": 1, "name": "Probe-aware evasion (L4)",
+     "expect": "ALERT  - keyed probes are not recognised",
+     "why": "hides from probe values it has seen before; keyed ones are new every cycle",
+     "set": {"mode": "rug-pull", "family": "content-injection", "level": "L4",
+             "probe_aware": True}},
+    {"key": "8", "group": 1, "name": "Legitimate rewording",
+     "expect": "ALERT  determinism_break - a FALSE alarm",
+     "why": "honest rewording of a tool whose output never varied - the "
+            "detector's known false-alarm case, shown as it is",
+     "set": {"mode": "benign", "updates": True}},
+    {"key": "9", "group": 2, "name": "Legitimate update: new field",
+     "expect": "OK  + UPDATE EXPLAINED",
+     "why": "v2 declares lookup_customer.last_contact and returns it",
+     "set": {"mode": "benign", "release": "v2", "cover": "C2"}},
+    {"key": "10", "group": 2, "name": "Update hiding exfiltration",
+     "expect": "ALERT  + UNDECLARED BEHAVIOUR  new_file",
+     "why": "same legitimate field, with exfiltration shipped inside it",
+     "set": {"mode": "rug-pull", "family": "exfiltration", "release": "v2",
+             "cover": "C2", "only_tools": ["lookup_customer"]}},
+    {"key": "11", "group": 2, "name": "Update widens a permission",
+     "expect": "WATCH  + PERMISSION WIDENED",
+     "why": "v2 drops readOnlyHint on lookup_customer; no attack",
+     "set": {"mode": "benign", "release": "v2", "cover": "C3"}},
+    {"key": "12", "group": 2, "name": "Widened permission covering exfil",
+     "expect": "ALERT  + PERMISSION WIDENED",
+     "why": "the widening is shown, and the leak still lands as residue",
+     "set": {"mode": "rug-pull", "family": "exfiltration", "release": "v2",
+             "cover": "C3", "only_tools": ["lookup_customer"]}},
+]
+
+GROUPS = {1: "GAP 1 - attacks after approval (the definitions never change)",
+          2: "GAP 2 - attacks hidden inside a legitimate update"}
+
+
+def build_test(test: dict, seed: int) -> Scenario:
+    """A fresh scenario for one test, on the demo's approved release."""
+    scenario = Scenario(seed=seed, release=DEMO_BASE)
+    for key, value in test["set"].items():
+        setattr(scenario, key, value)
+    if scenario.release == "v2":
+        scenario.narrow_base = True
+    if "after_seconds" in test:
+        # A wall-clock trigger, because it survives a process restart and a
+        # call count does not. The count and the input words are switched
+        # off, so the sleeper turns on time and not by chance: the L3 gate
+        # also fires on input containing "@", "key", "token" or "secret".
+        from datetime import datetime, timedelta, timezone
+
+        scenario.trigger.after = (datetime.now(timezone.utc)
+                                  + timedelta(seconds=test["after_seconds"])).isoformat()
+        scenario.trigger.after_calls = 10 ** 9
+        scenario.trigger.on_input_contains = []
+    return scenario
+
+
+def _events_log() -> Path:
+    from attacker.sink import EVENTS_LOG
+    return EVENTS_LOG
+
+
+def _event_lines() -> list[str]:
+    try:
+        return _events_log().read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return []
+
+
+def _ground_truth(since: int) -> str:
+    """What the server actually did since the test was armed, by event kind."""
+    counts: dict[str, int] = {}
+    for line in _event_lines()[since:]:
+        parts = line.split("\t", 2)
+        if len(parts) == 3:
+            counts[parts[1]] = counts.get(parts[1], 0) + 1
+    if not counts:
+        return "nothing malicious has happened yet"
+    return ", ".join(f"{kind} x{n}" for kind, n in sorted(counts.items()))
+
+
+def _test_menu(active: dict | None, since: int) -> str:
+    lines = [_rule(), "  MCP RUG-PULL ATTACK SERVER   -   test menu", _rule()]
+    if active:
+        lines += [f"  RUNNING   : {active['key']}. {active['name']}",
+                  f"  DASHBOARD : should show  {active['expect']}",
+                  f"  GROUND    : {_ground_truth(since)}",
+                  "              (from the server's own log - the dashboard never sees this)"]
+    else:
+        lines += ["  RUNNING   : nothing armed yet - start with 1, then connect",
+                  "              the server in the DriftSentry dashboard"]
+    for group, title in GROUPS.items():
+        lines += ["", f"  {title}"]
+        for t in (t for t in TESTS if t["group"] == group):
+            lines.append(f"  {t['key']:>3}  {t['name']:<34} -> {t['expect']}")
+    lines += ["",
+              "    0  Reset to the clean server",
+              "    a  Advanced: change type, strength, bypass one by one",
+              "    q  Quit             (Enter refreshes the ground truth)",
+              _rule("-")]
+    return "\n".join(lines)
+
+
+def run(path: Path) -> int:
+    """The test menu: pick a numbered test, watch the dashboard react."""
+    seed = Scenario.load(path).seed
+    active: dict | None = None
+    since = len(_event_lines())
+
+    print("\n  Pick a test. The server picks it up on its next call; the")
+    print("  dashboard finds it on its next check, or press Scan there.")
+    print("  After an ALERT the dashboard quarantines the server: press")
+    print("  Trust there (or pick 0 here) before the next test.\n")
+
+    while True:
+        print("\n" + _test_menu(active, since))
+        choice = _prompt("  Test: ").lower()
+        if choice == "q":
+            print("\n  Leaving the server as it is.\n")
+            return 0
+        if choice == "a":
+            run_advanced(path)
+            active = None
+            continue
+        if not choice:
+            continue                                  # redraw: fresh ground truth
+        if choice == "0":
+            choice = "1"
+        test = next((t for t in TESTS if t["key"] == choice), None)
+        if test is None:
+            print("  Unrecognised choice.")
+            continue
+
+        scenario = build_test(test, seed)
+        problems = scenario.validate()
+        if problems:
+            for problem in problems:
+                print(f"  cannot arm: {problem}", file=sys.stderr)
+            continue
+        scenario.save(path)
+        active, since = test, len(_event_lines())
+        print(f"\n  -> armed: {test['name']}. {test['why']}.")
+        if scenario.release == "v2":
+            print("     This ships a NEW RELEASE. The server reads it on its next")
+            print("     start, and DriftSentry starts a fresh one every check.")

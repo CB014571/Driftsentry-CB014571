@@ -39,6 +39,39 @@ log = logging.getLogger("driftsentry.daemon")
 HISTORY = 120
 
 
+def _update_summary(report: Any) -> dict[str, Any] | None:
+    """What the dashboard shows about an update, or None if there was none.
+
+    Read from the scorer's residue outcome only. The dashboard renders this;
+    it computes nothing about it.
+    """
+    outcome = getattr(report, "residue", None)
+    if not outcome:
+        return None
+    items = outcome.get("items", [])
+
+    def of(kind: str) -> list[dict[str, str]]:
+        seen, out = set(), []
+        for item in items:
+            key = (item["tool"], item["signal"])
+            if item["classification"] == kind and key not in seen:
+                seen.add(key)
+                out.append({"tool": item["tool"], "signal": item["signal"],
+                            "reason": item["reason"]})
+        return out
+
+    return {
+        "verdict": outcome.get("verdict", ""),
+        "explained": of("explained"),
+        "residue": of("residue"),
+        "held_for_review": of("held_for_review"),
+        "escalations": [{"tool": t, "escalation": e}
+                        for t, e in outcome.get("escalations", [])],
+        "explained_tools": outcome.get("explained_tools", []),
+        "needs_baseline": outcome.get("tools_needing_baseline", []),
+    }
+
+
 @dataclass
 class ServerState:
     """Everything the dashboard needs to know about one server."""
@@ -59,6 +92,9 @@ class ServerState:
     policy_status: str = "trusted"
     enforce: bool = False
     checking: bool = False
+    # Declared-diff residue checking (Gap 2). None until an update arrives;
+    # then what the update declared and what became of each observed change.
+    update: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -77,6 +113,7 @@ class ServerState:
             "policy_status": self.policy_status,
             "enforce": self.enforce,
             "checking": self.checking,
+            "update": self.update,
         }
 
 
@@ -220,9 +257,17 @@ class Daemon:
             self.update_job(job_id, f"connecting to {name}...")
             # Serialised against scheduled checks: only one probe session at a time.
             async with self._probe_lock:
+                # Keyed probes, with this server's own secret key: values the
+                # server cannot predict, rotated every cycle. Fixed probes were
+                # the default here, which meant a probe-aware server could
+                # recognise the dashboard's checks and behave for them - the
+                # exact evasion the thesis measures and keyed probing answers.
+                from driftsentry import keys as key_store
+
                 baseline = await capture_baseline(
                     name, command, args, cwd=cwd,
                     n_probes=probes, n_samples=samples,
+                    probe_mode="keyed", key=key_store.get_or_create(name),
                 )
             self.store.save(baseline)
             probed = [t.tool for t in baseline.tools if t.probed]
@@ -294,10 +339,20 @@ class Daemon:
             return
         state.checking = True
         try:
+            from driftsentry import keys as key_store
+
             report = await verify_server(
                 baseline,
                 samples_per_probe=self.samples_per_probe,
                 monitor_sandbox=self.monitor_sandbox,
+                # A fresh cycle every check, so a keyed baseline never sends
+                # the same probe values twice. Ignored by a fixed baseline.
+                cycle=state.checks + 1,
+                key=key_store.get(state.name),
+                # Gap 2: when the server's tool definitions have changed, the
+                # declared changes explain the behaviour they cover and only
+                # the residue can alert. Identical scoring otherwise.
+                update_check=True,
             )
         except Exception as exc:  # noqa: BLE001 - one bad cycle must not stop the daemon
             state.status, state.error = "error", f"{type(exc).__name__}: {exc}"
@@ -322,6 +377,7 @@ class Daemon:
         ]
         state.history.append({"t": state.last_check, "score": round(report.score, 3),
                               "verdict": report.verdict})
+        state.update = _update_summary(report)
 
         # Raise an alert only on the TRANSITION into alert, not on every cycle
         # while an attack continues - otherwise a sustained attack floods the
