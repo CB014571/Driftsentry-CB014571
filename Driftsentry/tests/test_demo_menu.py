@@ -162,3 +162,29 @@ def test_the_dashboard_has_the_update_panel():
     for label in ("UPDATE EXPLAINED", "UNDECLARED BEHAVIOUR", "PERMISSION WIDENED"):
         assert label in html
     assert "x.update?" in html
+
+
+def test_the_dashboard_names_what_the_update_declared():
+    """Measured on the live dashboard: without this the panel said UPDATE
+    EXPLAINED without saying what the update declared - the one thing an
+    examiner needs to see."""
+    from driftsentry.daemon import _declared_lines
+    declared = {"tools_added": ["export_all"], "tools_removed": [],
+                "tools": {"lookup_customer": {
+                    "output_changes": [{"path": "last_contact", "kind": "added"}],
+                    "input_changes": [], "escalations": ["readOnly_removed"],
+                    "description_changed": True}}}
+    lines = _declared_lines(declared)
+    assert {"tool": "export_all", "change": "new tool"} in lines
+    change = next(l["change"] for l in lines if l["tool"] == "lookup_customer")
+    assert "output added last_contact" in change
+    assert "readOnly removed" in change
+    assert "description reworded" in change
+
+
+def test_the_residue_outcome_carries_the_declaration_without_touching_the_rules():
+    from driftsentry.declared_diff import diff_definitions
+    from driftsentry.residue import RULES, ResidueReport
+    report = ResidueReport(declared=diff_definitions([], []).to_dict())
+    assert "declared" in report.to_dict()
+    assert "declared" not in RULES

@@ -495,6 +495,11 @@ function updatePanel(u){
   return `<div style="border-left:3px solid var(--${head[0]==='off'?'line2':head[0]});padding:6px 10px;margin:2px 0 8px">
     <span class="badge b-${head[0]}">${head[1]}</span>
     <span style="color:var(--dim);font-size:11px;margin-left:6px">update check · ${head[2]}</span>
+    ${(u.declared||[]).map(d=>`<div style="margin:3px 0;font-size:11.5px">
+        <span style="color:var(--accent)">declared</span> <b>${esc(d.tool)}</b> · ${esc(d.change)}</div>`).join('')}
+    ${(u.explained_tools||[]).length?`<div style="margin:3px 0;font-size:11.5px">
+        <span style="color:var(--ok);font-weight:bold">ok</span> explained by the declaration:
+        <b>${esc(u.explained_tools.join(', '))}</b></div>`:''}
     ${(u.escalations||[]).map(e=>line('!', 'watch', e)).join('')}
     ${(u.residue||[]).map(i=>line('x', 'alert', i)).join('')}
     ${(u.held_for_review||[]).map(i=>line('?', 'watch', i)).join('')}

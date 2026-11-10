@@ -69,7 +69,26 @@ def _update_summary(report: Any) -> dict[str, Any] | None:
                         for t, e in outcome.get("escalations", [])],
         "explained_tools": outcome.get("explained_tools", []),
         "needs_baseline": outcome.get("tools_needing_baseline", []),
+        "declared": _declared_lines(outcome.get("declared") or {}),
     }
+
+
+def _declared_lines(declared: dict[str, Any]) -> list[dict[str, str]]:
+    """What the update said about itself, one plain line per tool."""
+    lines = []
+    for name in declared.get("tools_added", []):
+        lines.append({"tool": name, "change": "new tool"})
+    for name in declared.get("tools_removed", []):
+        lines.append({"tool": name, "change": "tool removed"})
+    for name, td in sorted((declared.get("tools") or {}).items()):
+        parts = [f"output {c['kind']} {c['path']}" for c in td.get("output_changes", [])]
+        parts += [f"input {c['kind']} {c['path']}" for c in td.get("input_changes", [])]
+        parts += [f"{e.replace('_', ' ')}" for e in td.get("escalations", [])]
+        if td.get("description_changed"):
+            parts.append("description reworded")
+        if parts:
+            lines.append({"tool": name, "change": "; ".join(parts)})
+    return lines
 
 
 @dataclass

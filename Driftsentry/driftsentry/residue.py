@@ -271,6 +271,9 @@ class ResidueReport:
     escalations: list[tuple[str, str]] = field(default_factory=list)
     explained_tools: list[str] = field(default_factory=list)
     tools_needing_baseline: list[str] = field(default_factory=list)
+    # What the update declared, as DeclaredDiff.to_dict(). Reporting only:
+    # nothing here is read back by the rules, so the frozen rules are untouched.
+    declared: dict[str, Any] = field(default_factory=dict)
     rules_version: str = RULES_VERSION
     open_world: str = RULES["open_world"]
     # The re-probe as the residue checker sees it: explained parts masked or
@@ -315,6 +318,7 @@ class ResidueReport:
             "escalations": [list(e) for e in self.escalations],
             "explained_tools": list(self.explained_tools),
             "tools_needing_baseline": list(self.tools_needing_baseline),
+            "declared": self.declared,
             "signal_counts": self.signal_counts,
         }
 
@@ -374,7 +378,8 @@ def check_update(
         raise ValueError(f"unknown open-world policy {policy!r}")
 
     new_defs = _definitions_by_name(getattr(report, "observed_definitions", []))
-    out = ResidueReport(escalations=list(diff.escalations),
+    out = ResidueReport(declared=diff.to_dict(),
+                        escalations=list(diff.escalations),
                         tools_needing_baseline=list(diff.tools_added),
                         open_world=policy)
     view_checks = []
