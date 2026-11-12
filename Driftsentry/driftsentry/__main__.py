@@ -273,6 +273,32 @@ def _watch_line(report) -> str:
     return line
 
 
+def _cmd_demo(ns: argparse.Namespace) -> int:
+    """The whole demonstration from one command: the attacker's test menu in
+    one window, the dashboard in another. See driftsentry/demo.py."""
+    from driftsentry.demo import DemoError, demo_home, open_menu, prepare
+
+    try:
+        project, python = prepare(ns.name, ns.attacker, rebaseline=ns.rebaseline)
+    except DemoError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+
+    if ns.no_menu:
+        print("menu       : not opened (--no-menu)")
+    elif open_menu(python, project):
+        print("menu       : opened in its own window - pick a test there")
+    else:
+        print(f"menu       : run this in another terminal:\n"
+              f"             cd \"{project}\" && \"{python}\" -m attacker "
+              f"--home \"{demo_home(project)}\" menu")
+    print()
+
+    return _cmd_ui(argparse.Namespace(
+        interval=ns.interval, samples_per_probe=1, port=ns.port,
+        no_window=ns.no_window, no_sandbox=False, verbose=ns.verbose))
+
+
 def _cmd_ui(ns: argparse.Namespace) -> int:
     """Start the daemon and open the desktop dashboard.
 
@@ -814,6 +840,25 @@ def build_parser() -> argparse.ArgumentParser:
     ui.add_argument("--no-sandbox", action="store_true", help="disable side-effect monitoring")
     ui.add_argument("--verbose", action="store_true", help="log daemon activity")
     ui.set_defaults(func=_cmd_ui)
+
+    demo = sub.add_parser(
+        "demo",
+        help="the demonstration in one command: attacker test menu + dashboard",
+    )
+    demo.add_argument("--attacker", default=None,
+                      help="the attack server's folder (default: next to this project)")
+    demo.add_argument("--name", default="acme", help="server name in the dashboard")
+    demo.add_argument("--rebaseline", action="store_true",
+                      help="enrol again even if a current keyed baseline exists")
+    demo.add_argument("--interval", type=float, default=10.0,
+                      help="seconds between checks (default 10, quicker for a demo)")
+    demo.add_argument("--port", type=int, default=8787)
+    demo.add_argument("--no-window", action="store_true",
+                      help="serve the dashboard without opening its window")
+    demo.add_argument("--no-menu", action="store_true",
+                      help="do not open the attacker menu window")
+    demo.add_argument("--verbose", action="store_true")
+    demo.set_defaults(func=_cmd_demo)
 
     # watch ----------------------------------------------------------------
     watch = sub.add_parser(

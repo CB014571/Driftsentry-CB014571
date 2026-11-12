@@ -188,3 +188,80 @@ def test_the_residue_outcome_carries_the_declaration_without_touching_the_rules(
     report = ResidueReport(declared=diff_definitions([], []).to_dict())
     assert "declared" in report.to_dict()
     assert "declared" not in RULES
+
+
+# --------------------------------------------------------------------------- #
+# driftsentry demo: one explicit attacker home, and backups out of sight
+# --------------------------------------------------------------------------- #
+# Measured: started from the desktop app's terminal, the dashboard's server
+# read a redirected copy of %LOCALAPPDATA% while the attack was armed in the
+# real one, and every check said OK with the attack armed. The demo now names
+# one home outright and gives it to every process.
+def test_every_demo_process_gets_the_same_home(tmp_path):
+    from driftsentry import demo
+    home = str(demo.demo_home(tmp_path))
+    assert demo.serve_args(tmp_path) == ["-m", "attacker", "--home", home, "serve"]
+    assert demo.demo_home(tmp_path).parent == tmp_path, "inside the attacker project"
+
+
+def test_the_home_is_outside_localappdata():
+    import os
+
+    from driftsentry import demo
+    home = demo.demo_home(demo.DEFAULT_ATTACKER)
+    local = os.environ.get("LOCALAPPDATA")
+    if local:
+        assert not str(home).lower().startswith(local.lower())
+
+
+def test_a_baseline_that_launches_the_attacker_differently_is_replaced(tmp_path, monkeypatch):
+    from types import SimpleNamespace as NS
+
+    from driftsentry import demo
+    python = tmp_path / "python.exe"
+    old = NS(probe_mode="keyed", launch={"command": str(python),
+                                         "args": ["-m", "attacker", "serve"]})
+    monkeypatch.setattr("driftsentry.store.BaselineStore.load", lambda self, n: old)
+    assert demo.baseline_status("acme", python, tmp_path)[0] == "other_server"
+    old.launch["args"] = demo.serve_args(tmp_path)
+    assert demo.baseline_status("acme", python, tmp_path)[0] == "ok"
+
+
+def test_a_fixed_probe_baseline_is_replaced():
+    from types import SimpleNamespace as NS
+
+    from driftsentry import demo
+    import driftsentry.store as store
+    real = store.BaselineStore.load
+    store.BaselineStore.load = lambda self, n: NS(probe_mode="fixed", launch={})
+    try:
+        assert demo.baseline_status("acme", Path("p"), Path("x"))[0] == "fixed"
+    finally:
+        store.BaselineStore.load = real
+
+
+def test_a_backup_is_kept_where_the_dashboard_will_not_monitor_it(tmp_path, monkeypatch):
+    """Measured: a backup beside the baselines showed up as a second server."""
+    import json
+
+    monkeypatch.setenv("DRIFTSENTRY_HOME", str(tmp_path))
+    from driftsentry import demo
+    from driftsentry.store import BaselineStore
+    store = BaselineStore()
+    store.path_for("acme").write_text(json.dumps({"server": "acme"}), encoding="utf-8")
+    backup = demo.backup_baseline("acme")
+    assert backup.exists() and backup.parent.name == "baseline_backups"
+    assert store.list_servers() == ["acme"]
+
+
+def test_the_attacker_cli_takes_a_home(tmp_path):
+    import subprocess
+    py = ATTACKER / ".venv" / "Scripts" / "python.exe"
+    if not py.is_file():
+        pytest.skip("attacker venv not present")
+    home = tmp_path / "h"
+    done = subprocess.run([str(py), "-m", "attacker", "--home", str(home),
+                           "benign", "--release", "v1n"], cwd=ATTACKER,
+                          capture_output=True, text=True, timeout=60)
+    assert done.returncode == 0, done.stderr
+    assert (home / "scenario.json").is_file()
