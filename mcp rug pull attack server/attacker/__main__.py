@@ -63,7 +63,11 @@ _SCENARIO_FLAGS = [
 
 
 def _path(ns: argparse.Namespace) -> Path:
-    return Path(ns.scenario) if getattr(ns, "scenario", None) else DEFAULT_SCENARIO_PATH
+    if getattr(ns, "scenario", None):
+        return Path(ns.scenario)
+    if getattr(ns, "home", None):
+        return Path(ns.home) / "scenario.json"
+    return DEFAULT_SCENARIO_PATH
 
 
 def _wrap(text: str, width: int) -> list[str]:
@@ -430,6 +434,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     # Bare `attacker` opens the interactive console, the way `msfconsole` does.
     parser.set_defaults(func=_cmd_console)
+    parser.add_argument(
+        "--home", default=None, metavar="DIR",
+        help="the attacker's home folder: its scenario file, sink and event log. "
+             "Give the SAME folder to every process that must agree - the server "
+             "a detector launches, the menu, the CLI. The default home depends on "
+             "the environment of whoever started the process, and two processes "
+             "can disagree about it without any error.")
     sub = parser.add_subparsers(dest="command")
 
     def add_scenario_path(p: argparse.ArgumentParser) -> None:
@@ -564,6 +575,13 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     ns = parser.parse_args(sys.argv[1:] if argv is None else argv)
+    if ns.home:
+        # Set before the sink, the features log or the server are imported:
+        # each computes its paths from the home at import time, so setting it
+        # any later would leave the scenario in one folder and the evidence in
+        # another.
+        import os
+        os.environ["ATTACKER_HOME"] = str(Path(ns.home).resolve())
     return ns.func(ns)
 
 

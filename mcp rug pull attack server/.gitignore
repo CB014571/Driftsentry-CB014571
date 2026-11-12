@@ -28,3 +28,6 @@ scenario_*.json
 Thumbs.db
 .idea/
 .vscode/
+
+# driftsentry demo: the attacker home shared by the server and the menu
+.demo_home/
