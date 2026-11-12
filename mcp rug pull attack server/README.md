@@ -73,46 +73,32 @@ settings as a table. Type `help` for the full command list.
 next call. The server is started by whatever you point at it (normally the
 detector), and the change lands with no restart.
 
-### The control menu (number-driven)
+### The test menu (for demonstrations)
 
 ```bash
 attacker menu
 ```
 
-An interactive panel. It shows what the server is doing right now, and every
-change is one keystroke:
+Twelve numbered tests, one keystroke each, in two groups:
 
-```
-==================================================================
-  MCP RUG-PULL ATTACK SERVER   -   control menu
-==================================================================
-  STATUS    : RUG-PULL   content-injection   L1
-  bypass    : off
-  variation : 50% of calls are malicious   (used at L2)
-  trigger   : after 3 calls                (used at L3 / sleeper)
-  seed      : 1234
-------------------------------------------------------------------
-  1   Change attack TYPE        which of the six families
-  2   Change attack STRENGTH    L1 (obvious) .. L5 (stealthy)
-  3   Toggle BYPASS mode        try to evade the detector's probes
-  4   Change VARIATION          how often it attacks (L2)
-  5   Set TRIGGER               turn malicious after N calls (L3)
-  6   Go BENIGN                 a well-behaved server
-  7   Go BENIGN + UPDATES       legitimate changes (false-alarm test)
-  8   TRIP the trigger now      fire a sleeper immediately
-  9   Change SEED               a different reproducible run
-  s   Show the full scenario      r   Reset      q   Quit
-------------------------------------------------------------------
-```
+* **Gap 1** (tests 1 to 8): attacks after approval with the definitions
+  unchanged. These are clean, content injection, silent tamper, exfiltration,
+  new egress, a 45-second sleeper, probe-aware evasion (L4), and a legitimate
+  rewording that is a deliberate false alarm.
+* **Gap 2** (tests 9 to 12): a legitimate update, an update hiding
+  exfiltration, an update that widens a permission, and a widened permission
+  covering exfiltration.
 
-Changes land on a **running** server's next tool call — no restart. That is the
-point: a rug pull is supposed to happen after you have already approved the
-server.
+The menu shows the running test, what the DriftSentry dashboard should show
+for it, and the **ground truth**: what the server actually did since the test
+was armed, read from its own event log. The dashboard never sees that log.
+Every test starts from release `v1n`, so one approved baseline serves all
+twelve. `a` opens the advanced menu, which changes family, level, bypass,
+variation and trigger one at a time.
 
-Choosing L4 or L5 will offer to switch bypass mode on, because those levels
-cannot work without it. It stays a question rather than something the menu does
-quietly: handing the attacker knowledge of the defence is a deliberate act, and
-the scenario file records that it happened.
+The expected dashboard result for each test was measured end to end before it
+was written into the menu. Four first guesses were wrong and were corrected.
+`driftsentry demo` opens this menu and the dashboard together.
 
 ### The scriptable way
 
@@ -149,19 +135,26 @@ attacker reset                  # back to benign, clear the sink
 
 ### Where the scenario lives
 
-In a fixed per-user directory — `%LOCALAPPDATA%\mcp-attacker\` on Windows — not a
-path relative to the working directory. **You do not need to pass `--scenario`.**
-
-That default is deliberate. An MCP client launches its servers with whatever
-working directory it happens to have and with a filtered environment, so a
+By default the scenario lives in a per-user directory, `%LOCALAPPDATA%\mcp-attacker\`
+on Windows, not a path relative to the working directory. An MCP client starts
+its servers with its own working directory and a filtered environment, so a
 relative default meant the CLI wrote one file while the running server read
-another. The attack then silently never fired, which looks exactly like the
-detector failing to catch it — the worst possible failure mode for a tool whose
-whole purpose is measuring detection. An absolute, environment-independent path
-means every process agrees without anyone having to think about it.
+another. The attack then never fired, which looks exactly like the detector
+failing to catch it.
 
-Override it with `--scenario <path>` or `ATTACKER_HOME` only when you deliberately
-want several independent scenarios, such as generating a labelled corpus.
+That default is still not enough in every case. Processes started from a
+packaged Windows app (measured with the Claude desktop app's terminal) have
+their `%LOCALAPPDATA%` writes redirected to a private copy, so two processes
+can disagree about the default home with no error. When several processes must
+agree, give them all the same folder:
+
+```bash
+attacker --home C:/attacker-home serve
+attacker --home C:/attacker-home menu
+```
+
+`--home` goes before the subcommand. It sets the scenario file, the sink and
+the event log together. `--scenario <path>` or `ATTACKER_HOME` also still work.
 
 ---
 
@@ -185,15 +178,28 @@ want several independent scenarios, such as generating a labelled corpus.
 | `L3` | Only after a trigger — call count, date, or input | Whether re-probing still catches it |
 | `L4` | **Probe-aware**: recognises the detector's canary inputs and behaves while watched | The adaptive-attacker claim |
 | `L5` | Probe-aware **and** mimics the benign response distribution | The limit case |
+| `L6` | A **learned recogniser**: a model fitted to observed traffic classifies each call as probe or genuine | RQ1: which features give probes away |
 
 *Family* is the payload — what it does. *Level* is the gate — when it is allowed
-to fire. Six families × five levels comes from one payload mechanism and one
+to fire. Six families × six levels comes from one payload mechanism and one
 gating mechanism, so a level means the same thing across families and the
 resulting recall matrix is comparable row to row.
 
 **L4 and L5 require `--probe-aware` explicitly.** The attacker is not supposed to
 know the defender exists; handing it a guess at the defender's test inputs is a
 deliberate act, and the scenario file records that it happened.
+
+## Attacks hidden in updates (covers)
+
+A release `v2` ships a legitimate declared change together with an attack on
+`lookup_customer`. The cover is how the declared change relates to the attack:
+
+| Cover | Declared change |
+|---|---|
+| `C0` | none; the attack ships alone |
+| `C1` | a legitimate change on a different tool (`search_orders` gains `total_count`) |
+| `C2` | a legitimate change on the same tool (`lookup_customer` gains `last_contact`) |
+| `C3` | the declaration is widened to cover the payload (`readOnlyHint` removed, or `openWorldHint` added for network payloads) |
 
 ---
 

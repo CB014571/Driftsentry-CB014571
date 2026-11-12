@@ -152,7 +152,11 @@ def _cmd_baseline(ns: argparse.Namespace) -> int:
             n_probes=ns.probes, n_samples=ns.samples, seed=ns.seed,
             backend_name=ns.embedding, safety_policy=ns.safety_policy,
             monitor_sandbox=not ns.no_sandbox,
+            probe_mode=ns.probe_mode,
+            key=key_store.get_or_create(ns.server) if ns.probe_mode == "keyed" else None,
         )
+
+    from driftsentry import keys as key_store
 
     baseline = anyio.run(_main)
     path = BaselineStore().save(baseline)
@@ -162,6 +166,35 @@ def _cmd_baseline(ns: argparse.Namespace) -> int:
 
 
 _VERDICT_LABEL = {"ok": "OK", "watch": "WATCH", "alert": "ALERT"}
+
+_UPDATE_HEADLINE = {
+    "residue_alert": "UNDECLARED BEHAVIOUR - the update does something it did not declare",
+    "escalation": "PERMISSION WIDENED - the update gives a tool more power",
+    "held_for_review": "HELD FOR REVIEW - a change the rules cannot judge",
+}
+
+
+def _print_update(outcome: dict) -> None:
+    """The residue outcome in plain words: the same summary the dashboard shows."""
+    from types import SimpleNamespace
+
+    from driftsentry.daemon import _update_summary
+
+    u = _update_summary(SimpleNamespace(residue=outcome))
+    print("\nUPDATE: the tool definitions changed since the baseline")
+    print("  " + _UPDATE_HEADLINE.get(u["verdict"], "UPDATE EXPLAINED - every change was declared"))
+    for line in u["declared"]:
+        print(f"  declared   {line['tool']}: {line['change']}")
+    for item in u["explained"]:
+        print(f"  explained  {item['tool']}: {item['signal']}")
+    for item in u["residue"]:
+        print(f"  RESIDUE    {item['tool']}: {item['signal']} ({item['reason']})")
+    for item in u["held_for_review"]:
+        print(f"  held       {item['tool']}: {item['signal']} ({item['reason']})")
+    for e in u["escalations"]:
+        print(f"  ESCALATION {e['tool']}: {e['escalation'].replace('_', ' ')}")
+    if u["explained_tools"]:
+        print("  fully explained, safe to re-baseline: " + ", ".join(u["explained_tools"]))
 
 
 def _print_drift_report(report, show_probes: bool = True) -> None:
@@ -216,6 +249,8 @@ def _cmd_verify(ns: argparse.Namespace) -> int:
             monitor_sandbox=not ns.no_sandbox,
             mode="hash-only" if ns.hash_only else "full",
             threshold_ratio=ns.threshold,
+            cycle=ns.cycle,
+            update_check=ns.update_check,
         )
 
     try:
@@ -225,6 +260,8 @@ def _cmd_verify(ns: argparse.Namespace) -> int:
         return 2
 
     _print_drift_report(report)
+    if report.residue:
+        _print_update(report.residue)
 
     if ns.json:
         import json as _json
@@ -400,13 +437,19 @@ def _cmd_watch(ns: argparse.Namespace) -> int:
 
     async def _loop() -> None:
         last = None
+        last_update = None
         checks = 0
         while True:
             try:
+                # As the dashboard's daemon does: a new cycle every check, so
+                # keyed probe values never repeat, and updates are scored by
+                # what they declare. Neither changes a fixed-probe baseline.
                 report = await verify_server(
                     baseline,
                     samples_per_probe=ns.samples_per_probe,
                     monitor_sandbox=not ns.no_sandbox,
+                    cycle=checks + 1,
+                    update_check=True,
                 )
             except Exception as exc:  # noqa: BLE001 - a bad cycle must not kill the monitor
                 from datetime import datetime
@@ -427,6 +470,13 @@ def _cmd_watch(ns: argparse.Namespace) -> int:
                 print()
             elif report.verdict != "alert" and last == "alert":
                 print("  -> recovered: the server is behaving again.\n")
+
+            # An update is explained once, when it appears or its verdict changes.
+            update = (report.residue or {}).get("verdict")
+            if update and update != last_update:
+                _print_update(report.residue)
+                print()
+            last_update = update
 
             last = report.verdict
             if ns.once or (ns.max_checks and checks >= ns.max_checks):
@@ -799,6 +849,11 @@ def build_parser() -> argparse.ArgumentParser:
     baseline.add_argument("--server", required=True, help="name to store the baseline under")
     baseline.add_argument("--cwd", default=None, help="working directory for the server")
     baseline.add_argument("--verbose", action="store_true", help="log probe progress")
+    baseline.add_argument("--probe-mode", choices=("fixed", "keyed"), default="fixed",
+                          help="fixed: replay stored probe values (default, as the "
+                               "earlier experiments ran). keyed: draw fresh values "
+                               "from this server's secret key every check, so a "
+                               "server cannot learn to recognise them (recommended)")
     _add_probe_options(baseline)
     baseline.add_argument("--exec", required=True, nargs=argparse.REMAINDER,
                           help="the server's launch command (must be last)")
@@ -819,6 +874,13 @@ def build_parser() -> argparse.ArgumentParser:
     verify.add_argument("--json", default=None, metavar="PATH", help="write the structured report here")
     verify.add_argument("--no-alert", action="store_true",
                         help="score only; do not raise or record an alert")
+    verify.add_argument("--update-check", action="store_true",
+                        help="if the tool definitions changed, treat this as an update: "
+                             "behaviour the new definitions declare is explained, and "
+                             "only what they do not declare can alert (residue checking)")
+    verify.add_argument("--cycle", type=int, default=1,
+                        help="probe cycle for a keyed baseline; use a new number each "
+                             "check so probe values never repeat (default 1)")
     verify.add_argument("--plain", action="store_true", help="plain-text alerts, no colour")
     verify.add_argument("--verbose", action="store_true", help="log probe progress")
     verify.add_argument("--exec", nargs=argparse.REMAINDER, default=[],

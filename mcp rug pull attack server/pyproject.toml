@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mcp-rugpull-attack-server"
-version = "0.1.0"
+version = "1.0.0"
 description = "A standalone adversarial MCP server that generates ground-truth rug-pull attacks for evaluating behavioural detection"
 readme = "README.md"
 requires-python = ">=3.11"

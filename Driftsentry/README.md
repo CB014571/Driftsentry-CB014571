@@ -1,277 +1,153 @@
 # DriftSentry
 
-**A proxy-based detector for behavioural rug-pull attacks in the Model Context Protocol (MCP).**
+**Detects behavioural rug-pull attacks in the Model Context Protocol (MCP).**
 
-Final-year project — BSc (Hons) Cyber Security. Companion build to *Proposal v23* and
-the *Implementation Roadmap*.
+Release 1.0.0. This is the detector half of the final-year project. The project
+overview, the research gaps and the headline results are in the
+[repository README](../README.md). Every measured number is in
+[eval_results/tables.md](eval_results/tables.md).
 
 ---
 
-## The problem in one paragraph
+## What it does
 
-An MCP **rug pull** is when a tool you already approved turns malicious *after* approval
-while its advertised definition (name, description, schema) stays byte-for-byte
-identical. Hash-only scanners (mcp-scan, Snyk Agent Scan) pin the definition, so they are
-blind to this. A one-shot "paste your config, get a verdict" scan cannot see it either,
-because the attack happens later. **DriftSentry is a resident proxy** that stays in the
-loop between client and server, captures a *behavioural* baseline of each tool at approval
-time, and re-verifies on a schedule — catching drift that leaves the definition unchanged.
+1. **Baseline at approval.** When you approve a server, DriftSentry sends each
+   safe tool a set of canary probes and records how it answers: response
+   embeddings and their natural variance, structure, files opened, and network
+   hosts contacted. Tools that look side-effecting (`send_email`,
+   `delete_file`) are never probed. They are monitored by observation.
+2. **Re-probe on a schedule.** It probes again later and scores the drift
+   against the baseline. With **keyed probes** the values are drawn from a
+   secret per-server key and change every cycle, so a server cannot learn to
+   recognise them and behave only while it is being tested (Gap 1).
+3. **Check updates against what they declare.** When the tool definitions
+   change, DriftSentry diffs the old and new definitions. Behaviour the new
+   definitions declare, such as an added output field, is explained. Anything
+   they do not declare is **residue** and alerts. A widened permission, such as
+   `readOnlyHint` removed, is an escalation (Gap 2).
+4. **Explain and contain.** An alert names the tool, the signal, a before and
+   after, and mitigations specific to the cause. The server is marked
+   quarantined. With `--enforce` the proxy refuses calls to it.
 
-## What gets built (three deliverables)
+No language model sits in the decision path. Scoring is deterministic, so a
+score can be reproduced from a stored baseline.
 
-| Package        | Role                                                                                  |
-|----------------|---------------------------------------------------------------------------------------|
-| `driftsentry/` | **The detector.** Proxy (data plane) + resident daemon (scheduler, probe engine, drift scorer, ChromaDB store) + a thin desktop/CLI control plane. |
-| `testbed/`     | **The attacker.** A standalone MCP server with benign / benign-update / rug-pull modes, six attack families, and a complexity knob L1–L5. Never imports `driftsentry`. |
-| `eval/`        | **The evidence.** A labelled corpus and the four experiments that answer the research questions. |
+## Install
 
-Data path (never touched by the UI):
-`Client → DriftSentry proxy → real MCP server → proxy → Client`, with the daemon
-replaying canary probes out of band and scoring drift against the stored baseline.
-
-## Build status (by roadmap phase)
-
-- [x] **Phase 0 — Foundations & environment** ✅
-- [x] **Phase 1 — Interception proxy core** ✅
-- [x] **Phase 2 — Config ingestion & rewriting** ✅
-- [x] **Phase 3 — Baseline capture & probe engine** ✅
-- [x] **Phase 4 — Drift scorer** ✅
-- [x] **Phase 5 — Alerting & mitigation layer** ✅
-- [x] **Phase 7 — Adversarial testbed server** ✅ *(six families, L1–L5)*
-- [ ] Phase 6 — Desktop app & CLI *(deferred to the MVP; the Mid-Point demo is headless)*
-- [ ] Phase 8 — Dataset construction
-- [ ] Phase 9 — Evaluation experiments
-- [ ] Phase 10 — Rigor, threats to validity, write-up
-
-## Setup
-
-Requires Python 3.11+ (developed and verified on **CPython 3.14**, Windows).
+Python 3.11 or later. Developed and tested on CPython 3.14 on Windows 11.
 
 ```bash
-# 1. Create and populate the virtual environment
 py -m venv .venv
-.venv\Scripts\activate            # Windows;  source .venv/bin/activate on Unix
-
-# 2. Install exact, reproducible dependencies
-pip install -r requirements.lock  # or: pip install -r requirements.txt
-pip install -e .                  # makes the `driftsentry` command available
+.venv\Scripts\python -m pip install -r requirements.lock
+.venv\Scripts\python -m pip install -e .
 ```
 
-Optional semantic-embedding backends (the dependency-free hashing backend works without
-them) are listed in `requirements-optional.txt`.
-
-**Testing:** see [docs/TESTING.md](docs/TESTING.md) for the full verified
-walkthrough — the self-checking demos, the hand-driven demo sequence, and what
-"working" should look like.
-**Demonstrating:** [docs/VIVA_DEMO.md](docs/VIVA_DEMO.md) is a step-by-step
-runbook with commands, expected output, timings, and the questions to expect.
-
-## Verify the install (Phase 0 definition of done)
+`requirements.lock` holds the exact versions used for the results.
+`requirements-optional.txt` lists optional semantic-embedding backends.
 
 ```bash
-# 1. The MCP loop we own: launch the echo server, list & call its tools over stdio.
-python examples/echo_client.py
-
-# 2. The offline stack: ChromaDB persist/reload + a local embedding, no network.
-python scripts/check_stack.py
-
-# 3. The proxy in the loop: client -> DriftSentry proxy -> echo server, with a
-#    transparency check, a concurrency check, and a written audit log.
-python examples/proxy_demo.py
-
-# 4. Config rewrite + restore, end to end, in a temp dir (your real config is
-#    never touched): wrap, verify the rewritten entry actually runs, then undo.
-python examples/init_demo.py
-
-# 5. Behavioural baseline: probe safety, variance learning, and catching a
-#    drifted server whose tool definitions are byte-for-byte identical.
-python examples/baseline_demo.py
-
-# 6. The drift scorer: calibrate a threshold on benign data, alert on the
-#    drifted twin with an attributable cause, and show hash-only pinning miss it.
-python examples/scorer_demo.py
-
-# 7. Alerting: cause, before/after and per-cause mitigations, then quarantine
-#    and prove opt-in enforcement blocks a live call through the proxy.
-python examples/alert_demo.py
-
-# 8. The Mid-Point demonstration: six attack families that all hash identically
-#    to the benign server, per-family detection, false-alarm checks on benign
-#    updates, and the L1->L4 complexity knob.
-python examples/testbed_demo.py
+.venv\Scripts\python -m pytest -q
 ```
 
-## The adversarial testbed
+## Commands
 
-A standalone MCP server that generates ground-truth rug pulls. It never imports
-`driftsentry` — it is the attacker, and it is not allowed to know how the
-defender works except at the explicit `--probe-aware` opt-in.
+| Command | What it does |
+|---|---|
+| `driftsentry demo` | The demonstration in one command: the attacker's test menu and the dashboard. See [docs/USER_GUIDE.md](docs/USER_GUIDE.md). |
+| `driftsentry ui` | The desktop dashboard, with the monitoring daemon behind it. It checks every enrolled server on a schedule. |
+| `driftsentry baseline --server NAME [--probe-mode keyed] --exec CMD...` | Enrol a server. Use `--probe-mode keyed`. `fixed` stays the default only so earlier experiments reproduce. |
+| `driftsentry calibrate` | Set the alert threshold from benign servers only. Attack data is never used. |
+| `driftsentry verify --server NAME [--update-check] [--cycle N]` | Check once. Exits 1 on an alert. `--update-check` scores a changed definition as an update. `--hash-only` is the mcp-scan-style control. |
+| `driftsentry watch --server NAME` | Re-check on a schedule in the terminal. Uses a new probe cycle each time, with update checking on. |
+| `driftsentry init --config PATH` | Rewrite an MCP client config so every stdio server runs through the DriftSentry proxy, and baseline each one. The original is not modified unless `--in-place` is given, and then a backup is kept. |
+| `driftsentry restore --config PATH` | Take DriftSentry back out of a client config. |
+| `driftsentry run --server NAME --exec CMD...` | The transparent stdio proxy itself. `--enforce` blocks calls to a quarantined server. `--passive` also checks live traffic. |
+| `driftsentry report`, `quarantine`, `trust` | Alert history and policy state. |
 
-```bash
-python -m testbed list-families                              # the six families and L1-L5
-python -m testbed serve --family new-egress --level L1       # run a rug pull
-python -m testbed serve --mode benign --updates              # the false-alarm set
-python -m testbed set-family exfiltration                    # switch a RUNNING server
-python -m testbed set-level L3
-python -m testbed trip                                       # fire a sleeper now
-```
+Data is stored under `.driftsentry_data/`, or `DRIFTSENTRY_HOME` if set:
+baselines, the calibration, alerts (JSONL), policy and the per-server probe keys.
 
-*Family* is the payload (what it does); *level* is the gate (when it fires).
-Six families × five levels comes from one payload mechanism and one gating
-mechanism, so a level means the same thing across families and the recall matrix
-is comparable row to row.
-
-| Family | Behaviour once it fires | Real case it mirrors |
-|---|---|---|
-| `exfiltration` | Copies responses to an attacker sink; reads credential files | third-party-app data theft |
-| `silent-tamper` | Alters a detail — a recipient, an account number, a total | postmark-mcp |
-| `content-injection` | Injects instructions aimed at the AI assistant | tool poisoning |
-| `new-egress` | Contacts a host never contacted at baseline | data theft |
-| `sleeper` | Benign until a call count, date, or `trip` fires | Invariant Labs sleeper |
-| `conditional` | Only attacks when it sees something worth stealing | targeted rug pull |
-
-**Safety.** Closed-loop by construction: no working exploit against any third
-party, no real endpoint, synthetic data only. "Exfiltration" appends to a file
-in a scratch directory; "new egress" connects to a loopback decoy this same
-process started. Both are held open deliberately so the behaviour is observable
-to a polling monitor — a detector cannot be credited with catching an attack
-that left no trace.
-
-Every scenario is a JSON file with a seed, so any run — including one driven by
-hand during a demo — can be saved and replayed exactly.
-
-## Wiring DriftSentry into a real client
-
-```bash
-# Rewrite to a NEW file (the original is never modified):
-driftsentry init --config "%APPDATA%\Claude\claude_desktop_config.json"
-
-# ...or update the original, keeping a timestamped backup:
-driftsentry init --config <path> --in-place
-
-# Take DriftSentry back out of the loop:
-driftsentry restore --config <path>
-```
-
-Only stdio servers are proxied today; HTTP entries are reported and left
-untouched. Secrets in a server's `env` block stay in `env` — only the variable
-*names* are passed on the command line.
-
-`init` also captures a behavioural baseline of each wrapped server (Phase 3), so
-trust attaches to behaviour rather than to a definition hash. Use `--no-baseline`
-to rewrite only.
-
-## Behavioural baselines
-
-```bash
-# Capture a baseline: probe each safe tool and learn its natural variance.
-driftsentry baseline --server shop --exec python shop_server.py
-
-# Re-probe later and measure drift against that baseline.
-driftsentry verify --server shop --exec python shop_server.py
-```
-
-**Probe safety.** Tools that look side-effecting (`send_email`, `delete_file`) are
-never actively probed — they are marked *baseline-by-observation*. Classification
-uses the MCP `readOnlyHint`/`destructiveHint` annotations when present, falling
-back to word-boundary verb heuristics. `--safety-policy strict` probes only tools
-with positive evidence of being read-only.
-
-## Alerts, quarantine and enforcement
-
-When a score crosses the threshold, `verify` raises an alert naming the server
-and tool, the signal and how far past the line it went, a concrete before/after,
-and mitigations templated to the *cause* — a new-egress alert says rotate the
-credentials that server could have seen; a definition-hash alert says force
-re-approval; plain behavioural drift says look at the before/after and decide,
-because a legitimate update produces the same signal.
-
-Severity comes from the score, but the **advice comes from the most specific
-signal that fired**: if a response drifted *and* contains an injected
-instruction, the useful guidance is "check what your assistant did after reading
-this", not a generic "something changed".
-
-```bash
-driftsentry report --server shop --full   # alert history + policy state
-driftsentry quarantine --server shop      # mark it unsafe (advisory)
-driftsentry trust --server shop           # clear the quarantine
-```
-
-Alerts are written to `.driftsentry_data/alerts/<server>.jsonl` as well as the
-terminal, so there is a machine-readable record for the evaluation.
-
-**Enforcement is opt-in.** A quarantine is advisory by default: DriftSentry
-records its opinion and keeps saying so, but the client keeps working. Only when
-the proxy is started with `--enforce` does it actually refuse `tools/call` to a
-quarantined server (returning a JSON-RPC error that explains why). Detection is
-the contribution being evaluated — a proxy that silently blocked attacks would
-confound every detection measurement.
-
-## Detecting drift
-
-```bash
-# Set the alert threshold from BENIGN servers only (never from attack data).
-driftsentry calibrate --repeats 3
-
-# Score a server against its baseline.
-driftsentry verify --server shop
-
-# The control condition: definition-hash pinning alone, as mcp-scan does.
-driftsentry verify --server shop --hash-only
-```
-
-`verify` prints one score per tool with the triggering signal named, and exits 1
-on an alert so it can be scripted. Three signals feed the score:
+## How a score is made
 
 | Signal | Catches | Weight |
 |---|---|---|
-| Definition hash change | Classic / sleeper rug pull that edits name, description or schema | Hard trigger (3.0) |
-| Embedding distance vs the tool's own variance band | Response content shifting while the definition is unchanged | Calibrated (1.0 = alert) |
-| Security rules (new egress host, secret-file read, credential- or instruction-shaped output) | Exfiltration, new-egress, content injection | High (2.0 / 1.1) |
+| Definition hash change | A rug pull that edits name, description or input schema | hard trigger (3.0) |
+| Embedding distance against the tool's own variance band | Response content shifting while the definition is unchanged | calibrated (1.0 = alert) |
+| Structural change | Changed response shape | 0.85 (WATCH on its own, never ALERT) |
+| Determinism break | A tool that answered a probe identically now varies | 1.15 |
+| Field drift | A specific output field changed value | 1.6 |
+| Security rules: new egress host, new file opened, credential- or instruction-shaped output | Exfiltration, new egress, content injection | 2.0 high, 1.1 medium |
+| Declaration escalation (update checking) | An update widened a tool's permissions | 0.9 (WATCH unless combined) |
 
-Signals are combined by **maximum**, not by sum: the embedding and structural
-signals read the same response and are correlated, so summing would let ordinary
-benign noise accumulate into an alert and inflate the false-alarm rate. Scoring
-is fully deterministic — no language model sits in the decision path, which is
-what makes a score reproducible from a stored baseline.
+WATCH starts at 0.85 and ALERT at 1.00.
 
-**Calibration** places the threshold at a quantile of the benign drift
-distribution (default: the 99th percentile × 1.25), records how many benign
-observations from how many servers produced it, and warns when that evidence is
-too thin to quote. It never drops below 1.0, so DriftSentry cannot alert inside a
-probe's own measured benign band.
+Signals are combined by **maximum**, not by sum. The embedding and structural
+signals read the same response and are correlated, so summing would let benign
+noise add up to an alert.
 
-**Embedding backends.** `--embedding auto` (default) picks the best backend that
-is *already available* and never downloads anything: Ollama if its daemon is
-running, else a cached ONNX all-MiniLM, else a dependency-free hashing backend —
-which measures *lexical* change only and warns loudly that it is doing so. Run
-once with `--embedding onnx` to fetch all-MiniLM (~79 MB, offline afterwards).
-Every baseline records the backend and dimension it was built with, and baselines
-from different backends are stored in separate ChromaDB collections so they can
-never be silently compared.
+**Calibration** sets the threshold at a quantile of the benign drift
+distribution (default: 99th percentile × 1.25). It records how much evidence
+produced the threshold and warns when that evidence is thin. It never drops
+below 1.0.
 
-Both should report success. `check_stack.py` also tells you whether the optional
-Ollama / ONNX semantic backends are available on your machine.
+**Embedding backends.** `--embedding auto` uses the best backend already
+installed and never downloads anything: Ollama if running, then a cached ONNX
+all-MiniLM-L6-v2, then a dependency-free hashing backend, which measures only
+lexical change and warns that it does. Baselines record their backend, and
+baselines from different backends are never compared.
+
+**Update checking** (`driftsentry/declared_diff.py`, `driftsentry/residue.py`).
+The permitted-change rules are fixed in code and were frozen before any result
+was measured (`eval_results/rq3u/rules_frozen.json`, rules version 1.0).
+`verify_rules()` fails if the code and the frozen file disagree. Nothing is
+re-baselined automatically. A fully explained update lists the tools that are
+safe to re-baseline, and the user decides.
+
+## The evaluation
+
+`eval/` is the harness. It launches the attack server as a separate process,
+reads ground truth from the attacker's event log, and writes CSV/JSONL to
+`eval_results/`.
+
+```bash
+.venv\Scripts\python -m eval tables
+```
+
+This rebuilds `eval_results/tables.md` from those files. The experiment
+subcommands are `run`, `collect`, `rq3`, `t20`, `rq3u`, `rq3u-analyse` and
+`real`. Full sweeps take hours.
 
 ## Repository layout
 
 ```
-driftsentry/          the detector package (built up phases 1–6)
-  __init__.py
-  __main__.py         the `driftsentry` command (subcommands added per phase)
-testbed/              the adversarial MCP server (phase 7) — must not import driftsentry
-eval/                 the evaluation harness (phases 8–9)
-examples/             echo_server.py + echo_client.py — the known-good Phase 0 loop
-scripts/              check_stack.py — offline stack self-check
-requirements.txt      core dependencies (intent)
-requirements.lock     exact pinned versions (reproducible install)
-requirements-optional.txt   heavier / later-phase deps, installed per phase
-pyproject.toml        packaging + the `driftsentry` entry point
+driftsentry/        the detector
+  proxy.py            stdio proxy (data plane)
+  baseline.py         probing, variance learning, re-probing
+  probe_generator.py  keyed probe values (HMAC per server, per cycle)
+  scorer.py           signals, combination, verdict
+  declared_diff.py    old against new tool definitions
+  residue.py          frozen permitted-change rules and the residue verdict
+  calibration.py      benign-only threshold
+  alerts.py policy.py the alert card, quarantine, enforcement
+  daemon.py api.py    scheduled checking and the localhost API (127.0.0.1)
+  ui/index.html       the dashboard
+  demo.py             `driftsentry demo`
+eval/               the evaluation harness and statistics
+eval_results/       raw results and tables.md
+tests/              pytest suite
+examples/ scripts/  per-component self-checks (scripts/run_all_checks.py)
+docs/               user guide, viva runbook, code guide
 ```
 
-## A note on reproducibility
+## Limits
 
-Reproducibility is a graded contribution, not an afterthought. Dependencies are pinned
-from day one (`requirements.lock`), all randomness in later phases is seeded, and the
-evaluation is regenerable from scenario files. The privacy-preserving stack (local
-embeddings + local ChromaDB) runs with no network egress.
+* Only stdio servers are proxied. HTTP entries in a client config are reported
+  and left alone.
+* A tool that is never probed (side-effecting) is covered only by observation
+  of real calls.
+* Keyed probes defeat a recogniser that keys on probe **values**. RQ1 measured
+  that client, session and timing features still give probes away, and the
+  countermeasures tested did not close that (H2 failed).
+* Update checking flagged 2 of 4 real benign upgrades (time, git). In both,
+  behaviour changed in ways their definitions did not declare. This counts
+  against H3 and is reported in Table 9.
