@@ -88,6 +88,13 @@ async def _call_once(
     monitor: SandboxMonitor | None,
 ) -> tuple[dict[str, Any], float, Observation]:
     """Call a tool once, timing it and watching for side effects."""
+    # An in-session channel (driftsentry/insession.py) sends any genuine calls
+    # due before this probe, and waits out its pacing, HERE - before the
+    # side-effect window opens - so nothing a genuine call does is ever
+    # attributed to the probe.
+    prepare = getattr(session, "prepare_probe", None)
+    if prepare is not None:
+        await prepare(tool_name)
     if monitor is not None:
         monitor.start()
     started = time.perf_counter()
@@ -145,6 +152,7 @@ async def capture_baseline(
     probe_mode: str = "fixed",
     key: bytes | None = None,
     mimic_host: bool = False,
+    shapes: dict[str, Any] | None = None,
 ) -> ServerBaseline:
     """Capture a full behavioural baseline for one stdio MCP server.
 
@@ -166,7 +174,10 @@ async def capture_baseline(
         )
 
         probe_key = key or key_store.get_or_create(server)
-        generator = KeyedProbeGenerator(probe_key, cycle=0)
+        # Shaped at capture too: the family baseline has to contain the same
+        # variety of values that verification will send, or the variety
+        # itself would read as drift.
+        generator = KeyedProbeGenerator(probe_key, cycle=0, shapes=shapes)
         key_identifier = key_store.key_id(probe_key)
     else:
         generator = ProbeGenerator(seed=seed)
@@ -513,6 +524,7 @@ async def _reprobe_keyed(
     subsample_bank: bool = False,
     process_started: float | None = None,
     declared_output: dict[str, list[str]] | None = None,
+    shapes: dict[str, Any] | None = None,
 ) -> list[ProbeCheck]:
     """Verify with freshly generated values, against family baselines.
 
@@ -541,7 +553,7 @@ async def _reprobe_keyed(
             "its key is no longer in the key store; re-baseline the server"
         )
 
-    generator = KeyedProbeGenerator(probe_key, cycle=cycle)
+    generator = KeyedProbeGenerator(probe_key, cycle=cycle, shapes=shapes)
     definitions = {d["name"]: d for d in baseline.tool_definitions}
     checks: list[ProbeCheck] = []
 
@@ -692,8 +704,20 @@ async def reprobe(
     mimic_host: bool = False,
     mimic_traffic: bool = False,
     subsample_bank: bool = False,
+    session: Any = None,
+    server_pids: list[int] | None = None,
+    shapes: dict[str, Any] | None = None,
 ) -> ReprobeReport:
     """Replay a stored baseline's probes against a live server and measure drift.
+
+    ``session`` (follow-up to H2): verify inside a session that is ALREADY
+    open - the user's own, carrying their calls - instead of launching a
+    separate server process. Every client, environment and session feature a
+    server could use to tell a probe from a user is then the user's own. The
+    object must offer ``list_tools`` and ``call_tool``; ``server_pids`` names
+    the server process(es) for side-effect monitoring. Keyed baselines only:
+    replaying stored fixed values inside a user's session would still be
+    recognisable by value.
 
     Deliberately a *measurement*, not a verdict: it reports each probe's distance
     relative to its benign band. Combining that with the hash and security-rule
@@ -712,6 +736,33 @@ async def reprobe(
         raise ValueError(
             f"embedding mismatch: baseline used {baseline.embedding_backend} "
             f"(dim {baseline.embedding_dim}), current backend is {embedder.name} (dim {embedder.dim})"
+        )
+
+    if session is not None:
+        if baseline.probe_mode != "keyed":
+            raise ValueError("in-session verification needs a keyed baseline")
+        pids = list(server_pids or [])
+        monitor = SandboxMonitor(pids) if (monitor_sandbox and pids) else None
+        listed = await session.list_tools()
+        observed_definitions = [t.model_dump(mode="json", by_alias=True)
+                                for t in listed.tools]
+        checks = await _reprobe_keyed(
+            session, baseline, embedder, monitor,
+            samples_per_probe=samples_per_probe, cycle=cycle, key=key,
+            # The session paces itself: it interleaves probes with the
+            # user's calls at the user's own gaps.
+            mimic_traffic=False,
+            subsample_bank=subsample_bank,
+            declared_output=_declared_output_paths(baseline, observed_definitions),
+            shapes=shapes,
+        )
+        return ReprobeReport(
+            server=baseline.server,
+            baseline_definition_hash=baseline.definition_hash,
+            observed_definition_hash=tools_definition_hash(observed_definitions),
+            checks=checks,
+            embedding_backend=embedder.name,
+            observed_definitions=observed_definitions,
         )
 
     params = StdioServerParameters(command=command, args=args, cwd=cwd, env=env)
@@ -750,6 +801,7 @@ async def reprobe(
                     subsample_bank=subsample_bank,
                     process_started=process_started,
                     declared_output=declared_output,
+                    shapes=shapes,
                 ))
                 return ReprobeReport(
                     server=baseline.server,

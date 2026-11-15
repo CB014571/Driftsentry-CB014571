@@ -124,6 +124,12 @@ class EpisodeConfig:
     # calibrated threshold, as every experiment before RQ3a did.
     per_tool: dict[str, float] | None = None
 
+    # H2b follow-up (eval/followup.py): verify inside a live session through
+    # the proxy, interleaved with replayed genuine calls, with probe values
+    # shaped by ``shapes``. Off by default; nothing earlier changes.
+    in_session: bool = False
+    shapes: dict[str, Any] | None = None
+
     def label(self) -> str:
         if self.mode == "benign":
             base = "benign-update" if self.updates else "benign"
@@ -154,6 +160,8 @@ class EpisodeConfig:
             # Likewise only when set, for the same reason.
             **({"per_tool": dict(sorted(self.per_tool.items()))}
                if self.per_tool else {}),
+            **({"in_session": True, "shaped": bool(self.shapes)}
+               if self.in_session else {}),
         }
 
 
@@ -344,6 +352,7 @@ class Episode:
                 n_probes=cfg.n_probes, n_samples=cfg.n_samples, seed=cfg.seed,
                 probe_mode=cfg.probe_mode, key=probe_key,
                 mimic_host=cfg.mimic_host,
+                **({"shapes": cfg.shapes} if cfg.in_session and cfg.shapes else {}),
             )
             store = BaselineStore()
             store.save(baseline)
@@ -375,9 +384,21 @@ class Episode:
                     _PROC.cpu_percent(None)          # prime the interval
                 t0 = time.perf_counter()
                 scored = None
+                call_records = None
                 if update:
                     scored = await self._update_cycle(baseline, launch, cycle, probe_key)
                     report = scored.residue
+                elif cfg.in_session:
+                    from eval.followup import insession_cycle, load_profile_a
+
+                    report, call_records = await insession_cycle(
+                        baseline, attacker_project=self.attacker.project_dir,
+                        atk_home=self.atk_home, ds_home=self.ds_home,
+                        server_id=cfg.server_id, cycle=cycle, key=probe_key,
+                        seed=cfg.seed, replay_sessions=cfg.replay_sessions,
+                        threshold_ratio=cfg.threshold_ratio,
+                        monitor_sandbox=cfg.monitor_sandbox,
+                        shapes=cfg.shapes, profile=load_profile_a())
                 else:
                     report = await verify_server(
                         baseline,
@@ -399,7 +420,14 @@ class Episode:
                 # attacker that skipped every probe fires here instead, which
                 # is what makes the episode a missed detection rather than
                 # one where nothing happened.
-                replayed = await self._replay(launch, cycle)
+                # In-session, the genuine calls were sent INSIDE the cycle,
+                # interleaved with the probes.
+                if call_records is not None:
+                    replayed = [{"tool": r.tool, "args": r.args, "text": r.text,
+                                 "failed": r.failed, "latency_s": r.end - r.start}
+                                for r in call_records if r.kind == "genuine"]
+                else:
+                    replayed = await self._replay(launch, cycle)
 
                 # Three detectors over ONE episode. Separate runs would make
                 # the comparison unpaired and throw away what McNemar needs.
@@ -455,6 +483,12 @@ class Episode:
                 )
                 for name, value in components(report).items():
                     setattr(row, name, round(value, 4))
+                if call_records is not None:
+                    from eval.followup import events_in_windows, read_attacker_events
+
+                    events = read_attacker_events(self.atk_home)
+                    row.probe_window_events = events_in_windows(events, call_records, "probe")
+                    row.genuine_window_events = events_in_windows(events, call_records, "genuine")
                 if scored is not None:
                     _fill_update_columns(row, scored, cfg.update_cover)
                     row.full_detected = full_detected(scored.full)
@@ -464,7 +498,11 @@ class Episode:
                 # compared on the same cycles, and stopping when residue
                 # alerts would end the episode before a condition that only
                 # alerts later had its chance - biased toward residue.
-                if detected and cfg.stop_on_alert and not update:
+                # In-session (H2b), only a probe-earned alert ends the episode:
+                # an alert raised by what a GENUINE call left behind must not
+                # stop the cycles in which a probe could still earn one.
+                earned = (not cfg.in_session) or row.probe_window_events > 0
+                if detected and earned and cfg.stop_on_alert and not update:
                     break
 
             # 5. ground truth, read from the attacker

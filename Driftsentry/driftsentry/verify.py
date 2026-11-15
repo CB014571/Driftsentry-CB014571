@@ -58,6 +58,9 @@ async def verify_server(
     subsample_bank: bool = False,
     update_check: bool = False,
     per_tool: dict[str, float] | None = None,
+    session: Any = None,
+    server_pids: list[int] | None = None,
+    shapes: dict[str, Any] | None = None,
 ) -> DriftReport:
     """Re-probe a server and score the result.
 
@@ -78,7 +81,10 @@ async def verify_server(
     condition identical to the control - the same class of defect as the
     launch-parity one, caught before it produced a number.
     """
-    command, args, cwd, env = _launch_of(baseline, launch)
+    # In-session verification (``session``) needs no launch: the server is
+    # already running inside the user's session.
+    command, args, cwd, env = (("", [], None, None) if session is not None
+                               else _launch_of(baseline, launch))
     measurement = await reprobe(
         baseline, command, args, cwd=cwd, env=env,
         samples_per_probe=samples_per_probe,
@@ -87,6 +93,9 @@ async def verify_server(
         mimic_host=mimic_host,
         mimic_traffic=mimic_traffic,
         subsample_bank=subsample_bank,
+        session=session,
+        server_pids=server_pids,
+        shapes=shapes,
     )
     if threshold_ratio is None:
         threshold_ratio, source = active_threshold(measurement.embedding_backend)

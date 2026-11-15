@@ -70,7 +70,11 @@ _open_sockets: list[socket.socket] = []
 def log_event(kind: str, detail: str) -> None:
     """Record one malicious act, with a timestamp, for later verification."""
     ensure_sink()
-    stamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    # Microseconds, not seconds: a probe call lasts a fraction of a second, and
+    # attributing an act to the call that triggered it (eval/followup.py, H2b)
+    # needs the stamp to fall inside that call. Nothing reads the stamp as a
+    # key or compares it as text, so the extra precision changes no count.
+    stamp = datetime.now(timezone.utc).isoformat(timespec="microseconds")
     with _state_lock:
         with EVENTS_LOG.open("a", encoding="utf-8") as handle:
             handle.write(f"{stamp}\t{kind}\t{detail}\n")

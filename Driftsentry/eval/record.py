@@ -145,6 +145,14 @@ class ExperimentRow:
     alert_residue: bool = False
     attributed_residue: bool = False
 
+    # H2b, in-session verification only (-1 otherwise): attacker events whose
+    # timestamp falls inside a probe call, and inside a genuine call. A
+    # detection counts as probe-earned only when the first is above zero.
+    # Appended LAST, like every column before them, so every existing results
+    # file stays a prefix of this header and can still be resumed.
+    probe_window_events: int = -1
+    genuine_window_events: int = -1
+
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 

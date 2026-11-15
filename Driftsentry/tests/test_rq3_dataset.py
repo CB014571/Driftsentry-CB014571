@@ -406,6 +406,12 @@ def test_a_fresh_file_writes_the_current_header(tmp_path):
 # columns existed is therefore an exact prefix of today's header, lines up with
 # every column it has, and must stay resumable - otherwise adding a column
 # would retire every half-finished sweep and restart it from nothing.
+# The columns a file written before RQ3a lacks: the 17 update columns, and
+# the 2 H2b columns appended after them. A file that predates the update
+# columns is exactly this many short of today's header.
+_UPDATE_AND_LATER_COLUMNS = 17 + 2
+
+
 def _prefix_file(tmp_path, n_dropped):
     import csv as _csv
 
@@ -420,12 +426,12 @@ def test_a_prefix_header_is_appended_to_under_its_own_columns(tmp_path):
     import csv as _csv
 
     from eval.record import FIELD_NAMES, ExperimentRow, ResultWriter, now
-    path = _prefix_file(tmp_path, 17)
+    path = _prefix_file(tmp_path, _UPDATE_AND_LATER_COLUMNS)
     with ResultWriter(tmp_path, "exp") as w:
         w.append(ExperimentRow(experiment_id="e", episode_id="ep", timestamp=now(),
                                config_hash="cfg:x"))
     rows = list(_csv.reader(path.open(encoding="utf-8")))
-    assert rows[0] == FIELD_NAMES[:-17]
+    assert rows[0] == FIELD_NAMES[:-_UPDATE_AND_LATER_COLUMNS]
     assert len(rows[1]) == len(rows[0])
     assert rows[1][rows[0].index("config_hash")] == "cfg:x"
 
@@ -433,7 +439,7 @@ def test_a_prefix_header_is_appended_to_under_its_own_columns(tmp_path):
 def test_a_row_with_values_in_a_column_the_file_lacks_is_refused(tmp_path):
     """Writing it would drop the values silently."""
     from eval.record import ExperimentRow, ResultWriter, SchemaMismatch, now
-    _prefix_file(tmp_path, 17)
+    _prefix_file(tmp_path, _UPDATE_AND_LATER_COLUMNS)
     with ResultWriter(tmp_path, "exp") as w:
         with pytest.raises(SchemaMismatch, match="predates the columns"):
             w.append(ExperimentRow(experiment_id="e", episode_id="ep",
@@ -442,7 +448,7 @@ def test_a_row_with_values_in_a_column_the_file_lacks_is_refused(tmp_path):
 
 def test_a_prefix_file_keeps_its_rows(tmp_path):
     from eval.record import ExperimentRow, ResultWriter, now
-    path = _prefix_file(tmp_path, 17)
+    path = _prefix_file(tmp_path, _UPDATE_AND_LATER_COLUMNS)
     with ResultWriter(tmp_path, "exp") as w:
         w.append(ExperimentRow(experiment_id="e", episode_id="ep1", timestamp=now()))
     with ResultWriter(tmp_path, "exp") as w:

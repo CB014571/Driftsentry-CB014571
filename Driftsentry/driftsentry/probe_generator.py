@@ -77,6 +77,7 @@ class KeyedProbeGenerator:
         include_optional: bool = True,
         version: str = GENERATOR_VERSION,
         coverage: "CoverageModel | None" = None,
+        shapes: dict[str, Any] | None = None,
     ) -> None:
         if not key:
             raise ValueError("a probe key is required")
@@ -89,6 +90,12 @@ class KeyedProbeGenerator:
         # exposed to a spread of input classes over successive cycles instead of
         # many samples of one. Without it, behaviour is exactly as before.
         self.coverage = coverage
+        # Per-tool argument shapes learned from genuine traffic (traffic.py
+        # ToolShape: lengths, digit and space ratios). When supplied, string
+        # values are chosen to look like what users actually send - RQ1 put
+        # the argument family at AUC 0.763, enough on its own to take recall
+        # to zero. Without it, behaviour is exactly as before.
+        self.shapes = shapes or {}
 
     # -- key derivation -----------------------------------------------------
     def _rng(self, server: str, tool: str, template_id: str, cycle: int,
@@ -211,9 +218,14 @@ class KeyedProbeGenerator:
         # Strings, and anything untyped. Coverage picks the category when it is
         # driving; otherwise the field's name hint chooses the grammar.
         category = self._category(field_path, schema, rng)
+        shape = self.shapes.get(tool)
         if category:
             grammars[field_path] = category
             value = probe_templates.generate_category(category, rng)
+        elif shape is not None and getattr(shape, "lengths", None):
+            grammar, value = shaped_string(
+                probe_templates.grammar_for(prop_name, schema), shape, rng)
+            grammars[field_path] = f"shaped:{grammar}"
         else:
             grammar = probe_templates.grammar_for(prop_name, schema)
             grammars[field_path] = grammar
@@ -316,6 +328,81 @@ class KeyedProbeGenerator:
                 )
             )
         return probes
+
+
+#: Grammars a shaped value may be drawn from besides the field's own. Real
+#: users do not respect the name hint: the genuine corpus sends a person's name
+#: as a customer_id and an order number as a search query.
+SHAPE_ALTERNATES = ("identifier", "search", "person", "city", "filename", "generic")
+
+#: Candidates generated per shaped value. Enough that one usually lands within
+#: a character of the target length; all of them are keyed.
+SHAPE_CANDIDATES = 24
+
+
+def _ratio(text: str, pred) -> float:
+    return (sum(1 for c in text if pred(c)) / len(text)) if text else 0.0
+
+
+def _compact(value: str, target: int) -> str | None:
+    """A shorter form of the same value, for a short target length.
+
+    ``TASK-35622`` becomes ``T-3562`` and a phrase keeps its leading words.
+    Shortening an existing keyed value keeps it harmless and unpredictable;
+    inventing a new short format would be a second grammar to recognise.
+    """
+    if target <= 0:
+        return None
+    if "-" in value and value.split("-", 1)[1].isdigit():
+        prefix, digits = value.split("-", 1)
+        for k in range(len(prefix), 0, -1):
+            room = target - k - 1
+            if room >= 2:
+                return f"{prefix[:k]}-{digits[:room]}"
+        return None
+    if " " in value:
+        words, out = value.split(), ""
+        for word in words:
+            nxt = f"{out} {word}".strip()
+            if len(nxt) > target:
+                break
+            out = nxt
+        return out or None
+    return None
+
+
+def shaped_string(own_grammar: str, shape: Any, rng: random.Random) -> tuple[str, str]:
+    """A keyed string whose length and character mix follow genuine traffic.
+
+    The target length is drawn from the observed lengths (not a range), then
+    the candidate closest to it in length, digit ratio and space ratio wins.
+    Every candidate comes from a template grammar, so values stay as harmless
+    as unshaped ones. An empty string is a candidate only when real traffic
+    sent one - which the genuine corpus does.
+    """
+    lengths = list(getattr(shape, "lengths", []) or [])
+    target = lengths[rng.randrange(len(lengths))]
+    digit_t = float(getattr(shape, "digit_ratio", 0.0) or 0.0)
+    space_t = float(getattr(shape, "space_ratio", 0.0) or 0.0)
+
+    candidates: list[tuple[str, str]] = []
+    if target == 0:
+        candidates.append(("empty", ""))
+    for i in range(SHAPE_CANDIDATES):
+        grammar = own_grammar if i % 2 == 0 else rng.choice(SHAPE_ALTERNATES)
+        value = str(probe_templates.generate(grammar, rng))
+        candidates.append((grammar, value))
+        short = _compact(value, target)
+        if short:
+            candidates.append((grammar, short))
+
+    def score(item: tuple[str, str]) -> float:
+        _, v = item
+        return (abs(len(v) - target)
+                + 4.0 * abs(_ratio(v, str.isdigit) - digit_t)
+                + 4.0 * abs(_ratio(v, str.isspace) - space_t))
+
+    return min(candidates, key=score)
 
 
 def _fit_length(value: str, schema: dict[str, Any], rng: random.Random) -> str:

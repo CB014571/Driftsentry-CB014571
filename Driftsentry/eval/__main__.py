@@ -206,6 +206,37 @@ def _cmd_rq3(ns: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_h2b(ns: argparse.Namespace) -> int:
+    """H2b: the follow-up to H2 - in-session verification (eval/followup.py)."""
+    import asyncio
+
+    from eval import followup
+
+    # Its own workspace, ALWAYS. The collector deletes its workspace on start,
+    # and the default one belongs to whatever sweep may be running.
+    workspace = Path(ns.workspace_h2b)
+    if ns.stage == "preregister":
+        doc = followup.preregister()
+        print(json.dumps(doc, indent=2))
+        print(f"\nfrozen: {followup.PREREG}")
+        return 0
+    _quiet()
+    if ns.stage == "collect":
+        print(json.dumps(asyncio.run(followup.collect(ns.attacker, workspace)), indent=2))
+    elif ns.stage == "fit":
+        res = followup.fit(ns.attacker)
+        print(f"best family: {res['best_family']}  AUC {res['best_auc']:.3f}")
+        for name, fam in res["families"].items():
+            print(f"  {name:<12} {fam.get('auc')}")
+    elif ns.stage == "matrix":
+        followup.matrix(ns.attacker, workspace)
+    elif ns.stage == "control":
+        followup.control(ns.attacker, workspace)
+    elif ns.stage == "verdict":
+        print(json.dumps(followup.verdict(), indent=2))
+    return 0
+
+
 def _cmd_t20(ns: argparse.Namespace) -> int:
     """Do the countermeasures close the channels, and at what cost?"""
     _quiet()
@@ -468,6 +499,13 @@ def main(argv: list[str] | None = None) -> int:
     tables.add_argument("--out", default=str(DEFAULT_RESULTS / "tables.md"),
                         help="where the Markdown is written")
     tables.set_defaults(func=_cmd_tables)
+
+    h2b = sub.add_parser("h2b", help="follow-up to H2: in-session verification (H2b)")
+    h2b.add_argument("stage", choices=("preregister", "collect", "fit", "matrix",
+                                       "control", "verdict"))
+    h2b.add_argument("--workspace-h2b", default=str(ROOT / ".eval_workspace_h2b"),
+                     help="scratch directory for this follow-up only")
+    h2b.set_defaults(func=_cmd_h2b)
 
     ns = parser.parse_args(argv)
     return ns.func(ns)

@@ -61,6 +61,11 @@ class ToolShape:
     median_len: int = 0
     digit_ratio: float = 0.0
     space_ratio: float = 0.0
+    #: Every observed argument length, so a probe can draw a length from the
+    #: real distribution. min/median/max alone describe a range, and a value
+    #: drawn uniformly from a range is its own fingerprint when the real
+    #: lengths cluster. Lengths only - never the values themselves.
+    lengths: list[int] = field(default_factory=list)
 
 
 @dataclass
@@ -202,6 +207,7 @@ def learn(log_path: str | Path, server: str = "") -> TrafficProfile:
             median_len=int(statistics.median(lengths)) if lengths else 0,
             digit_ratio=(sum(c.isdigit() for c in joined) / len(joined)) if joined else 0.0,
             space_ratio=(joined.count(" ") / len(joined)) if joined else 0.0,
+            lengths=sorted(lengths),
         )
 
     profile = TrafficProfile(
