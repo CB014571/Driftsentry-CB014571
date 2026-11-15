@@ -1,0 +1,44 @@
+{
+  "thresholds": {
+    "get_weather": 1.057976431013138,
+    "lookup_customer": 1.0,
+    "read_document": 1.0
+  },
+  "provenance": {
+    "get_weather": {
+      "n": 144,
+      "source": "per_tool",
+      "threshold": 1.057976431013138,
+      "operating_point": 0.8463811448105104,
+      "max_benign_ratio": 0.853904259112299,
+      "mean_benign_ratio": 0.6183220670715349
+    },
+    "lookup_customer": {
+      "n": 144,
+      "source": "per_tool",
+      "threshold": 1.0,
+      "operating_point": 0.0,
+      "max_benign_ratio": 0.0,
+      "mean_benign_ratio": 0.0
+    },
+    "read_document": {
+      "n": 144,
+      "source": "per_tool",
+      "threshold": 1.0,
+      "operating_point": 0.0,
+      "max_benign_ratio": 0.0,
+      "mean_benign_ratio": 0.0
+    }
+  },
+  "rule": {
+    "quantile": 0.99,
+    "margin": 1.25,
+    "floor": 1.0,
+    "min_obs": 8
+  },
+  "global_threshold": 1.5,
+  "n_tools": 3,
+  "n_per_tool": 3,
+  "_sha256": "8797ea45ebce8b8bd65914d5cafc4d1e864522062417cae494898a860a44d59a",
+  "_frozen_at": "2026-11-15T09:35:31.146610+00:00"
+}

@@ -1,0 +1,40 @@
+{
+  "V-pertool": {
+    "verdict": "FAIL",
+    "checks": {
+      "false_alarms_halved": false,
+      "recall_held": true
+    },
+    "global_arm": {
+      "fired": 12,
+      "detected": 12,
+      "recall_pct": 100.0,
+      "benign_update_episodes": 6,
+      "benign_update_alarms": 6,
+      "benign_update_fa_pct": 100.0
+    },
+    "per_tool_arm": {
+      "fired": 12,
+      "detected": 12,
+      "recall_pct": 100.0,
+      "benign_update_episodes": 6,
+      "benign_update_alarms": 6,
+      "benign_update_fa_pct": 100.0
+    }
+  },
+  "V-nevercalled": {
+    "verdict": "PASS",
+    "fired": 16,
+    "full": 16,
+    "passive": 0,
+    "mcnemar": {
+      "p": 3.0517578125e-05,
+      "n": 16,
+      "b01": 16,
+      "b10": 0,
+      "discordant": 16,
+      "a_rate": 0.0,
+      "b_rate": 1.0
+    }
+  }
+}
