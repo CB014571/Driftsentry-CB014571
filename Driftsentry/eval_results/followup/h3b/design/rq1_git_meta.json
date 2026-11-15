@@ -1,0 +1,234 @@
+{
+  "server": "git",
+  "old_version": "2026.8.18",
+  "new_version": "2026.10.28",
+  "probed_tools": [
+    "git_status",
+    "git_diff_unstaged",
+    "git_diff_staged",
+    "git_diff",
+    "git_log",
+    "git_show",
+    "git_branch"
+  ],
+  "withheld_tools": {
+    "git_commit": "name suggests state change ('commit')",
+    "git_add": "name suggests state change ('add')",
+    "git_reset": "annotation: destructiveHint=true",
+    "git_create_branch": "name suggests state change ('create')",
+    "git_checkout": "name suggests state change ('checkout')"
+  },
+  "environments": [
+    {
+      "server": "git",
+      "version": "2026.8.18",
+      "root": ".eval_workspace_h3b\\real\\git-old",
+      "sdk_version": "1.30.0",
+      "sdk_resolved_by": "pip",
+      "attempts": [
+        {
+          "mcp": "1.30.0",
+          "source": "pip",
+          "ok": true,
+          "detail": "started"
+        }
+      ]
+    },
+    {
+      "server": "git",
+      "version": "2026.10.28",
+      "root": ".eval_workspace_h3b\\real\\git-new",
+      "sdk_version": "2.3.0",
+      "sdk_resolved_by": "pip",
+      "attempts": [
+        {
+          "mcp": "2.3.0",
+          "source": "pip",
+          "ok": true,
+          "detail": "started"
+        }
+      ]
+    }
+  ],
+  "declared": {
+    "tools_added": [],
+    "tools_removed": [],
+    "tools": {
+      "git_create_branch": {
+        "name": "git_create_branch",
+        "description_changed": true,
+        "input_changes": [],
+        "output_changes": [],
+        "annotations": {},
+        "escalations": []
+      },
+      "git_show": {
+        "name": "git_show",
+        "description_changed": true,
+        "input_changes": [],
+        "output_changes": [],
+        "annotations": {},
+        "escalations": []
+      }
+    }
+  },
+  "error": null,
+  "runs": [
+    {
+      "server": "git",
+      "phase": "old",
+      "run": 1,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:7a4a2c9b818b1ba3b3eaea9c46af7a4b314d03854f63ac663cebd0f14d42a307",
+      "alerted": false,
+      "per_tool": {
+        "git_status": 0.0,
+        "git_diff_unstaged": 0.0,
+        "git_diff_staged": 0.0,
+        "git_diff": 0.0,
+        "git_log": 0.0,
+        "git_show": 0.0,
+        "git_branch": 0.0
+      },
+      "error": null,
+      "update_check": false,
+      "residue_verdict": "",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "git",
+      "phase": "old",
+      "run": 2,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:7a4a2c9b818b1ba3b3eaea9c46af7a4b314d03854f63ac663cebd0f14d42a307",
+      "alerted": false,
+      "per_tool": {
+        "git_status": 0.0,
+        "git_diff_unstaged": 0.0,
+        "git_diff_staged": 0.0,
+        "git_diff": 0.0,
+        "git_log": 0.0,
+        "git_show": 0.0,
+        "git_branch": 0.0
+      },
+      "error": null,
+      "update_check": false,
+      "residue_verdict": "",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "git",
+      "phase": "old",
+      "run": 3,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:7a4a2c9b818b1ba3b3eaea9c46af7a4b314d03854f63ac663cebd0f14d42a307",
+      "alerted": false,
+      "per_tool": {
+        "git_status": 0.0,
+        "git_diff_unstaged": 0.0,
+        "git_diff_staged": 0.0,
+        "git_diff": 0.0,
+        "git_log": 0.0,
+        "git_show": 0.0,
+        "git_branch": 0.0
+      },
+      "error": null,
+      "update_check": false,
+      "residue_verdict": "",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "git",
+      "phase": "new",
+      "run": 1,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": true,
+      "definition_hash": "sha256:d9c0bb8456e619c218208f40df02f92bfa08041d9f47cab5dd28abbb798e2398",
+      "alerted": false,
+      "per_tool": {
+        "git_status": 0.0,
+        "git_diff_unstaged": 0.0,
+        "git_diff_staged": 0.0,
+        "git_diff": 0.0,
+        "git_log": 0.0,
+        "git_show": 0.0,
+        "git_branch": 0.0
+      },
+      "error": null,
+      "update_check": true,
+      "residue_verdict": "accepted",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "git",
+      "phase": "new",
+      "run": 2,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": true,
+      "definition_hash": "sha256:d9c0bb8456e619c218208f40df02f92bfa08041d9f47cab5dd28abbb798e2398",
+      "alerted": false,
+      "per_tool": {
+        "git_status": 0.0,
+        "git_diff_unstaged": 0.0,
+        "git_diff_staged": 0.0,
+        "git_diff": 0.0,
+        "git_log": 0.0,
+        "git_show": 0.0,
+        "git_branch": 0.0
+      },
+      "error": null,
+      "update_check": true,
+      "residue_verdict": "accepted",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "git",
+      "phase": "new",
+      "run": 3,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": true,
+      "definition_hash": "sha256:d9c0bb8456e619c218208f40df02f92bfa08041d9f47cab5dd28abbb798e2398",
+      "alerted": false,
+      "per_tool": {
+        "git_status": 0.0,
+        "git_diff_unstaged": 0.0,
+        "git_diff_staged": 0.0,
+        "git_diff": 0.0,
+        "git_log": 0.0,
+        "git_show": 0.0,
+        "git_branch": 0.0
+      },
+      "error": null,
+      "update_check": true,
+      "residue_verdict": "accepted",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    }
+  ]
+}

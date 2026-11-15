@@ -1,0 +1,35 @@
+{
+  "id": "H3b",
+  "written": "2026-11-15T11:47:04",
+  "code_commit": "4fd39b6b8d63f3f2044c1c224b33970d4b2e36c3",
+  "status": "post-hoc follow-up to H3, designed after H3 failed; H3 stays FAIL",
+  "rules": {
+    "version": "1.1",
+    "file": "rules_v1_1_frozen.json",
+    "sha256": "d6b05008432718d603f67375fb2d7010b45e34f61915ddf34a10308d8e50d499"
+  },
+  "designed_on": [
+    "time",
+    "git",
+    "motherduck",
+    "alchemy"
+  ],
+  "held_out": [
+    "calculator",
+    "sqlite",
+    "duckdb"
+  ],
+  "held_out_interpreter": "C:\\Users\\LEGION\\AppData\\Local\\Python\\pythoncore-3.12-64\\python.exe",
+  "hypothesis": "Under residue rules v1.1, (a) at most 15.0% of the held-out real benign upgrades leave a residue; (b) residue detection of attacks hidden in updates, re-run on the RQ3a matrix, is at least 80.0% pooled over C0-C2 and beats accept_rebaseline, definition_diff and new_host_only (exact McNemar, Holm p < 0.05); (c) synthetic benign updates raise no more false alarms than under v1.0.",
+  "thresholds": {
+    "detect_at_least_pct": 80.0,
+    "real_upgrades_at_most_pct": 15.0,
+    "holm_alpha": 0.05
+  },
+  "procedure": {
+    "held_out": "python -m eval real --servers calculator,sqlite,duckdb --rules 1.1 --interpreter <3.12> --runs 3; a server leaves a residue if any of its 3 upgrade runs has residue_verdict residue_alert",
+    "synthetic": "python -m eval rq3u --rules 1.1 (same families, covers, seeds and cycles as the v1.0 sweep); analysed with eval.rq3u_analyse",
+    "small_sample": "three held-out servers: the real-upgrade half passes only if none leaves a residue; the Wilson interval is reported",
+    "unmeasurable": "a held-out server whose old release still cannot start is reported as unmeasurable and not counted either way"
+  }
+}

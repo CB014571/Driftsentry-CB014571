@@ -1,0 +1,476 @@
+[
+  {
+    "_meta": null,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": null
+    },
+    "description": "Shows the working tree status",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "repo_path": {
+          "title": "Repo Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "repo_path"
+      ],
+      "title": "statusArguments",
+      "type": "object"
+    },
+    "name": "git_status",
+    "outputSchema": null,
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": null
+    },
+    "description": "Shows changes in the working directory that are not yet staged",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "context_lines": {
+          "default": 3,
+          "title": "Context Lines",
+          "type": "integer"
+        },
+        "repo_path": {
+          "title": "Repo Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "repo_path"
+      ],
+      "title": "diff_unstagedArguments",
+      "type": "object"
+    },
+    "name": "git_diff_unstaged",
+    "outputSchema": null,
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": null
+    },
+    "description": "Shows changes that are staged for commit",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "context_lines": {
+          "default": 3,
+          "title": "Context Lines",
+          "type": "integer"
+        },
+        "repo_path": {
+          "title": "Repo Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "repo_path"
+      ],
+      "title": "diff_stagedArguments",
+      "type": "object"
+    },
+    "name": "git_diff_staged",
+    "outputSchema": null,
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": null
+    },
+    "description": "Shows differences between branches or commits",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "context_lines": {
+          "default": 3,
+          "title": "Context Lines",
+          "type": "integer"
+        },
+        "repo_path": {
+          "title": "Repo Path",
+          "type": "string"
+        },
+        "target": {
+          "title": "Target",
+          "type": "string"
+        }
+      },
+      "required": [
+        "repo_path",
+        "target"
+      ],
+      "title": "diffArguments",
+      "type": "object"
+    },
+    "name": "git_diff",
+    "outputSchema": null,
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": null
+    },
+    "description": "Records changes to the repository",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "repo_path": {
+          "title": "Repo Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "repo_path",
+        "message"
+      ],
+      "title": "commitArguments",
+      "type": "object"
+    },
+    "name": "git_commit",
+    "outputSchema": null,
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": null
+    },
+    "description": "Adds file contents to the staging area",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "files": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Files",
+          "type": "array"
+        },
+        "repo_path": {
+          "title": "Repo Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "repo_path",
+        "files"
+      ],
+      "title": "addArguments",
+      "type": "object"
+    },
+    "name": "git_add",
+    "outputSchema": null,
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": null
+    },
+    "description": "Unstages all staged changes",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "repo_path": {
+          "title": "Repo Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "repo_path"
+      ],
+      "title": "resetArguments",
+      "type": "object"
+    },
+    "name": "git_reset",
+    "outputSchema": null,
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": null
+    },
+    "description": "Shows the commit logs",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "end_timestamp": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "End timestamp for filtering commits. Accepts: ISO 8601 format (e.g., '2024-01-15T14:30:25'), relative dates (e.g., '2 weeks ago', 'yesterday'), or absolute dates (e.g., '2024-01-15', 'Jan 15 2024')",
+          "title": "End Timestamp"
+        },
+        "max_count": {
+          "default": 10,
+          "title": "Max Count",
+          "type": "integer"
+        },
+        "repo_path": {
+          "title": "Repo Path",
+          "type": "string"
+        },
+        "start_timestamp": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Start timestamp for filtering commits. Accepts: ISO 8601 format (e.g., '2024-01-15T14:30:25'), relative dates (e.g., '2 weeks ago', 'yesterday'), or absolute dates (e.g., '2024-01-15', 'Jan 15 2024')",
+          "title": "Start Timestamp"
+        }
+      },
+      "required": [
+        "repo_path"
+      ],
+      "title": "logArguments",
+      "type": "object"
+    },
+    "name": "git_log",
+    "outputSchema": null,
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": null
+    },
+    "description": "Creates a new branch from an optional base branch or commit",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "base_branch": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Branch, tag or commit SHA to create the branch from. Defaults to the current branch, or to the current commit when HEAD is detached",
+          "title": "Base Branch"
+        },
+        "branch_name": {
+          "title": "Branch Name",
+          "type": "string"
+        },
+        "repo_path": {
+          "title": "Repo Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "repo_path",
+        "branch_name"
+      ],
+      "title": "create_branchArguments",
+      "type": "object"
+    },
+    "name": "git_create_branch",
+    "outputSchema": null,
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": null
+    },
+    "description": "Switches branches",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "branch_name": {
+          "title": "Branch Name",
+          "type": "string"
+        },
+        "repo_path": {
+          "title": "Repo Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "repo_path",
+        "branch_name"
+      ],
+      "title": "checkoutArguments",
+      "type": "object"
+    },
+    "name": "git_checkout",
+    "outputSchema": null,
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": null
+    },
+    "description": "Shows the contents of a commit, or of a file or directory given as <revision>:<path>",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "repo_path": {
+          "title": "Repo Path",
+          "type": "string"
+        },
+        "revision": {
+          "title": "Revision",
+          "type": "string"
+        }
+      },
+      "required": [
+        "repo_path",
+        "revision"
+      ],
+      "title": "showArguments",
+      "type": "object"
+    },
+    "name": "git_show",
+    "outputSchema": null,
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": null
+    },
+    "description": "List Git branches",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "branch_type": {
+          "description": "Whether to list local branches ('local'), remote branches ('remote') or all branches('all').",
+          "title": "Branch Type",
+          "type": "string"
+        },
+        "contains": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The commit sha that branch should contain. Do not pass anything to this param if no commit sha is specified",
+          "title": "Contains"
+        },
+        "not_contains": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The commit sha that branch should NOT contain. Do not pass anything to this param if no commit sha is specified",
+          "title": "Not Contains"
+        },
+        "repo_path": {
+          "description": "The path to the Git repository.",
+          "title": "Repo Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "repo_path",
+        "branch_type"
+      ],
+      "title": "branchArguments",
+      "type": "object"
+    },
+    "name": "git_branch",
+    "outputSchema": null,
+    "title": null
+  }
+]

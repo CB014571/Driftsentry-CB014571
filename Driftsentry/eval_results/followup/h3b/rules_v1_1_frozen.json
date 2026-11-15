@@ -1,0 +1,73 @@
+{
+  "rules": {
+    "version": "1.1",
+    "base": "1.0",
+    "rows": [
+      {
+        "declared": "none (definition unchanged)",
+        "explains": "nothing",
+        "never": "any change; the check reduces to the base detector"
+      },
+      {
+        "declared": "output field added or changed (outputSchema)",
+        "explains": "structure and value changes in that field of that tool",
+        "never": "changes in other fields or tools, new outbound hosts, file writes"
+      },
+      {
+        "declared": "input parameter added or changed (inputSchema)",
+        "explains": "response changes on calls that use the parameter",
+        "never": "response changes on probes that do not use it"
+      },
+      {
+        "declared": "description changed",
+        "explains": "nothing in responses; shown to the user",
+        "never": "any behaviour change"
+      },
+      {
+        "declared": "new tool",
+        "explains": "the new tool's own behaviour, which gets its own baseline",
+        "never": "any change in existing tools"
+      },
+      {
+        "declared": "readOnlyHint true or openWorldHint false (unchanged)",
+        "explains": "nothing",
+        "never": "file writes or process starts; outbound connections"
+      },
+      {
+        "declared": "hint widened (read-only removed, open-world added)",
+        "explains": "the newly allowed kind of effect",
+        "never": "reported to the user as a declaration escalation in every case"
+      },
+      {
+        "declared": "open-world tool",
+        "explains": "changes in response content",
+        "never": "a new outbound host is held for user review, counted separately"
+      }
+    ],
+    "always_residue": [
+      "new content flags (instruction-like text, secret-like output)",
+      "determinism breaks on fields not declared",
+      "any change in a tool whose definition did not change"
+    ],
+    "annotation_defaults": "MCP spec 2025-06-18: readOnlyHint false, destructiveHint true, idempotentHint false, openWorldHint true",
+    "open_world": "explicit",
+    "framework_normalisation": [
+      {
+        "artefact": "structuredContent that is exactly the JSON of a text block in the same response",
+        "treatment": "removed before comparison: it repeats the text, so any real change shows in the text"
+      },
+      {
+        "artefact": "an error reworded: the probe's answer was an error at baseline and is still an error",
+        "treatment": "the change in wording is explained (an update may change how it reports a failure, and an SDK upgrade changes the envelope around it). A success that became an error, or an error that became a success, is not covered; content flags and side effects on an error stay residue"
+      }
+    ],
+    "formalisation": {
+      "declared": "outputSchema added to a tool that had none",
+      "explains": "nothing by itself: a schema for output the tool already returned is not a change in behaviour, so declared fields are NOT masked; only the mirrored structuredContent is removed",
+      "never": "any change in the text answer"
+    }
+  },
+  "_sha256": "2e764c6bffc54acad508a931bd7e0533d9546cefc4b218a333261b7830ee7ee2",
+  "_frozen_at": "2026-11-15T06:17:04.629852+00:00",
+  "_git_commit": "4fd39b6b8d63f3f2044c1c224b33970d4b2e36c3"
+}

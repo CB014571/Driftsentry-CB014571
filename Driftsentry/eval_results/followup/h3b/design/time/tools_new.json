@@ -1,0 +1,151 @@
+[
+  {
+    "_meta": null,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": null
+    },
+    "description": "Get current time in a specific timezone",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "timezone": {
+          "description": "IANA timezone name (e.g., 'America/New_York', 'Europe/London'). Use 'Asia/Colombo' as local timezone if no timezone provided by the user.",
+          "title": "Timezone",
+          "type": "string"
+        }
+      },
+      "required": [
+        "timezone"
+      ],
+      "title": "get_current_timeArguments",
+      "type": "object"
+    },
+    "name": "get_current_time",
+    "outputSchema": {
+      "properties": {
+        "datetime": {
+          "title": "Datetime",
+          "type": "string"
+        },
+        "day_of_week": {
+          "title": "Day Of Week",
+          "type": "string"
+        },
+        "is_dst": {
+          "title": "Is Dst",
+          "type": "boolean"
+        },
+        "timezone": {
+          "title": "Timezone",
+          "type": "string"
+        }
+      },
+      "required": [
+        "timezone",
+        "datetime",
+        "day_of_week",
+        "is_dst"
+      ],
+      "title": "TimeResult",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": null
+    },
+    "description": "Convert time between timezones",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "source_timezone": {
+          "description": "Source IANA timezone name (e.g., 'America/New_York', 'Europe/London'). Use 'Asia/Colombo' as local timezone if no source timezone provided by the user.",
+          "title": "Source Timezone",
+          "type": "string"
+        },
+        "target_timezone": {
+          "description": "Target IANA timezone name (e.g., 'Asia/Tokyo', 'America/San_Francisco'). Use 'Asia/Colombo' as local timezone if no target timezone provided by the user.",
+          "title": "Target Timezone",
+          "type": "string"
+        },
+        "time": {
+          "description": "Time to convert in 24-hour format (HH:MM)",
+          "title": "Time",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_timezone",
+        "time",
+        "target_timezone"
+      ],
+      "title": "convert_timeArguments",
+      "type": "object"
+    },
+    "name": "convert_time",
+    "outputSchema": {
+      "$defs": {
+        "TimeResult": {
+          "properties": {
+            "datetime": {
+              "title": "Datetime",
+              "type": "string"
+            },
+            "day_of_week": {
+              "title": "Day Of Week",
+              "type": "string"
+            },
+            "is_dst": {
+              "title": "Is Dst",
+              "type": "boolean"
+            },
+            "timezone": {
+              "title": "Timezone",
+              "type": "string"
+            }
+          },
+          "required": [
+            "timezone",
+            "datetime",
+            "day_of_week",
+            "is_dst"
+          ],
+          "title": "TimeResult",
+          "type": "object"
+        }
+      },
+      "properties": {
+        "source": {
+          "$ref": "#/$defs/TimeResult"
+        },
+        "target": {
+          "$ref": "#/$defs/TimeResult"
+        },
+        "time_difference": {
+          "title": "Time Difference",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source",
+        "target",
+        "time_difference"
+      ],
+      "title": "TimeConversionResult",
+      "type": "object"
+    },
+    "title": null
+  }
+]

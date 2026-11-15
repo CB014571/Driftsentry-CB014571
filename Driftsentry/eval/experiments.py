@@ -140,6 +140,10 @@ def _configs(spec: SweepSpec) -> list[EpisodeConfig]:
     )
     if spec.update_covers or spec.benign_update_covers:
         return _update_configs(spec, dict(common, per_tool=spec.per_tool))
+    # Per-tool thresholds outside updates too (validation). Only when set, so
+    # an existing sweep's configs - and their hashes - are unchanged.
+    if spec.per_tool:
+        common["per_tool"] = spec.per_tool
     out: list[EpisodeConfig] = []
 
     for seed in spec.benign_seeds:

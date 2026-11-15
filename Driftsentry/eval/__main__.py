@@ -206,6 +206,39 @@ def _cmd_rq3(ns: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_h3b(ns: argparse.Namespace) -> int:
+    """H3b: rules v1.1 on held-out real upgrades (eval/followup_h3b.py)."""
+    from eval import followup_h3b
+
+    if ns.stage == "preregister":
+        print(json.dumps(followup_h3b.preregister(ns.interpreter or ""), indent=2))
+        return 0
+    followup_h3b.verify_preregistration()
+    print(json.dumps(followup_h3b.held_out_result(), indent=2))
+    return 0
+
+
+def _cmd_validate(ns: argparse.Namespace) -> int:
+    """The two validation claims never measured (eval/followup_validation.py)."""
+    from eval import followup_validation as v
+
+    workspace = Path(ns.workspace_val)
+    if ns.stage == "preregister":
+        print(json.dumps(v.preregister(), indent=2))
+        return 0
+    _quiet()
+    if ns.stage == "pertool-fit":
+        fitted = v.fit_per_tool_thresholds(ns.attacker, workspace)
+        print(json.dumps(fitted["provenance"], indent=2))
+    elif ns.stage == "pertool":
+        v.per_tool_sweeps(ns.attacker, workspace)
+    elif ns.stage == "never-called":
+        v.never_called_sweep(ns.attacker, workspace)
+    elif ns.stage == "verdict":
+        print(json.dumps(v.verdict(), indent=2, default=str))
+    return 0
+
+
 def _cmd_h2b(ns: argparse.Namespace) -> int:
     """H2b: the follow-up to H2 - in-session verification (eval/followup.py)."""
     import asyncio
@@ -529,6 +562,19 @@ def main(argv: list[str] | None = None) -> int:
     h2b.add_argument("--workspace-h2b", default=str(ROOT / ".eval_workspace_h2b"),
                      help="scratch directory for this follow-up only")
     h2b.set_defaults(func=_cmd_h2b)
+
+    h3b = sub.add_parser("h3b", help="follow-up to H3: residue rules v1.1 on held-out upgrades")
+    h3b.add_argument("stage", choices=("preregister", "verdict"))
+    h3b.add_argument("--interpreter", default=None,
+                     help="the Python the held-out environments are built with")
+    h3b.set_defaults(func=_cmd_h3b)
+
+    val = sub.add_parser("validate", help="the two validation claims never measured")
+    val.add_argument("stage", choices=("preregister", "pertool-fit", "pertool",
+                                       "never-called", "verdict"))
+    val.add_argument("--workspace-val", default=str(ROOT / ".eval_workspace_val"),
+                     help="scratch directory for the validation runs only")
+    val.set_defaults(func=_cmd_validate)
 
     ns = parser.parse_args(argv)
     return ns.func(ns)

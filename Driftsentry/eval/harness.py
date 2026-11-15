@@ -376,7 +376,11 @@ class Episode:
                 self.attacker.benign(updates=cfg.updates, seed=cfg.seed, **ship)
             else:
                 self.attacker.arm(cfg.family, level=cfg.level, seed=cfg.seed,
-                                  only_tools=([UPDATE_ATTACKED_TOOL] if update else None),
+                                  # An update attacks one tool; a never-called-tool
+                                  # episode confines the attack to the tools the
+                                  # replayed user avoids. Neither: every tool.
+                                  only_tools=([UPDATE_ATTACKED_TOOL] if update
+                                              else (list(cfg.avoid_tools) or None)),
                                   **ship)
 
             # 4. verification cycles
@@ -420,6 +424,7 @@ class Episode:
                         mimic_host=cfg.mimic_host,
                         mimic_traffic=cfg.mimic_traffic,
                         subsample_bank=cfg.subsample_bank,
+                        per_tool=cfg.per_tool,
                     )
                 duration = time.perf_counter() - t0
 
