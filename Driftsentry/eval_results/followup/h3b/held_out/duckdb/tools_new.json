@@ -1,0 +1,19 @@
+[
+  {
+    "annotations": null,
+    "description": "Execute a query on the DuckDB database",
+    "inputSchema": {
+      "properties": {
+        "query": {
+          "description": "SQL query to execute",
+          "type": "string"
+        }
+      },
+      "required": [
+        "query"
+      ],
+      "type": "object"
+    },
+    "name": "query"
+  }
+]

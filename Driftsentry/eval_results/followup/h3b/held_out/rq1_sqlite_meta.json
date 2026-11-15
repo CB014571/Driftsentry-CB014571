@@ -2,10 +2,209 @@
   "server": "sqlite",
   "old_version": "0.6.2",
   "new_version": "2025.4.25",
-  "probed_tools": [],
-  "withheld_tools": {},
-  "environments": [],
-  "declared": {},
-  "error": "old release: sqlite 0.6.2 started under no mcp version tried (9 attempts). Last error: -packages\\mcp\\client\\session.py\", line 501, in send_request\n      |     raw = await self._dispatcher.send_raw_request(method, data.get(\"params\"), opts)\n      |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n      |   File \"F:\\fyp project\\Driftsentry\\.eval_workspace_h3b\\real312\\sqlite-old\\Lib\\site-packages\\mcp\\shared\\jsonrpc_dispatcher.py\", line 433, in send_raw_request\n      |     raise MCPError(code=outcome.code, message=outcome.message, data=outcome.data)\n      | mcp.shared.exceptions.MCPError: Connection closed\n      +------------------------------------",
-  "runs": []
+  "probed_tools": [
+    "read-query",
+    "list-tables",
+    "describe-table"
+  ],
+  "withheld_tools": {
+    "write-query": "name suggests state change ('write')",
+    "create-table": "name suggests state change ('create')",
+    "append-insight": "name suggests state change ('append')"
+  },
+  "environments": [
+    {
+      "server": "sqlite",
+      "version": "0.6.2",
+      "root": ".eval_workspace_h3b\\real312asof\\sqlite-old",
+      "sdk_version": "1.0.0",
+      "sdk_resolved_by": "pip",
+      "attempts": [
+        {
+          "mcp": "1.0.0",
+          "source": "pip",
+          "ok": true,
+          "detail": "started"
+        }
+      ]
+    },
+    {
+      "server": "sqlite",
+      "version": "2025.4.25",
+      "root": ".eval_workspace_h3b\\real312asof\\sqlite-new",
+      "sdk_version": "1.6.0",
+      "sdk_resolved_by": "pip",
+      "attempts": [
+        {
+          "mcp": "1.6.0",
+          "source": "pip",
+          "ok": true,
+          "detail": "started"
+        }
+      ]
+    }
+  ],
+  "declared": {
+    "tools_added": [
+      "append_insight",
+      "create_table",
+      "describe_table",
+      "list_tables",
+      "read_query",
+      "write_query"
+    ],
+    "tools_removed": [
+      "append-insight",
+      "create-table",
+      "describe-table",
+      "list-tables",
+      "read-query",
+      "write-query"
+    ],
+    "tools": {}
+  },
+  "error": null,
+  "runs": [
+    {
+      "server": "sqlite",
+      "phase": "old",
+      "run": 1,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:789a8fc40be85cfcffdde2fa1ce0284eb878f6a18f14bfaeca2bb48221d77e50",
+      "alerted": false,
+      "per_tool": {
+        "read-query": 0.0,
+        "list-tables": 0.0,
+        "describe-table": 0.0
+      },
+      "error": null,
+      "update_check": false,
+      "residue_verdict": "",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "sqlite",
+      "phase": "old",
+      "run": 2,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:789a8fc40be85cfcffdde2fa1ce0284eb878f6a18f14bfaeca2bb48221d77e50",
+      "alerted": false,
+      "per_tool": {
+        "read-query": 0.0,
+        "list-tables": 0.0,
+        "describe-table": 0.0
+      },
+      "error": null,
+      "update_check": false,
+      "residue_verdict": "",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "sqlite",
+      "phase": "old",
+      "run": 3,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:789a8fc40be85cfcffdde2fa1ce0284eb878f6a18f14bfaeca2bb48221d77e50",
+      "alerted": false,
+      "per_tool": {
+        "read-query": 0.0,
+        "list-tables": 0.0,
+        "describe-table": 0.0
+      },
+      "error": null,
+      "update_check": false,
+      "residue_verdict": "",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "sqlite",
+      "phase": "new",
+      "run": 1,
+      "score": 3.0,
+      "verdict": "alert",
+      "triggered_by": "behavioural_drift",
+      "definition_changed": true,
+      "definition_hash": "sha256:1f654bb07433972b3e0d7a384a52f7d3b0474148a27029181dbd077b9bc99fe5",
+      "alerted": true,
+      "per_tool": {
+        "list-tables": 3.0,
+        "describe-table": 3.0,
+        "read-query": 2.3649
+      },
+      "error": null,
+      "update_check": true,
+      "residue_verdict": "residue_alert",
+      "residue_signals": [
+        "behavioural_drift",
+        "determinism_break"
+      ],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "sqlite",
+      "phase": "new",
+      "run": 2,
+      "score": 3.0,
+      "verdict": "alert",
+      "triggered_by": "behavioural_drift",
+      "definition_changed": true,
+      "definition_hash": "sha256:1f654bb07433972b3e0d7a384a52f7d3b0474148a27029181dbd077b9bc99fe5",
+      "alerted": true,
+      "per_tool": {
+        "list-tables": 3.0,
+        "describe-table": 3.0,
+        "read-query": 2.3649
+      },
+      "error": null,
+      "update_check": true,
+      "residue_verdict": "residue_alert",
+      "residue_signals": [
+        "behavioural_drift",
+        "determinism_break"
+      ],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "sqlite",
+      "phase": "new",
+      "run": 3,
+      "score": 3.0,
+      "verdict": "alert",
+      "triggered_by": "behavioural_drift",
+      "definition_changed": true,
+      "definition_hash": "sha256:1f654bb07433972b3e0d7a384a52f7d3b0474148a27029181dbd077b9bc99fe5",
+      "alerted": true,
+      "per_tool": {
+        "list-tables": 3.0,
+        "describe-table": 3.0,
+        "read-query": 2.3649
+      },
+      "error": null,
+      "update_check": true,
+      "residue_verdict": "residue_alert",
+      "residue_signals": [
+        "behavioural_drift",
+        "determinism_break"
+      ],
+      "escalations": [],
+      "held_for_review": 0
+    }
+  ]
 }

@@ -2,10 +2,168 @@
   "server": "duckdb",
   "old_version": "1.0.1",
   "new_version": "1.1.0",
-  "probed_tools": [],
+  "probed_tools": [
+    "query"
+  ],
   "withheld_tools": {},
-  "environments": [],
-  "declared": {},
-  "error": "old release: duckdb 1.0.1 started under no mcp version tried (9 attempts). Last error: no handshake within 60s",
-  "runs": []
+  "environments": [
+    {
+      "server": "duckdb",
+      "version": "1.0.1",
+      "root": ".eval_workspace_h3b\\real312asof\\duckdb-old",
+      "sdk_version": "1.1.2",
+      "sdk_resolved_by": "pip",
+      "attempts": [
+        {
+          "mcp": "1.1.2",
+          "source": "pip",
+          "ok": true,
+          "detail": "started"
+        }
+      ]
+    },
+    {
+      "server": "duckdb",
+      "version": "1.1.0",
+      "root": ".eval_workspace_h3b\\real312asof\\duckdb-new",
+      "sdk_version": "1.7.1",
+      "sdk_resolved_by": "pip",
+      "attempts": [
+        {
+          "mcp": "1.7.1",
+          "source": "pip",
+          "ok": true,
+          "detail": "started"
+        }
+      ]
+    }
+  ],
+  "declared": {
+    "tools_added": [],
+    "tools_removed": [],
+    "tools": {}
+  },
+  "error": null,
+  "runs": [
+    {
+      "server": "duckdb",
+      "phase": "old",
+      "run": 1,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:9dfcb9eb2c955ff483f5419807558cf89c4b34caa6b3f386c169770152e5a0ee",
+      "alerted": false,
+      "per_tool": {
+        "query": 0.0
+      },
+      "error": null,
+      "update_check": false,
+      "residue_verdict": "",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "duckdb",
+      "phase": "old",
+      "run": 2,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:9dfcb9eb2c955ff483f5419807558cf89c4b34caa6b3f386c169770152e5a0ee",
+      "alerted": false,
+      "per_tool": {
+        "query": 0.0
+      },
+      "error": null,
+      "update_check": false,
+      "residue_verdict": "",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "duckdb",
+      "phase": "old",
+      "run": 3,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:9dfcb9eb2c955ff483f5419807558cf89c4b34caa6b3f386c169770152e5a0ee",
+      "alerted": false,
+      "per_tool": {
+        "query": 0.0
+      },
+      "error": null,
+      "update_check": false,
+      "residue_verdict": "",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "duckdb",
+      "phase": "new",
+      "run": 1,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:9dfcb9eb2c955ff483f5419807558cf89c4b34caa6b3f386c169770152e5a0ee",
+      "alerted": false,
+      "per_tool": {
+        "query": 0.0
+      },
+      "error": null,
+      "update_check": true,
+      "residue_verdict": "accepted",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "duckdb",
+      "phase": "new",
+      "run": 2,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:9dfcb9eb2c955ff483f5419807558cf89c4b34caa6b3f386c169770152e5a0ee",
+      "alerted": false,
+      "per_tool": {
+        "query": 0.0
+      },
+      "error": null,
+      "update_check": true,
+      "residue_verdict": "accepted",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "duckdb",
+      "phase": "new",
+      "run": 3,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:9dfcb9eb2c955ff483f5419807558cf89c4b34caa6b3f386c169770152e5a0ee",
+      "alerted": false,
+      "per_tool": {
+        "query": 0.0
+      },
+      "error": null,
+      "update_check": true,
+      "residue_verdict": "accepted",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    }
+  ]
 }

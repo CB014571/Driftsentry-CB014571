@@ -2,10 +2,182 @@
   "server": "calculator",
   "old_version": "0.1.2",
   "new_version": "0.2.1",
-  "probed_tools": [],
+  "probed_tools": [
+    "calculate"
+  ],
   "withheld_tools": {},
-  "environments": [],
-  "declared": {},
-  "error": "old release: calculator 0.1.2 started under no mcp version tried (9 attempts). Last error: install failed: pip install mcp-server-calculator==0.1.2 mcp==1.2.1 failed: ERROR: Cannot install mcp-server-calculator==0.1.2 and mcp==1.2.1 because these package versions have conflicting dependencies.\nERROR: ResolutionImpossible: for help visit https://pip.pypa.io/en/latest/topics/dependency-resolution/#dealing-with-dependency-conflicts",
-  "runs": []
+  "environments": [
+    {
+      "server": "calculator",
+      "version": "0.1.2",
+      "root": ".eval_workspace_h3b\\real312asof\\calculator-old",
+      "sdk_version": "1.6.0",
+      "sdk_resolved_by": "pip",
+      "attempts": [
+        {
+          "mcp": "1.6.0",
+          "source": "pip",
+          "ok": true,
+          "detail": "started"
+        }
+      ]
+    },
+    {
+      "server": "calculator",
+      "version": "0.2.1",
+      "root": ".eval_workspace_h3b\\real312asof\\calculator-new",
+      "sdk_version": "1.29.0",
+      "sdk_resolved_by": "pip",
+      "attempts": [
+        {
+          "mcp": "1.29.0",
+          "source": "pip",
+          "ok": true,
+          "detail": "started"
+        }
+      ]
+    }
+  ],
+  "declared": {
+    "tools_added": [],
+    "tools_removed": [],
+    "tools": {
+      "calculate": {
+        "name": "calculate",
+        "description_changed": false,
+        "input_changes": [],
+        "output_changes": [
+          {
+            "path": "result",
+            "kind": "added"
+          }
+        ],
+        "annotations": {},
+        "escalations": []
+      }
+    }
+  },
+  "error": null,
+  "runs": [
+    {
+      "server": "calculator",
+      "phase": "old",
+      "run": 1,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:fe0347a5ec09328aeb61f4e364c7f1f4e7db1bcda3e0595b4972baf4d837f5b6",
+      "alerted": false,
+      "per_tool": {
+        "calculate": 0.0
+      },
+      "error": null,
+      "update_check": false,
+      "residue_verdict": "",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "calculator",
+      "phase": "old",
+      "run": 2,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:fe0347a5ec09328aeb61f4e364c7f1f4e7db1bcda3e0595b4972baf4d837f5b6",
+      "alerted": false,
+      "per_tool": {
+        "calculate": 0.0
+      },
+      "error": null,
+      "update_check": false,
+      "residue_verdict": "",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "calculator",
+      "phase": "old",
+      "run": 3,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:fe0347a5ec09328aeb61f4e364c7f1f4e7db1bcda3e0595b4972baf4d837f5b6",
+      "alerted": false,
+      "per_tool": {
+        "calculate": 0.0
+      },
+      "error": null,
+      "update_check": false,
+      "residue_verdict": "",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "calculator",
+      "phase": "new",
+      "run": 1,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:fe0347a5ec09328aeb61f4e364c7f1f4e7db1bcda3e0595b4972baf4d837f5b6",
+      "alerted": false,
+      "per_tool": {
+        "calculate": 0.0
+      },
+      "error": null,
+      "update_check": true,
+      "residue_verdict": "accepted",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "calculator",
+      "phase": "new",
+      "run": 2,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:fe0347a5ec09328aeb61f4e364c7f1f4e7db1bcda3e0595b4972baf4d837f5b6",
+      "alerted": false,
+      "per_tool": {
+        "calculate": 0.0
+      },
+      "error": null,
+      "update_check": true,
+      "residue_verdict": "accepted",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "calculator",
+      "phase": "new",
+      "run": 3,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:fe0347a5ec09328aeb61f4e364c7f1f4e7db1bcda3e0595b4972baf4d837f5b6",
+      "alerted": false,
+      "per_tool": {
+        "calculate": 0.0
+      },
+      "error": null,
+      "update_check": true,
+      "residue_verdict": "accepted",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    }
+  ]
 }

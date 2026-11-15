@@ -1,0 +1,37 @@
+[
+  {
+    "_meta": null,
+    "annotations": null,
+    "description": "Calculates/evaluates the given expression.",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "expression": {
+          "title": "Expression",
+          "type": "string"
+        }
+      },
+      "required": [
+        "expression"
+      ],
+      "title": "calculateArguments",
+      "type": "object"
+    },
+    "name": "calculate",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "title": "Result",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "calculateOutput",
+      "type": "object"
+    },
+    "title": null
+  }
+]
