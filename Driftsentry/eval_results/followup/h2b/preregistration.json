@@ -1,0 +1,40 @@
+{
+  "id": "H2b",
+  "written": "2026-11-15T11:11:01",
+  "code_commit": "36412e75ebe99f8720a4a5a2284d5193faaed2f2",
+  "status": "post-hoc follow-up to H2, designed after H2 failed; H2 stays FAIL",
+  "hypothesis": "Verifying inside the user's own session, with keyed argument values shaped to genuine traffic (shapes, gaps and startup delays learned from genuine split A only), makes probes unrecognisable: the best cross-validated recogniser (any family, including 'all') reaches AUC <= 0.6; probe-earned L6 recall is within 10.0 points of L1; and benign false alarms rise by at most 2.0 points over the separate-session control.",
+  "thresholds": {
+    "auc_ceiling": 0.6,
+    "recall_within_pp": 10.0,
+    "false_alarm_rise_pp": 2.0
+  },
+  "procedure": {
+    "collection_sessions": 60,
+    "genuine_sessions_replayed_per_live_session": 8,
+    "samples_per_probe": 1,
+    "subsample_bank": true,
+    "baseline_probes_per_family": 8,
+    "recogniser": "eval.rq3_distinguish.analyse, 5-fold GroupKFold by process, re-fitted on this traffic; best family exported to L6",
+    "matrix": {
+      "levels": [
+        "L1",
+        "L6"
+      ],
+      "seeds": [
+        1,
+        2
+      ],
+      "cycles": 4,
+      "families": "all six"
+    },
+    "recall": "probe-earned: an episode counts as detected only if an alert is raised in a cycle where the attacker's events log shows it fired during a probe call; denominator = episodes whose attack fired at all; an alert that is not probe-earned does not end the episode",
+    "false_alarm_control": "separate-session keyed verification on the same benign seeds (condition 'none' of T20, re-run here)"
+  },
+  "genuine_split": {
+    "rule": "sha256(json(session)) first 8 hex digits mod 2: 0 -> A (shapes), 1 -> B (replayed)",
+    "n_sessions_a": 58,
+    "n_sessions_b": 57,
+    "profile_a_sha256": "2295f5f69afa8ea5501eb08b8a1046a13969574fda5f319c9adb6baa9f98d905"
+  }
+}
