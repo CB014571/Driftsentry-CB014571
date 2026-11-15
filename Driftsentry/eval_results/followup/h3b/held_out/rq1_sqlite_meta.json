@@ -1,0 +1,11 @@
+{
+  "server": "sqlite",
+  "old_version": "0.6.2",
+  "new_version": "2025.4.25",
+  "probed_tools": [],
+  "withheld_tools": {},
+  "environments": [],
+  "declared": {},
+  "error": "old release: sqlite 0.6.2 started under no mcp version tried (9 attempts). Last error: -packages\\mcp\\client\\session.py\", line 501, in send_request\n      |     raw = await self._dispatcher.send_raw_request(method, data.get(\"params\"), opts)\n      |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n      |   File \"F:\\fyp project\\Driftsentry\\.eval_workspace_h3b\\real312\\sqlite-old\\Lib\\site-packages\\mcp\\shared\\jsonrpc_dispatcher.py\", line 433, in send_raw_request\n      |     raise MCPError(code=outcome.code, message=outcome.message, data=outcome.data)\n      | mcp.shared.exceptions.MCPError: Connection closed\n      +------------------------------------",
+  "runs": []
+}

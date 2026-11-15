@@ -186,12 +186,44 @@ def create_venv(root: Path, *, clean: bool = False) -> Path:
     raise EnvError(f"no interpreter in {root}")
 
 
-def pip_install(python: Path, specs: Sequence[str]) -> None:
+def as_of_release(package: str, version: str) -> str | None:
+    """The moment to install a release as of: its upload time plus two days.
+
+    Used when REAL_ENV_AS_OF=release. Measured: installed with TODAY's
+    transitive dependencies (pydantic 2.14, anyio 4.16, duckdb 2.0) none of
+    the 2025 releases calculator 0.1.2, sqlite 0.6.2 and duckdb 1.0.1 would
+    start on any SDK, and the walk left sqlite on an SDK beta. A release is
+    only measured fairly beside the dependencies that existed when it shipped.
+    Two days, so a dependency released alongside it is still in range.
+    """
+    import os
+    from datetime import datetime, timedelta
+
+    if os.environ.get("REAL_ENV_AS_OF") != "release":
+        return None
+    stamp = release_dates(package).get(version)
+    if not stamp:
+        return None
+    when = datetime.fromisoformat(stamp.replace("Z", "+00:00")) + timedelta(days=2)
+    return when.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _modern_pip(python: Path) -> None:
+    """--uploaded-prior-to needs pip 26.1. The installer itself is not dated."""
+    _run([str(python), "-m", "pip", "install", "--no-input", "--quiet",
+          "pip>=26.1"], timeout=INSTALL_TIMEOUT_S)
+
+
+def pip_install(python: Path, specs: Sequence[str], as_of: str | None = None) -> None:
     """Install exact pins into one environment, newest spec winning.
 
     ``--no-input`` because this runs unattended, and a pip that stops to ask
-    something would hang the sweep rather than fail it.
+    something would hang the sweep rather than fail it. ``as_of`` installs
+    nothing uploaded after that moment (see as_of_release).
     """
+    if as_of:
+        _modern_pip(python)
+        specs = [*specs, "--uploaded-prior-to", as_of]
     done = _run([str(python), "-m", "pip", "install", "--no-input",
                  "--disable-pip-version-check", *specs],
                 timeout=INSTALL_TIMEOUT_S)
@@ -314,7 +346,9 @@ def resolve_sdk_pin(
         try:
             # The server is reinstalled alongside, so a pin that drags in a
             # different dependency set cannot leave a half-built environment.
-            pip_install(python, [f"{package}=={version}", f"mcp=={sdk}"])
+            as_of = as_of_release(package, version)
+            pip_install(python, [f"{package}=={version}", f"mcp=={sdk}"],
+                        **({"as_of": as_of} if as_of else {}))
         except EnvError as exc:
             attempts.append({"mcp": sdk, "source": "walk", "ok": False,
                              "detail": f"install failed: {exc}"[-600:]})
@@ -352,12 +386,14 @@ def build(
     specs = [f"{package}=={version}"]
     if sdk:
         specs.append(f"mcp=={sdk}")
-    pip_install(python, specs)
+    as_of = as_of_release(package, version)
+    pip_install(python, specs, **({"as_of": as_of} if as_of else {}))
 
     out = Installed(server=server, version=version, root=Path(root),
                     python=python,
                     sdk_version=sdk or installed_version(python, "mcp"),
-                    sdk_resolved_by="pinned" if sdk else "pip")
+                    sdk_resolved_by=("pinned" if sdk else
+                                     f"pip as of {as_of}" if as_of else "pip"))
 
     if sdk or not resolve:
         ok, detail = starts_and_lists(python, entry, cwd=cwd, env=env)

@@ -413,6 +413,8 @@ def _cmd_real(ns: argparse.Namespace) -> int:
 
     if ns.interpreter:
         os.environ["REAL_ENV_PYTHON"] = ns.interpreter
+    if ns.as_of_release:
+        os.environ["REAL_ENV_AS_OF"] = "release"
     workspace = Path(ns.real_workspace) if ns.real_workspace else Path(ns.workspace) / "real"
     out_dir = Path(ns.out) if ns.out else Path(ns.results) / "rq1"
     print(f"\nenvironments : {workspace}")
@@ -543,6 +545,9 @@ def main(argv: list[str] | None = None) -> int:
                       help="print what would be installed and stop")
     real.add_argument("--rules", choices=("1.0", "1.1"), default="1.0",
                       help="residue rules to score the upgrade with (default 1.0, as frozen)")
+    real.add_argument("--as-of-release", action="store_true",
+                      help="install each release with only the dependencies that "
+                           "existed when it was published (pip --uploaded-prior-to)")
     real.add_argument("--interpreter", default=None,
                       help="Python used to build the server environments")
     real.add_argument("--real-workspace", default=None,
