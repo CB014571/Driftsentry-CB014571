@@ -164,8 +164,8 @@
       "launcher": "pip",
       "package": "mcp-server-sqlite",
       "entry": [
-        "-m",
-        "mcp_server_sqlite"
+        "-c",
+        "import sys; from mcp_server_sqlite import main; sys.exit(main())"
       ],
       "old": "0.6.2",
       "new": "2025.4.25",
@@ -185,7 +185,8 @@
       "label": null,
       "changelog": "https://github.com/modelcontextprotocol/servers/commits/main/src/sqlite",
       "why_shortlisted": "Crosses a versioning-scheme change (0.6.2 to a date-based scheme), which is exactly the kind of release where behaviour moves.",
-      "caution": "write_query and create_table exist. Point it at a throwaway database."
+      "caution": "write_query and create_table exist. Point it at a throwaway database.",
+      "entry_note": "Neither 0.6.2 nor 2025.4.25 ships a __main__ module, so `-m mcp_server_sqlite` never started either release; both declare the console script mcp-server-sqlite = mcp_server_sqlite:main, which this calls. Found 15 Nov 2026 (H3b amendment 2)."
     },
     {
       "name": "mcp-server-fetch",

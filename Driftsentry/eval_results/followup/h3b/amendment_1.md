@@ -33,3 +33,22 @@ No held-out upgrade had produced any measurement under either build: all three
 were NOT MEASURED. Nothing about the outcome was known when this was decided.
 The pre-registration already provides for a server that still cannot start: it
 is reported as unmeasurable and counted neither way.
+
+## Amendment 2 (same day): the sqlite launch line
+
+Re-run with dated installs, calculator was measured. sqlite still did not
+start, and the reason was not the environment. Neither sqlite release (0.6.2
+nor 2025.4.25) ships a `__main__` module, so the launch line in
+`eval/real_servers.json`, `python -m mcp_server_sqlite`, could never start
+either one. Both releases declare the console script
+`mcp-server-sqlite = mcp_server_sqlite:main`, and the launch now calls that
+`main()`, the same form duckdb already used. This was also part of why sqlite
+was "unmeasurable" in the original RQ3b run.
+
+duckdb's fixture step installed the old release without the date, and pip does
+not downgrade what it already installed, so the dated install had no effect
+there. That step is now dated too.
+
+Both are launch and environment fixes. Neither touches the rules, thresholds or
+analysis, and at the time of the change no held-out *upgrade* had been scored
+except calculator's.

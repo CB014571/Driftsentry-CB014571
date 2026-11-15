@@ -280,10 +280,16 @@ async def run_server(
         db = make_fixture("sqlite", fixture_dir, Path(sys.executable))
     elif fixture_kind == "duckdb":
         # Seeded by the old release's own duckdb, so install that first.
-        from eval.real_envs import create_venv, pip_install
+        from eval.real_envs import as_of_release, create_venv, pip_install
         try:
             seed_python = create_venv(workspace / f"{short}-old", clean=clean)
-            pip_install(seed_python, [f"{package}=={entry_spec['old']}"])
+            # Dated like the release itself (--as-of-release): this environment
+            # IS the old release's, and pip never downgrades what it already
+            # installed, so an undated install here would fix today's
+            # dependencies in place for every later step.
+            as_of = as_of_release(package, entry_spec["old"])
+            pip_install(seed_python, [f"{package}=={entry_spec['old']}"],
+                        **({"as_of": as_of} if as_of else {}))
             db = make_fixture("duckdb", fixture_dir, seed_python)
         except EnvError as exc:
             out.error = f"fixture: {exc}"
