@@ -137,9 +137,17 @@ def preregister(server_id: str = "target") -> dict[str, Any]:
     a, b = genuine_split("A"), genuine_split("B")
     profile = profile_from_sessions(a, server_id)
     PROFILE_A.write_text(json.dumps(profile.to_dict(), indent=2), encoding="utf-8")
+    import subprocess
+
+    try:
+        commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True,
+                                text=True, timeout=10).stdout.strip()
+    except Exception:
+        commit = ""
     doc = {
         "id": "H2b",
         "written": datetime.now().isoformat(timespec="seconds"),
+        "code_commit": commit,
         "status": "post-hoc follow-up to H2, designed after H2 failed; H2 stays FAIL",
         "hypothesis": (
             "Verifying inside the user's own session, with keyed argument values "
