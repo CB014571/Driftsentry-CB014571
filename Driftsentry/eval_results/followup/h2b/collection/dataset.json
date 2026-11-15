@@ -1,0 +1,10 @@
+{
+  "rows": 1243,
+  "genuine_rows": 703,
+  "probe_rows": 540,
+  "groups": 60,
+  "unlabelled_dropped": 0,
+  "pre_baseline_dropped": 144,
+  "mixed_groups": true,
+  "dataset": "F:\\fyp project\\Driftsentry\\eval_results\\followup\\h2b\\collection\\dataset.jsonl"
+}

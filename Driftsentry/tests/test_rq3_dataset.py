@@ -120,6 +120,22 @@ def test_a_process_serving_both_labels_fails_the_build(tmp_path):
         ))
 
 
+def test_in_session_traffic_may_mix_labels_within_one_process(tmp_path):
+    """H2b: probes ride the client's own session, so one process sees both.
+
+    The rows stay grouped on that process, so it still lands whole in one fold.
+    """
+    summary = build(_write(
+        tmp_path,
+        features=[_row(10.0, 100, start=9.5), _row(11.0, 100, start=9.5)],
+        windows=[{"label": GENUINE, "start": 9.0, "end": 10.5},
+                 {"label": PROBE, "start": 10.6, "end": 12.0}],
+    ), mixed_groups=True)
+    assert summary["groups"] == 1
+    assert summary["genuine_rows"] == 1 and summary["probe_rows"] == 1
+    assert summary["mixed_groups"] is True
+
+
 def test_a_row_without_a_timestamp_fails_rather_than_being_dropped(tmp_path):
     with pytest.raises(LabelError, match="no timestamp"):
         build(_write(

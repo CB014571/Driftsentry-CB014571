@@ -1,0 +1,21 @@
+{
+  "family": "client",
+  "feature_names": [
+    "client_name=claude-ai",
+    "client_version=0.1.0"
+  ],
+  "mean": [
+    1.0,
+    1.0
+  ],
+  "scale": [
+    1.0,
+    1.0
+  ],
+  "coef": [
+    0.0,
+    0.0
+  ],
+  "intercept": -0.26375373258295143,
+  "trained_on": "sha256:46a694d3169f0576"
+}

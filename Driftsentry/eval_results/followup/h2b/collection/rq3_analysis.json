@@ -1,0 +1,91 @@
+{
+  "dataset": "F:\\fyp project\\Driftsentry\\eval_results\\followup\\h2b\\collection\\dataset.jsonl",
+  "dataset_digest": "sha256:46a694d3169f0576",
+  "rows": 1243,
+  "genuine": 703,
+  "probe": 540,
+  "groups": 60,
+  "cv_splits": 5,
+  "families": {
+    "argument": {
+      "auc": 0.7370093777988515,
+      "low": 0.7043909982907081,
+      "high": 0.7664851349551807,
+      "n_boot": 2000
+    },
+    "client": {
+      "auc": 0.4991465149359886,
+      "low": 0.4854172231267426,
+      "high": 0.5133918909540183,
+      "n_boot": 2000
+    },
+    "environment": {
+      "auc": 0.4991465149359886,
+      "low": 0.4854172231267426,
+      "high": 0.5133918909540183,
+      "n_boot": 2000
+    },
+    "session": {
+      "auc": 0.5319055898003267,
+      "low": 0.5027232381322965,
+      "high": 0.558463384793456,
+      "n_boot": 2000
+    },
+    "timing": {
+      "auc": 0.8015792107897372,
+      "low": 0.7782711530831765,
+      "high": 0.824162040134694,
+      "n_boot": 2000
+    },
+    "all": {
+      "auc": 0.8874242663716347,
+      "low": 0.871615049928852,
+      "high": 0.9013986151721021,
+      "n_boot": 2000
+    }
+  },
+  "vs_reference": {
+    "client": {
+      "auc1": 0.4991465149359886,
+      "auc2": 0.7370093777988515,
+      "p": 2.811941244106052e-36,
+      "var": 0.0003576619686124688,
+      "z": 12.577382255832264,
+      "p_holm": 1.1247764976424208e-35,
+      "beats_reference": false
+    },
+    "environment": {
+      "auc1": 0.4991465149359886,
+      "auc2": 0.7370093777988515,
+      "p": 2.811941244106052e-36,
+      "var": 0.0003576619686124688,
+      "z": 12.577382255832264,
+      "p_holm": 1.1247764976424208e-35,
+      "beats_reference": false
+    },
+    "session": {
+      "auc1": 0.5319055898003267,
+      "auc2": 0.7370093777988515,
+      "p": 1.0082768774752391e-22,
+      "var": 0.0004370275659172266,
+      "z": 9.811135316744046,
+      "p_holm": 2.0165537549504783e-22,
+      "beats_reference": false
+    },
+    "timing": {
+      "auc1": 0.8015792107897372,
+      "auc2": 0.7370093777988515,
+      "p": 0.000578508617380579,
+      "var": 0.00035201808496975796,
+      "z": 3.441495255140248,
+      "p_holm": 0.000578508617380579,
+      "beats_reference": true
+    }
+  },
+  "h3": {
+    "threshold": 0.9,
+    "qualifying_families": {},
+    "auc_part_passes": false,
+    "note": "H3 also requires the recall half - an L6 attacker cutting detection by >= 50 points. That is T16, not this."
+  }
+}

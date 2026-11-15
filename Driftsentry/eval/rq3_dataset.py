@@ -75,8 +75,16 @@ def build(
     *,
     out_name: str = "dataset.jsonl",
     drop_before: float | None = None,
+    mixed_groups: bool = False,
 ) -> dict[str, Any]:
-    """Produce the labelled dataset, or raise if the labels are unsound."""
+    """Produce the labelled dataset, or raise if the labels are unsound.
+
+    ``mixed_groups`` is for in-session traffic (follow-up H2b), where probes
+    and genuine calls share one server process by design. Grouping on the
+    process still keeps every session whole on one side of each split, so
+    the purity check - which exists to catch overlapping *separate*
+    sessions - does not apply there and is skipped.
+    """
     source = Path(collection_dir)
     features = _read_jsonl(source / "features.jsonl")
     windows = _read_jsonl(source / "windows.jsonl")
@@ -131,7 +139,8 @@ def build(
             f"First: {ambiguous[0]}"
         )
 
-    _check_pid_purity(rows)
+    if not mixed_groups:
+        _check_pid_purity(rows)
 
     out_path = source / out_name
     with out_path.open("w", encoding="utf-8") as handle:
@@ -147,6 +156,7 @@ def build(
         "groups": len(groups),
         "unlabelled_dropped": unlabelled,
         "pre_baseline_dropped": pre_baseline,
+        "mixed_groups": mixed_groups,
         "dataset": str(out_path),
     }
     (source / "dataset.json").write_text(json.dumps(summary, indent=2),

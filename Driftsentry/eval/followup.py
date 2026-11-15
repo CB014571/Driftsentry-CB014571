@@ -400,7 +400,8 @@ def fit(attacker_project: str | Path) -> dict[str, Any]:
 
     verify_preregistration()
     out = OUT / "collection"
-    build(out)
+    # In-session: one process serves both kinds of call by design (amendment 1).
+    build(out, mixed_groups=True)
     summary = analyse(out / "dataset.jsonl", attacker_project, out_dir=out,
                       n_boot=2000, seed=0)
     scored = {n: r["auc"] for n, r in summary["families"].items() if "auc" in r}
