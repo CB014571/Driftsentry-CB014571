@@ -186,6 +186,95 @@ RULES_V1_1: dict[str, Any] = {
     },
 }
 
+# --------------------------------------------------------------------------- #
+# Rules v1.2 (follow-up H3c): v1.1 plus ONE rule, for a tool that was renamed.
+#
+# Why: under frozen v1.1, held-out sqlite left a residue on every run because
+# its upgrade renamed all six tools (read-query -> read_query, ...). Every
+# probe then called a name that no longer existed. The tools had not changed;
+# only their spelling had. v1.2 pairs such tools and compares the new name's
+# behaviour with the old name's approval record.
+#
+# The pairing is deliberately strict, so it cannot be used to launder a
+# replacement tool: names equal once case and punctuation are ignored, input
+# fields equal the same way, and one-to-one. The rename is recorded in the
+# declared diff, never hidden, and the renamed tool's BEHAVIOUR is compared
+# exactly as any other tool's: a renamed tool that now behaves differently is
+# still residue.
+# --------------------------------------------------------------------------- #
+RULES_V1_2: dict[str, Any] = {
+    **RULES_V1_1,
+    "version": "1.2",
+    "base": "1.1",
+    "renaming": {
+        "declared": "a tool removed and a tool added whose names are equal once "
+                    "lower-cased with every non-alphanumeric character removed, and "
+                    "whose input-schema property names are equal the same way",
+        "condition": "the pairing is one-to-one: no other removed or added tool "
+                     "normalises to the same name",
+        "explains": "the change of name only: the new name is probed and compared "
+                    "with the old name's approval record; any change in behaviour, "
+                    "side effects or content flags is scored as residue as always",
+        "never": "a pairing by description, by similarity, or of more than one "
+                 "candidate",
+    },
+    "removal": {
+        "declared": "a tool the new release no longer lists (and that no renaming "
+                    "pairs with a new tool)",
+        "explains": "the answer to a probe of that tool: it can no longer be called "
+                    "by anyone, so a changed or failed answer is not a change in "
+                    "behaviour that can harm",
+        "never": "side effects or content flags observed during that call - those "
+                 "stay residue",
+    },
+}
+
+
+def _norm_name(name: str) -> str:
+    return "".join(ch for ch in str(name).lower() if ch.isalnum())
+
+
+def _norm_props(definition: dict[str, Any]) -> frozenset[str]:
+    schema = definition.get("inputSchema") or definition.get("input_schema") or {}
+    return frozenset(_norm_name(p) for p in (schema.get("properties") or {}))
+
+
+def match_renames(old_defs: list[dict[str, Any]],
+                  new_defs: list[dict[str, Any]]) -> dict[str, str]:
+    """Rules v1.2: {old name: new name} for tools that were only renamed."""
+    old_by = {d.get("name"): d for d in old_defs if d.get("name")}
+    new_by = {d.get("name"): d for d in new_defs if d.get("name")}
+    removed = [n for n in old_by if n not in new_by]
+    added = [n for n in new_by if n not in old_by]
+
+    def key(name: str, d: dict[str, Any]) -> tuple[str, frozenset[str]]:
+        return _norm_name(name), _norm_props(d)
+
+    removed_keys: dict[tuple, list[str]] = {}
+    for n in removed:
+        removed_keys.setdefault(key(n, old_by[n]), []).append(n)
+    added_keys: dict[tuple, list[str]] = {}
+    for n in added:
+        added_keys.setdefault(key(n, new_by[n]), []).append(n)
+    out: dict[str, str] = {}
+    for k, olds in removed_keys.items():
+        news = added_keys.get(k, [])
+        if len(olds) == 1 and len(news) == 1:
+            out[olds[0]] = news[0]
+    return out
+
+
+def rename_back(new_defs: list[dict[str, Any]], renames: dict[str, str]) -> list[dict[str, Any]]:
+    """The observed definitions with each renamed tool given its old name back."""
+    back = {new: old for old, new in renames.items()}
+    out = []
+    for d in new_defs:
+        if d.get("name") in back:
+            d = {**d, "name": back[d["name"]]}
+        out.append(d)
+    return out
+
+
 def framework_normalise(payload: dict[str, Any], tool_name: str) -> dict[str, Any]:
     """Rules v1.1: drop a structuredContent block that only repeats the text.
 
@@ -461,8 +550,14 @@ def check_update(
     only for a tool that already had an outputSchema, the declared output
     fields masked. Default 1.0, exactly as frozen.
     """
-    if rules_version not in ("1.0", "1.1"):
+    if rules_version not in ("1.0", "1.1", "1.2"):
         raise ValueError(f"unknown rules version {rules_version!r}")
+    # v1.2 is v1.1 plus the renaming rule, which acts BEFORE this function:
+    # renamed tools are probed under their new name and the diff is taken
+    # with their old name restored (verify.py). Everything here is v1.1.
+    framework_rules = rules_version in ("1.1", "1.2")
+    removed_tools = (set(getattr(diff, "tools_removed", []) or [])
+                     if rules_version == "1.2" else set())
     from driftsentry.rules import secret_paths
     from driftsentry.scorer import ALERT_AT, check_signals
 
@@ -488,7 +583,7 @@ def check_update(
         out_paths = sorted({c.path for c in td.output_changes if c.path})
         masked = getattr(check, "masked", None)
         framework = getattr(check, "framework", None)
-        if rules_version == "1.1":
+        if framework_rules:
             # Handled after the side-effect rules, below: v1.1 scores the raw
             # response AND the de-enveloped one, and a content signal is
             # residue only if both show it. The baseline was recorded on raw
@@ -508,6 +603,13 @@ def check_update(
             for name in ("behavioural_drift", "structural_change",
                          "determinism_break", "field_drift"):
                 why[name] = "declared output change: " + ", ".join(out_paths)
+
+        # -- rules v1.2: a tool the update removed cannot be called any more
+        if check.tool in removed_tools:
+            view = _neutralised(view)
+            for name in ("behavioural_drift", "structural_change",
+                         "determinism_break", "field_drift", "error_behaviour"):
+                why[name] = "tool removed by the update (rules v1.2)"
 
         # -- a declared input parameter the probe actually set
         in_params = {c.path.split(".")[0].removesuffix("[]")
@@ -553,7 +655,7 @@ def check_update(
         # -- score both, by the detector's own arithmetic
         original = check_signals(check, threshold_ratio=threshold_ratio, per_tool=per_tool)
         residual = check_signals(view, threshold_ratio=threshold_ratio, per_tool=per_tool)
-        if rules_version == "1.1" and framework:
+        if framework_rules and framework:
             fw_view = replace(view, **{k: framework[k] for k in _MASKABLE if k in framework})
             # An error before and after: the wording is explained, by
             # neutralising the content measurement. Side effects and content
@@ -624,7 +726,7 @@ def _git_commit() -> str:
 
 
 def _rules_for(version: str) -> dict[str, Any]:
-    return {"1.0": RULES, "1.1": RULES_V1_1}[version]
+    return {"1.0": RULES, "1.1": RULES_V1_1, "1.2": RULES_V1_2}[version]
 
 
 def freeze_rules(path: str | Path, version: str = "1.0") -> dict[str, Any]:

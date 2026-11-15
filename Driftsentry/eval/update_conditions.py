@@ -93,7 +93,16 @@ def score_update(
     rules_version: str = "1.0",
 ) -> UpdateScore:
     """Score one update re-probe under every condition."""
+    renames = dict(getattr(measurement, "renames", {}) or {})
+    if renames:                        # rules v1.2; see driftsentry/verify.py
+        from dataclasses import replace
+
+        from driftsentry.residue import rename_back
+
+        measurement = replace(measurement, observed_definitions=rename_back(
+            measurement.observed_definitions, renames))
     diff = diff_definitions(baseline_definitions, measurement.observed_definitions)
+    diff.tools_renamed = renames
     full = score_report(measurement, threshold_ratio=threshold_ratio,
                         calibration_source=calibration_source, mode="full",
                         per_tool=per_tool)

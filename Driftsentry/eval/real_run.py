@@ -69,6 +69,10 @@ class ServerRun:
     tools_old: list[dict[str, Any]] = field(default_factory=list)
     tools_new: list[dict[str, Any]] = field(default_factory=list)
     declared: dict[str, Any] = field(default_factory=dict)
+    # H3c: how often the OLD release answered its own baseline probes with an
+    # error. A server that mostly errors on generated arguments makes a weak
+    # upgrade test, and the write-up has to be able to say so.
+    baseline_error_rate: float | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -79,6 +83,7 @@ class ServerRun:
             "withheld_tools": self.withheld_tools,
             "environments": self.environments,
             "declared": self.declared,
+            "baseline_error_rate": self.baseline_error_rate,
             "error": self.error,
             "runs": [r.to_dict() for r in self.results],
         }
@@ -236,6 +241,35 @@ def make_fixture(kind: str, directory: Path, python: Path) -> Path:
             if done.returncode != 0:
                 raise EnvError(f"duckdb fixture failed: {done.stderr.strip()[-400:]}")
         return path
+    if kind in ("xlsx", "docx"):
+        # H3c. Written with the OLD release's own openpyxl / python-docx, for
+        # the same reason as duckdb: an older library may not read a newer
+        # file. The same rows as the database fixtures.
+        path = directory / f"fixture.{kind}"
+        if not path.exists():
+            if kind == "xlsx":
+                script = ("import json, sys\n"
+                          "from openpyxl import Workbook\n"
+                          "wb = Workbook(); ws = wb.active; ws.title = 'customers'\n"
+                          "ws.append(['id', 'name', 'city', 'account'])\n"
+                          "for row in json.loads(sys.argv[2]):\n"
+                          "    ws.append(row)\n"
+                          "wb.save(sys.argv[1])\n")
+            else:
+                script = ("import json, sys\n"
+                          "from docx import Document\n"
+                          "d = Document(); d.add_heading('Customers', 1)\n"
+                          "for row in json.loads(sys.argv[2]):\n"
+                          "    d.add_paragraph(' | '.join(str(v) for v in row))\n"
+                          "d.save(sys.argv[1])\n")
+            rows = [[1, "Dana Whitfield", "Leeds", "ACC-44120"],
+                    [2, "Marcus Silva", "Bristol", "ACC-44121"],
+                    [3, "Priya Raman", "Cardiff", "ACC-44122"]]
+            done = subprocess.run([str(python), "-c", script, str(path), json.dumps(rows)],
+                                  capture_output=True, text=True, timeout=120, check=False)
+            if done.returncode != 0:
+                raise EnvError(f"{kind} fixture failed: {done.stderr.strip()[-400:]}")
+        return path
     raise EnvError(f"unknown fixture kind {kind!r}")
 
 
@@ -280,8 +314,8 @@ async def run_server(
     db: Path | None = None
     if fixture_kind == "sqlite":
         db = make_fixture("sqlite", fixture_dir, Path(sys.executable))
-    elif fixture_kind == "duckdb":
-        # Seeded by the old release's own duckdb, so install that first.
+    elif fixture_kind in ("duckdb", "xlsx", "docx"):
+        # Seeded by the old release's own library, so install that first.
         from eval.real_envs import as_of_release, create_venv, pip_install
         try:
             seed_python = create_venv(workspace / f"{short}-old", clean=clean)
@@ -292,7 +326,7 @@ async def run_server(
             as_of = as_of_release(package, entry_spec["old"])
             pip_install(seed_python, [f"{package}=={entry_spec['old']}"],
                         **({"as_of": as_of} if as_of else {}))
-            db = make_fixture("duckdb", fixture_dir, seed_python)
+            db = make_fixture(fixture_kind, fixture_dir, seed_python)
         except EnvError as exc:
             out.error = f"fixture: {exc}"
             return out
@@ -303,7 +337,8 @@ async def run_server(
         old_env = build(short, package, entry_spec["old"], entry,
                         workspace / f"{short}-old", cwd=cwd, sdk=sdk_old,
                         resolve=resolve,
-                        clean=clean and fixture_kind != "duckdb", env=env)
+                        clean=clean and fixture_kind not in ("duckdb", "xlsx", "docx"),
+                        env=env)
         out.environments.append(old_env.to_dict())
     except EnvError as exc:
         out.error = f"old release: {exc}"
@@ -327,6 +362,8 @@ async def run_server(
     except Exception as exc:                                  # noqa: BLE001
         out.error = f"baseline: {type(exc).__name__}: {exc}"
         return out
+    rates = [p.error_rate for t in baseline.tools if t.probed for p in t.probes]
+    out.baseline_error_rate = round(sum(rates) / len(rates), 4) if rates else None
 
     for run in range(1, runs + 1):
         out.results.append(await probe_phase(
@@ -351,7 +388,17 @@ async def run_server(
 
     out.tools_old = list(_tool_schemas(old_env.python, entry, cwd=cwd, env=env).values())
     out.tools_new = list(_tool_schemas(new_env.python, entry, cwd=cwd, env=env).values())
-    out.declared = diff_definitions(out.tools_old, out.tools_new).to_dict()
+    if rules_version == "1.2":
+        # Recorded the way the update check will read it: renamed tools under
+        # their old names, the renames themselves listed (rules v1.2).
+        from driftsentry.residue import match_renames, rename_back
+
+        renames = match_renames(out.tools_old, out.tools_new)
+        diff = diff_definitions(out.tools_old, rename_back(out.tools_new, renames))
+        diff.tools_renamed = renames
+        out.declared = diff.to_dict()
+    else:
+        out.declared = diff_definitions(out.tools_old, out.tools_new).to_dict()
 
     # The new phase is scored as an UPDATE (RQ3b); the old phase above stays
     # the plain detector, because it is the noise floor - the same release

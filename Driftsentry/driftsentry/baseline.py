@@ -124,6 +124,19 @@ async def _call_once(
     return payload, latency_ms, observation
 
 
+class _RenamingSession:
+    """Rules v1.2: calls a renamed tool by its new name; everything else passes."""
+
+    def __init__(self, session: Any, renames: dict[str, str]) -> None:
+        self._session, self._renames = session, dict(renames)
+
+    async def call_tool(self, name: str, arguments: dict[str, Any] | None = None) -> Any:
+        return await self._session.call_tool(self._renames.get(name, name), arguments)
+
+    def __getattr__(self, attr: str) -> Any:
+        return getattr(self._session, attr)
+
+
 class _PendingWindow:
     """A call's side-effect window, resolved after the cycle's calls are done."""
 
@@ -449,6 +462,8 @@ class ReprobeReport:
     # Default empty rather than required, so baselines and reports written
     # before this field existed still load.
     observed_definitions: list[dict] = field(default_factory=list)
+    # Rules v1.2: {old name: new name} for tools probed under a new name.
+    renames: dict[str, str] = field(default_factory=dict)
 
     @property
     def definition_changed(self) -> bool:
@@ -870,6 +885,7 @@ async def reprobe(
     shapes: dict[str, Any] | None = None,
     framework_view: bool = False,
     watch: ContinuousMonitor | None = None,
+    rename_aware: bool = False,
 ) -> ReprobeReport:
     """Replay a stored baseline's probes against a live server and measure drift.
 
@@ -893,6 +909,8 @@ async def reprobe(
     was being baselined, so it can recognise them however unpredictable they were
     when first chosen.
     """
+    from driftsentry.residue import match_renames
+
     spec, dim = baseline.embedding_spec()
     embedder = backend or get_backend(spec, dim=dim)
     if embedder.dim != baseline.embedding_dim:
@@ -915,6 +933,10 @@ async def reprobe(
             listed = await session.list_tools()
             observed_definitions = [t.model_dump(mode="json", by_alias=True)
                                     for t in listed.tools]
+            renames = (match_renames(baseline.tool_definitions, observed_definitions)
+                       if rename_aware else {})
+            if renames:
+                session = _RenamingSession(session, renames)
             checks = await _reprobe_keyed(
                 session, baseline, embedder, monitor,
                 samples_per_probe=samples_per_probe, cycle=cycle, key=key,
@@ -936,6 +958,7 @@ async def reprobe(
             checks=checks,
             embedding_backend=embedder.name,
             observed_definitions=observed_definitions,
+            renames=renames,
         )
 
     params = StdioServerParameters(command=command, args=args, cwd=cwd, env=env)
@@ -965,6 +988,10 @@ async def reprobe(
                                     for t in listed.tools]
             observed_hash = tools_definition_hash(observed_definitions)
             declared_output = _declared_output_paths(baseline, observed_definitions)
+            renames = (match_renames(baseline.tool_definitions, observed_definitions)
+                       if rename_aware else {})
+            if renames:
+                session = _RenamingSession(session, renames)
 
             if baseline.probe_mode == "keyed":
                 checks.extend(await _reprobe_keyed(
@@ -984,6 +1011,7 @@ async def reprobe(
                     checks=checks,
                     embedding_backend=embedder.name,
                     observed_definitions=observed_definitions,
+                    renames=renames,
                 )
 
             for tool in baseline.tools:
@@ -1086,4 +1114,5 @@ async def reprobe(
         checks=checks,
         embedding_backend=embedder.name,
         observed_definitions=observed_definitions,
+        renames=renames,
     )

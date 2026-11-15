@@ -124,12 +124,15 @@ class DeclaredDiff:
 
     tools_added: list[str] = field(default_factory=list)
     tools_removed: list[str] = field(default_factory=list)
+    # Rules v1.2: {old name: new name} for tools that were only renamed.
+    tools_renamed: dict[str, str] = field(default_factory=dict)
     # Only tools present in both lists AND with something declared.
     tools: dict[str, ToolDiff] = field(default_factory=dict)
 
     @property
     def empty(self) -> bool:
-        return not (self.tools_added or self.tools_removed or self.tools)
+        return not (self.tools_added or self.tools_removed or self.tools
+                    or self.tools_renamed)
 
     @property
     def escalations(self) -> list[tuple[str, str]]:
@@ -145,6 +148,7 @@ class DeclaredDiff:
         return {
             "tools_added": list(self.tools_added),
             "tools_removed": list(self.tools_removed),
+            "tools_renamed": dict(self.tools_renamed),
             "tools": {name: d.to_dict() for name, d in sorted(self.tools.items())},
         }
 

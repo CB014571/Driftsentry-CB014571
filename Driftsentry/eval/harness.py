@@ -315,7 +315,8 @@ class Episode:
             cycle=cycle, key=key,
             mimic_host=cfg.mimic_host, mimic_traffic=cfg.mimic_traffic,
             subsample_bank=cfg.subsample_bank,
-            framework_view=(cfg.rules_version == "1.1"),
+            framework_view=(cfg.rules_version in ("1.1", "1.2")),
+            rename_aware=(cfg.rules_version == "1.2"),
         )
         threshold, source = ((cfg.threshold_ratio, "explicit")
                              if cfg.threshold_ratio is not None

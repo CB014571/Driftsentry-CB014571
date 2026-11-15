@@ -107,7 +107,9 @@ async def verify_server(
         watch=watch,
         # Rules v1.1 needs the framework view; v1.0 (the default) does not,
         # so nothing extra is measured for any existing experiment.
-        framework_view=(update_check and rules_version == "1.1"),
+        framework_view=(update_check and rules_version in ("1.1", "1.2")),
+        # Rules v1.2: a tool that was only renamed is probed under its new name.
+        rename_aware=(update_check and rules_version == "1.2"),
     )
     if threshold_ratio is None:
         threshold_ratio, source = active_threshold(measurement.embedding_backend)
@@ -117,8 +119,20 @@ async def verify_server(
     if update_check:
         from driftsentry.declared_diff import diff_definitions
 
+        renames = dict(getattr(measurement, "renames", {}) or {})
+        if renames:
+            from dataclasses import replace
+
+            from driftsentry.residue import rename_back
+
+            # The diff is taken with each renamed tool's old name restored,
+            # so only what changed besides the name is a declared change; the
+            # rename itself is recorded, not hidden.
+            measurement = replace(measurement, observed_definitions=rename_back(
+                measurement.observed_definitions, renames))
         candidate = diff_definitions(baseline.tool_definitions,
                                      measurement.observed_definitions)
+        candidate.tools_renamed = renames
         if not candidate.empty:
             declared_diff, mode = candidate, "residue"
     report = score_report(
