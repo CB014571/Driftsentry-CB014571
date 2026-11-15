@@ -413,6 +413,7 @@ def score_report(
     mode: str = "full",
     per_tool: dict[str, float] | None = None,
     declared_diff=None,                      # driftsentry.declared_diff.DeclaredDiff
+    rules_version: str = "1.0",
 ) -> DriftReport:
     """Score a re-probe measurement into a verdict.
 
@@ -440,7 +441,8 @@ def score_report(
 
         residue_outcome = check_update(report, declared_diff,
                                        threshold_ratio=threshold_ratio,
-                                       per_tool=per_tool)
+                                       per_tool=per_tool,
+                                       rules_version=rules_version)
         for tool, name in residue_outcome.escalations:
             escalated.setdefault(tool, []).append(name)
         for item in residue_outcome.items:

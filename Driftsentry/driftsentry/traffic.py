@@ -250,6 +250,26 @@ def save(profile: TrafficProfile) -> Path:
     return path
 
 
+def load_or_learn(server: str) -> TrafficProfile | None:
+    """The saved profile, or one learned now from the proxy's own log.
+
+    The proxy logs every genuine exchange (probes go under their own
+    direction and are never counted), so a server that has been used behind
+    the proxy already has the evidence; this turns it into a profile. Saved
+    only when it is usable, so a thin log is not frozen into a habit.
+    """
+    profile = load(server)
+    if profile is not None and profile.usable:
+        return profile
+    from driftsentry.paths import logs_dir
+
+    learned = learn(logs_dir() / f"{server}.jsonl", server)
+    if learned.usable:
+        save(learned)
+        return learned
+    return profile
+
+
 def load(server: str) -> TrafficProfile | None:
     path = profile_path(server)
     if not path.is_file():

@@ -127,6 +127,91 @@ RULES: dict[str, Any] = {
     "open_world": "explicit",
 }
 
+# --------------------------------------------------------------------------- #
+# Rules v1.1 - a follow-up, frozen separately. v1.0 above is unchanged and
+# remains the rule set every RQ3 result was scored with.
+#
+# Why it exists. v1.0 flagged 2 of 4 real benign upgrades (mcp-server-time,
+# mcp-server-git), failing H3's false-alarm half. Inspecting the raw
+# responses showed neither tool changed what it does. Both upgrades moved
+# the MCP SDK from 1.30 to 2.3, and the SDK changed the ENVELOPE around the
+# tool's answer:
+#
+#   time   the text answer is byte-identical; the new SDK adds a
+#          structuredContent block that is an exact copy of it, and an
+#          outputSchema describing fields the tool had always returned.
+#          v1.0 read the schema as "fields added", masked them out, and
+#          compared an empty object with the old answer.
+#   git    every probe hits a non-repository path and errors; the new SDK
+#          prefixes every tool error with "Error executing tool <name>: ".
+#
+# Correction, measured on the design re-run: for mcp-server-time the keyed
+# probes are not valid timezones, so every probe takes the ERROR path, and
+# there the old release worded its own error ("Error processing
+# mcp-server-time query: ...") while the new one lets the SDK word it. So
+# the second rule is "an error reworded" (error before and after), which
+# covers the SDK prefix and the tool's own rewording alike.
+#
+# v1.1 explains exactly those two things and nothing else. It
+# was designed on those two upgrades, so it is tested on upgrades it was
+# not designed on (eval/followup_h3b.py, pre-registered before running).
+# Side-effect and content-flag signals are untouched by both rules.
+# --------------------------------------------------------------------------- #
+RULES_V1_1: dict[str, Any] = {
+    "version": "1.1",
+    "base": "1.0",
+    "rows": RULES["rows"],
+    "always_residue": RULES["always_residue"],
+    "annotation_defaults": RULES["annotation_defaults"],
+    "open_world": RULES["open_world"],
+    "framework_normalisation": [
+        {"artefact": "structuredContent that is exactly the JSON of a text block "
+                     "in the same response",
+         "treatment": "removed before comparison: it repeats the text, so any real "
+                      "change shows in the text"},
+        {"artefact": "an error reworded: the probe's answer was an error at baseline "
+                     "and is still an error",
+         "treatment": "the change in wording is explained (an update may change how "
+                      "it reports a failure, and an SDK upgrade changes the envelope "
+                      "around it). A success that became an error, or an error that "
+                      "became a success, is not covered; content flags and side "
+                      "effects on an error stay residue"},
+    ],
+    "formalisation": {
+        "declared": "outputSchema added to a tool that had none",
+        "explains": "nothing by itself: a schema for output the tool already "
+                    "returned is not a change in behaviour, so declared fields "
+                    "are NOT masked; only the mirrored structuredContent is removed",
+        "never": "any change in the text answer",
+    },
+}
+
+def framework_normalise(payload: dict[str, Any], tool_name: str) -> dict[str, Any]:
+    """Rules v1.1: drop a structuredContent block that only repeats the text.
+
+    The other v1.1 rule (an error reworded) is applied by the residue checker,
+    not here: it explains a change rather than removing one.
+    Returns a new payload; the input is not modified.
+    """
+    out = json.loads(json.dumps(payload))
+    blocks = [b for b in (out.get("content") or []) if isinstance(b, dict)]
+    for key in ("structuredContent", "structured_content"):
+        sc = out.get(key)
+        if sc is None:
+            continue
+        for block in blocks:
+            if block.get("type") != "text":
+                continue
+            try:
+                parsed = json.loads(block.get("text") or "")
+            except (ValueError, TypeError):
+                continue
+            if parsed == sc:
+                out.pop(key)
+                break
+    return out
+
+
 #: The two readings of the open-world row, kept explicit because the choice
 #: decides H3 on this attacker and must be made before the freeze, not after.
 #:
@@ -363,13 +448,21 @@ def check_update(
     threshold_ratio: float,
     per_tool: dict[str, float] | None = None,
     open_world: str | None = None,
+    rules_version: str = "1.0",
 ) -> ResidueReport:
     """Classify every observed change on an updated server.
 
     ``probe_args`` maps probe_id to the argument names that probe set; it
     defaults to each check's own ``arg_names``. Only names matter: a probe
     "uses" a declared input parameter when it sets it.
+
+    ``rules_version="1.1"`` scores each check's ``framework`` view instead:
+    the response with the SDK's envelope removed (framework_normalise) and,
+    only for a tool that already had an outputSchema, the declared output
+    fields masked. Default 1.0, exactly as frozen.
     """
+    if rules_version not in ("1.0", "1.1"):
+        raise ValueError(f"unknown rules version {rules_version!r}")
     from driftsentry.rules import secret_paths
     from driftsentry.scorer import ALERT_AT, check_signals
 
@@ -394,7 +487,23 @@ def check_update(
         # -- a declared output field: measure the response without it
         out_paths = sorted({c.path for c in td.output_changes if c.path})
         masked = getattr(check, "masked", None)
-        if out_paths and masked:
+        framework = getattr(check, "framework", None)
+        if rules_version == "1.1":
+            # Handled after the side-effect rules, below: v1.1 scores the raw
+            # response AND the de-enveloped one, and a content signal is
+            # residue only if both show it. The baseline was recorded on raw
+            # responses, so stripping the envelope from one side alone could
+            # itself create a difference when the old release had it too.
+            if framework:
+                note = ("error reworded (rules v1.1)"
+                        if framework.get("all_error") and not getattr(check, "became_error", False)
+                        else "mirrored structured output removed (rules v1.1)")
+                if framework.get("masked_paths"):
+                    note += "; declared output change: " + ", ".join(framework["masked_paths"])
+                for name in ("behavioural_drift", "structural_change",
+                             "determinism_break", "field_drift"):
+                    why[name] = note
+        elif out_paths and masked:
             view = replace(view, **{k: masked[k] for k in _MASKABLE if k in masked})
             for name in ("behavioural_drift", "structural_change",
                          "determinism_break", "field_drift"):
@@ -440,11 +549,28 @@ def check_update(
                                              "read-only removed: " + ", ".join(ordinary[:5])))
             files = [f for f in files if f in secrets]
         view = replace(view, new_hosts=hosts, new_files=files)
-        view_checks.append(view)
 
         # -- score both, by the detector's own arithmetic
         original = check_signals(check, threshold_ratio=threshold_ratio, per_tool=per_tool)
         residual = check_signals(view, threshold_ratio=threshold_ratio, per_tool=per_tool)
+        if rules_version == "1.1" and framework:
+            fw_view = replace(view, **{k: framework[k] for k in _MASKABLE if k in framework})
+            # An error before and after: the wording is explained, by
+            # neutralising the content measurement. Side effects and content
+            # flags are not part of it and are scored as always.
+            if framework.get("all_error") and not getattr(check, "became_error", False):
+                fw_view = _neutralised(fw_view)
+            fw_signals = check_signals(fw_view, threshold_ratio=threshold_ratio,
+                                       per_tool=per_tool)
+            in_fw = {SIGNAL_NAMES.get(s.name, s.name) for s in fw_signals
+                     if s.score >= ALERT_AT}
+            residual = [s for s in residual if s.score < ALERT_AT
+                        or SIGNAL_NAMES.get(s.name, s.name) in in_fw]
+            if len(in_fw) < sum(1 for s in check_signals(view, threshold_ratio=threshold_ratio,
+                                                         per_tool=per_tool)
+                                if s.score >= ALERT_AT):
+                view = fw_view
+        view_checks.append(view)
         moved = {i.signal for i in out.items
                  if i.probe_id == check.probe_id and i.tool == check.tool}
 
@@ -497,22 +623,26 @@ def _git_commit() -> str:
         return "unknown"
 
 
-def freeze_rules(path: str | Path) -> dict[str, Any]:
-    """Seal RULES with a SHA-256, a timestamp and the commit they came from."""
+def _rules_for(version: str) -> dict[str, Any]:
+    return {"1.0": RULES, "1.1": RULES_V1_1}[version]
+
+
+def freeze_rules(path: str | Path, version: str = "1.0") -> dict[str, Any]:
+    """Seal a rule set with a SHA-256, a timestamp and the commit it came from."""
     from driftsentry.calibration import freeze
 
-    sealed = freeze({"rules": RULES}, path)
+    sealed = freeze({"rules": _rules_for(version)}, path)
     sealed["_git_commit"] = _git_commit()
     Path(path).write_text(json.dumps(sealed, indent=2, default=str), encoding="utf-8")
     return sealed
 
 
-def verify_rules(path: str | Path) -> dict[str, Any]:
+def verify_rules(path: str | Path, version: str = "1.0") -> dict[str, Any]:
     """Refuse a rules file that changed, or code that no longer matches it."""
     from driftsentry.calibration import verify_frozen
 
     data = verify_frozen(path)
-    if data.get("rules") != json.loads(json.dumps(RULES)):
+    if data.get("rules") != json.loads(json.dumps(_rules_for(version))):
         raise ValueError(
             f"{path} is intact but the RULES in the code no longer match it. "
             f"A permitted-change rule edited after the freeze invalidates every "

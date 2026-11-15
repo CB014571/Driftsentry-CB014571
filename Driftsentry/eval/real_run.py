@@ -260,6 +260,7 @@ async def run_server(
     sdk_new: str | None = None,
     resolve: bool = True,
     clean: bool = False,
+    rules_version: str = "1.0",
 ) -> ServerRun:
     """Build both releases, baseline the old one, probe both."""
     from driftsentry.baseline import capture_baseline
@@ -352,7 +353,7 @@ async def run_server(
         out.results.append(await probe_phase(
             short, baseline, launch_new, phase="new", run=run,
             samples_per_probe=samples_per_probe, cycle=runs + run,
-            update_check=True))
+            update_check=True, rules_version=rules_version))
     return out
 
 
@@ -388,6 +389,7 @@ async def run_all(
     runs: int = 3,
     resolve: bool = True,
     clean: bool = False,
+    rules_version: str = "1.0",
 ) -> list[ServerRun]:
     """Every selected server, each written out as it finishes.
 
@@ -405,7 +407,8 @@ async def run_all(
         print(f"[{i}/{len(specs)}] {spec['name']}  "
               f"{spec['old']} -> {spec['new']}", flush=True)
         result = await run_server(spec, workspace, runs=runs,
-                                  resolve=resolve, clean=clean)
+                                  resolve=resolve, clean=clean,
+                                  rules_version=rules_version)
         done.append(result)
 
         if result.results:

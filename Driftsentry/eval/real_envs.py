@@ -161,12 +161,22 @@ def _run(cmd: Sequence[str], *, timeout: int) -> subprocess.CompletedProcess:
 
 
 def create_venv(root: Path, *, clean: bool = False) -> Path:
-    """A throwaway virtual environment, and the interpreter inside it."""
+    """A throwaway virtual environment, and the interpreter inside it.
+
+    Built with REAL_ENV_PYTHON when set, else the interpreter running this.
+    Measured: three releases could not start on CPython 3.14 because the
+    pydantic-core they pin has no 3.14 wheel and the SDK they need imports a
+    private pydantic API that 3.14-era pydantic removed. The same release
+    on an interpreter of its own era is the release as it was deployed.
+    """
+    import os
+
     root = Path(root)
+    base = os.environ.get("REAL_ENV_PYTHON") or sys.executable
     if clean and root.exists():
         shutil.rmtree(root, ignore_errors=True)
     if not root.exists():
-        done = _run([sys.executable, "-m", "venv", str(root)],
+        done = _run([base, "-m", "venv", str(root)],
                     timeout=INSTALL_TIMEOUT_S)
         if done.returncode != 0:
             raise EnvError(f"venv failed in {root}: {done.stderr.strip()[-400:]}")

@@ -335,6 +335,7 @@ async def capture_baseline(
         key_id=key_identifier,
         generator_version=GENERATOR_VERSION if keyed else "",
         families=families,
+        arg_shapes=_shapes_to_dicts(shapes) if keyed else {},
     )
 
 
@@ -394,6 +395,11 @@ class ProbeCheck:
     # mask_note says why masking was impossible when it was attempted.
     masked: dict[str, Any] | None = None
     mask_note: str = ""
+    # Rules v1.1 (residue.RULES_V1_1). The same measurement on the response
+    # with the MCP SDK's envelope removed and, for a tool that already had an
+    # outputSchema, the declared fields masked. None when that changes
+    # nothing, and never computed unless update checking asks for v1.1.
+    framework: dict[str, Any] | None = None
 
 
 @dataclass
@@ -488,6 +494,103 @@ def _masked_fixed(payloads, paths, probe, embedder, profiles) -> tuple[dict | No
     }, ""
 
 
+def _shapes_to_dicts(shapes: dict[str, Any] | None) -> dict[str, Any]:
+    from dataclasses import asdict, is_dataclass
+
+    return {tool: (asdict(s) if is_dataclass(s) else dict(s))
+            for tool, s in (shapes or {}).items()}
+
+
+def _shapes_from_dicts(data: dict[str, Any]) -> dict[str, Any]:
+    from driftsentry.traffic import ToolShape
+
+    return {tool: ToolShape(**v) for tool, v in (data or {}).items()}
+
+
+def _framework_payloads(payloads: list[dict], tool: str, paths: list[str] | None,
+                        had_schema: bool) -> tuple[list[dict] | None, list[str]]:
+    """Rules v1.1: the responses with the SDK envelope removed.
+
+    Declared output fields are masked only when the tool ALREADY had an
+    outputSchema at baseline. A schema added to a tool that had none
+    formalises output it already returned (RULES_V1_1["formalisation"]), so
+    masking its fields would delete data that was always there. Returns None
+    when nothing changes, so no second measurement is taken.
+    """
+    from driftsentry.residue import framework_normalise
+
+    masked_paths: list[str] = []
+    current = payloads
+    if paths and had_schema:
+        masked, _note = _mask_all(payloads, paths)
+        if masked is not None:
+            current, masked_paths = masked, list(paths)
+    normalised = [framework_normalise(p, tool) for p in current]
+    if normalised == payloads:
+        return None, []
+    return normalised, masked_paths
+
+
+def _framework_keyed(payloads, observations, tool, paths, had_schema, probe, family,
+                     embedder) -> dict | None:
+    from driftsentry.families import compare_to_family
+
+    changed, masked_paths = _framework_payloads(payloads, tool, paths, had_schema)
+    all_error = _all_error(payloads)
+    if changed is None:
+        # Nothing to re-measure; an all-error answer still needs marking so
+        # the residue checker can apply the "error reworded" rule.
+        return {"all_error": True, "masked_paths": []} if all_error else None
+    normalized = [normalize_result(p) for p in changed]
+    vectors = embedder.embed([redact(n.text, probe.args) for n in normalized])
+    samples = [ProbeSample(embedding=vec, normalized=norm, latency_ms=0.0,
+                           hosts=obs.hosts, files=obs.files,
+                           content_flags=content_flags(norm.text))
+               for vec, norm, obs in zip(vectors, normalized, observations)]
+    measured = compare_to_family(family, samples)
+    out = {k: measured[k] for k in ("distance", "band", "ratio", "within_band",
+                                    "shape_known", "determinism_break", "comparability")}
+    out.update(field_drift=0.0, field_changes=[], masked_paths=masked_paths,
+               all_error=all_error)
+    return out
+
+
+def _framework_fixed(payloads, tool, paths, had_schema, probe, embedder,
+                     profiles) -> dict | None:
+    changed, masked_paths = _framework_payloads(payloads, tool, paths, had_schema)
+    all_error = _all_error(payloads)
+    if changed is None:
+        return {"all_error": True, "masked_paths": []} if all_error else None
+    normalized = [normalize_result(p) for p in changed]
+    vectors = embedder.embed([n.text for n in normalized])
+    distance = max(cosine_distance(v, probe.centroid) for v in vectors)
+    known_shapes, known_texts = set(probe.shape_hashes), set(probe.text_hashes)
+    drift, changes = (max((compare_fields(profiles, p) for p in changed),
+                          key=lambda r: r[0]) if profiles else (0.0, []))
+    return {
+        "distance": distance, "band": probe.band,
+        "ratio": distance / probe.band if probe.band else float("inf"),
+        "within_band": distance <= probe.band,
+        "shape_known": all(n.shape_hash in known_shapes for n in normalized),
+        "determinism_break": (probe.is_deterministic()
+                              and any(n.text_hash not in known_texts for n in normalized)),
+        "field_drift": drift, "field_changes": [c.describe() for c in changes[:5]],
+        "comparability": 1.0, "masked_paths": masked_paths, "all_error": all_error,
+    }
+
+
+def _all_error(payloads: list[dict]) -> bool:
+    return bool(payloads) and all(bool(p.get("isError") or p.get("is_error"))
+                                  for p in payloads)
+
+
+def _had_output_schema(baseline: ServerBaseline, tool: str) -> bool:
+    for d in baseline.tool_definitions or []:
+        if d.get("name") == tool:
+            return bool(d.get("outputSchema") or d.get("output_schema"))
+    return False
+
+
 def _masked_keyed(payloads, observations, paths, probe, family, embedder) -> tuple[dict | None, str]:
     """The keyed-path measurement again, without the declared fields."""
     from driftsentry.families import compare_to_family
@@ -525,6 +628,7 @@ async def _reprobe_keyed(
     process_started: float | None = None,
     declared_output: dict[str, list[str]] | None = None,
     shapes: dict[str, Any] | None = None,
+    framework_view: bool = False,
 ) -> list[ProbeCheck]:
     """Verify with freshly generated values, against family baselines.
 
@@ -553,6 +657,8 @@ async def _reprobe_keyed(
             "its key is no longer in the key store; re-baseline the server"
         )
 
+    if shapes is None and getattr(baseline, "arg_shapes", None):
+        shapes = _shapes_from_dicts(baseline.arg_shapes)
     generator = KeyedProbeGenerator(probe_key, cycle=cycle, shapes=shapes)
     definitions = {d["name"]: d for d in baseline.tool_definitions}
     checks: list[ProbeCheck] = []
@@ -665,6 +771,10 @@ async def _reprobe_keyed(
             if paths:
                 masked, mask_note = _masked_keyed(payloads, observations, paths,
                                                   probe, family, embedder)
+            framework = (_framework_keyed(payloads, observations, tool.tool, paths,
+                                          _had_output_schema(baseline, tool.tool),
+                                          probe, family, embedder)
+                         if framework_view else None)
             checks.append(ProbeCheck(
                 tool=tool.tool,
                 probe_id=probe.probe_id,
@@ -685,6 +795,7 @@ async def _reprobe_keyed(
                 arg_names=sorted(probe.args),
                 masked=masked,
                 mask_note=mask_note,
+                framework=framework,
             ))
     return checks
 
@@ -707,6 +818,7 @@ async def reprobe(
     session: Any = None,
     server_pids: list[int] | None = None,
     shapes: dict[str, Any] | None = None,
+    framework_view: bool = False,
 ) -> ReprobeReport:
     """Replay a stored baseline's probes against a live server and measure drift.
 
@@ -755,6 +867,7 @@ async def reprobe(
             subsample_bank=subsample_bank,
             declared_output=_declared_output_paths(baseline, observed_definitions),
             shapes=shapes,
+            framework_view=framework_view,
         )
         return ReprobeReport(
             server=baseline.server,
@@ -802,6 +915,7 @@ async def reprobe(
                     process_started=process_started,
                     declared_output=declared_output,
                     shapes=shapes,
+                    framework_view=framework_view,
                 ))
                 return ReprobeReport(
                     server=baseline.server,
@@ -874,6 +988,10 @@ async def reprobe(
                     if paths:
                         masked, mask_note = _masked_fixed(payloads, paths, probe,
                                                           embedder, profiles)
+                    framework = (_framework_fixed(payloads, tool.tool, paths,
+                                                  _had_output_schema(baseline, tool.tool),
+                                                  probe, embedder, profiles)
+                                 if framework_view else None)
 
                     checks.append(
                         ProbeCheck(
@@ -897,6 +1015,7 @@ async def reprobe(
                             arg_names=sorted(probe.args),
                             masked=masked,
                             mask_note=mask_note,
+                            framework=framework,
                         )
                     )
 

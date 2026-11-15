@@ -96,6 +96,7 @@ async def probe_phase(
     key: bytes | None = None,
     update_check: bool = False,
     per_tool: dict[str, float] | None = None,
+    rules_version: str = "1.0",
 ) -> UpgradeResult:
     """Score one release against a baseline captured on the old one.
 
@@ -112,7 +113,7 @@ async def probe_phase(
             baseline, launch=launch, samples_per_probe=samples_per_probe,
             monitor_sandbox=True, threshold_ratio=threshold_ratio,
             cycle=cycle, key=key, update_check=update_check,
-            per_tool=per_tool)
+            per_tool=per_tool, rules_version=rules_version)
     except Exception as exc:
         out.error = f"{type(exc).__name__}: {exc}"
         return out

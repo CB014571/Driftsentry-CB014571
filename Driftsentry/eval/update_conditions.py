@@ -90,6 +90,7 @@ def score_update(
     family: str = "",
     payload: str | None = None,
     attacked_tool: str = "",
+    rules_version: str = "1.0",
 ) -> UpdateScore:
     """Score one update re-probe under every condition."""
     diff = diff_definitions(baseline_definitions, measurement.observed_definitions)
@@ -98,7 +99,8 @@ def score_update(
                         per_tool=per_tool)
     residue = score_report(measurement, threshold_ratio=threshold_ratio,
                            calibration_source=calibration_source, mode="residue",
-                           per_tool=per_tool, declared_diff=diff)
+                           per_tool=per_tool, declared_diff=diff,
+                           rules_version=rules_version)
 
     def attr(signals: dict[str, set[str]]) -> bool:
         return attributed(signals, attacked_tool=attacked_tool,

@@ -130,6 +130,10 @@ class EpisodeConfig:
     in_session: bool = False
     shapes: dict[str, Any] | None = None
 
+    # Residue rules for update episodes. "1.0" is the frozen set every RQ3a
+    # result was scored with; "1.1" is the follow-up (H3b).
+    rules_version: str = "1.0"
+
     def label(self) -> str:
         if self.mode == "benign":
             base = "benign-update" if self.updates else "benign"
@@ -155,7 +159,9 @@ class EpisodeConfig:
             # Only present for update episodes. Adding the key to every
             # config would change every existing config_hash, and resume
             # would then refuse every half-finished sweep as a conflict.
-            **({"update_check": True, "residue_rules": _rules_version()}
+            **({"update_check": True,
+                "residue_rules": (_rules_version() if self.rules_version == "1.0"
+                                  else self.rules_version)}
                if self.update_cover else {}),
             # Likewise only when set, for the same reason.
             **({"per_tool": dict(sorted(self.per_tool.items()))}
@@ -305,6 +311,7 @@ class Episode:
             cycle=cycle, key=key,
             mimic_host=cfg.mimic_host, mimic_traffic=cfg.mimic_traffic,
             subsample_bank=cfg.subsample_bank,
+            framework_view=(cfg.rules_version == "1.1"),
         )
         threshold, source = ((cfg.threshold_ratio, "explicit")
                              if cfg.threshold_ratio is not None
@@ -315,6 +322,7 @@ class Episode:
             per_tool=cfg.per_tool,
             family=(cfg.family if cfg.mode == "rug-pull" else ""),
             attacked_tool=UPDATE_ATTACKED_TOOL,
+            rules_version=cfg.rules_version,
         )
 
     # -- the run ------------------------------------------------------------

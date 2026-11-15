@@ -293,6 +293,11 @@ class ServerBaseline:
     key_id: str = ""                          # identifies the key, never the key
     generator_version: str = ""
     families: list[Any] = field(default_factory=list)   # TemplateFamilyBaseline
+    # Argument shapes the keyed values were drawn to at capture (traffic.ToolShape
+    # as dicts: lengths and character mix, never values). Re-probing reuses
+    # them, so verification sends the same variety the family baseline saw.
+    # Empty for every baseline captured without shaping.
+    arg_shapes: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         data = asdict(self)
@@ -323,6 +328,7 @@ class ServerBaseline:
             generator_version=data.get("generator_version", ""),
             families=[TemplateFamilyBaseline.from_dict(f)
                       for f in data.get("families", [])],
+            arg_shapes=dict(data.get("arg_shapes") or {}),
         )
 
     def family_for(self, tool: str):

@@ -109,7 +109,8 @@ def _cmd_run(ns: argparse.Namespace) -> int:
     _configure_logging(verbose=True)
 
     async def _main() -> None:
-        await run_stdio_proxy(ns.server, command, args, cwd=ns.cwd, env=env, enforce=ns.enforce, passive=ns.passive)
+        await run_stdio_proxy(ns.server, command, args, cwd=ns.cwd, env=env, enforce=ns.enforce, passive=ns.passive,
+                              in_session=ns.in_session, verify_interval=ns.verify_interval)
 
     anyio.run(_main)
     return 0
@@ -154,7 +155,19 @@ def _cmd_baseline(ns: argparse.Namespace) -> int:
             monitor_sandbox=not ns.no_sandbox,
             probe_mode=ns.probe_mode,
             key=key_store.get_or_create(ns.server) if ns.probe_mode == "keyed" else None,
+            shapes=shapes,
         )
+
+    shapes = None
+    if ns.shape_args:
+        from driftsentry.traffic import load_or_learn as load_traffic
+
+        profile = load_traffic(ns.server)
+        if profile is None or not profile.usable:
+            print("error: --shape-args needs a traffic profile learned from this server's "
+                  "real sessions; run it behind the proxy first", file=sys.stderr)
+            return 2
+        shapes = dict(profile.tool_shapes)
 
     from driftsentry import keys as key_store
 
@@ -837,6 +850,12 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--passive", action="store_true",
                      help="watch real traffic for security invariants as well as proxying it "
                           "(catches a server that behaves for probes and attacks real users)")
+    run.add_argument("--in-session", action="store_true",
+                     help="also verify the server from inside this live session: keyed "
+                          "probes are injected at the user's own pace and never reach the "
+                          "client, so a server cannot tell them from real calls (H2b)")
+    run.add_argument("--verify-interval", type=float, default=300.0,
+                     help="average seconds between in-session checks (default 300)")
     run.add_argument("--enforce", action="store_true",
                      help="opt-in: refuse tool calls to a quarantined server (detection is the "
                           "default; blocking is not)")
@@ -849,6 +868,10 @@ def build_parser() -> argparse.ArgumentParser:
     baseline.add_argument("--server", required=True, help="name to store the baseline under")
     baseline.add_argument("--cwd", default=None, help="working directory for the server")
     baseline.add_argument("--verbose", action="store_true", help="log probe progress")
+    baseline.add_argument("--shape-args", action="store_true",
+                          help="keyed only: draw probe values to the length and character "
+                               "mix of the arguments real users send (from the proxy's "
+                               "traffic profile), so arguments do not give probes away")
     baseline.add_argument("--probe-mode", choices=("fixed", "keyed"), default="fixed",
                           help="fixed: replay stored probe values (default, as the "
                                "earlier experiments ran). keyed: draw fresh values "

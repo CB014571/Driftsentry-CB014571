@@ -61,6 +61,7 @@ async def verify_server(
     session: Any = None,
     server_pids: list[int] | None = None,
     shapes: dict[str, Any] | None = None,
+    rules_version: str = "1.0",
 ) -> DriftReport:
     """Re-probe a server and score the result.
 
@@ -96,6 +97,9 @@ async def verify_server(
         session=session,
         server_pids=server_pids,
         shapes=shapes,
+        # Rules v1.1 needs the framework view; v1.0 (the default) does not,
+        # so nothing extra is measured for any existing experiment.
+        framework_view=(update_check and rules_version == "1.1"),
     )
     if threshold_ratio is None:
         threshold_ratio, source = active_threshold(measurement.embedding_backend)
@@ -116,6 +120,7 @@ async def verify_server(
         mode=mode,
         per_tool=per_tool,
         declared_diff=declared_diff,
+        rules_version=rules_version,
     )
 
 

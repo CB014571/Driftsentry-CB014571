@@ -268,8 +268,15 @@ async def _pump(
     *,
     reply_to=None,
     enforcer=None,
+    transform=None,
 ) -> None:
     """Forward every message from ``source`` to ``dest``, logging as it goes.
+
+    ``transform`` (in-session verification, injector.ProbeInjector) rewrites a
+    message on its way through, or returns None to take it out of the stream:
+    an answer to an injected probe is never forwarded to the client. Client
+    messages are logged as the client sent them and server messages as the
+    client receives them, so the log keeps the client's own ids.
 
     When ``source`` closes (the client sent EOF, or the server exited) we cancel
     the whole proxy so the other side is torn down too — a half-open proxy would
@@ -293,10 +300,97 @@ async def _pump(
                     await reply_to.send(_blocked_response(item.message.root, plog.server_name, refusal))
                     continue
 
-            plog.record(item, direction)
-            await dest.send(item)
+            out = item
+            if transform is not None:
+                out = transform(item)
+                if out is None:
+                    root = item.message.root
+                    plog._emit({"dir": "probe", "kind": _classify(root),
+                                "id": getattr(root, "id", None)})
+                    continue
+            plog.record(item if direction == "c2s" else out, direction)
+            await dest.send(out)
     finally:
         cancel_scope.cancel()
+
+
+async def _insession_loop(server_name: str, injector, server_pids: list[int],
+                          interval: float) -> None:
+    """Verify from inside the live session until the proxy stops (H2b).
+
+    Each cycle number is taken from a counter kept on disk, so probe values
+    never repeat across sessions or restarts. A finding is handled exactly as
+    `driftsentry verify` handles it: alert record, advisory quarantine.
+    """
+    from driftsentry import camouflage
+    from driftsentry import keys as key_store
+    from driftsentry.injector import LiveSessionChannel
+    from driftsentry.store import BaselineStore
+    from driftsentry.traffic import load_or_learn as load_traffic
+    from driftsentry.verify import verify_server
+
+    baseline = BaselineStore().load(server_name)
+    key = key_store.get(server_name)
+    if baseline is None or baseline.probe_mode != "keyed" or key is None:
+        log.warning("in-session verification needs a keyed baseline and key for %r; "
+                    "enrol it with `driftsentry baseline --probe-mode keyed`", server_name)
+        return
+    while not injector.initialized:
+        await anyio.sleep(0.2)
+    profile = load_traffic(server_name)
+    profile = profile if (profile is not None and profile.usable) else None
+    while True:
+        cycle = _next_cycle(server_name)
+        channel = LiveSessionChannel(injector, key=key, server=server_name,
+                                     cycle=cycle, profile=profile)
+        try:
+            report = await verify_server(
+                baseline, session=channel, server_pids=server_pids,
+                samples_per_probe=1, subsample_bank=True, cycle=cycle, key=key,
+                update_check=True)
+            _handle_insession_report(server_name, report)
+        except Exception as exc:  # noqa: BLE001 - never take the user's session down
+            log.warning("in-session verification cycle %d failed: %s", cycle, exc)
+        await anyio.sleep(camouflage.next_interval(key, server_name, cycle, interval))
+
+
+def _next_cycle(server_name: str) -> int:
+    from driftsentry.paths import data_dir
+
+    path = data_dir() / "insession" / f"{server_name}.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        last = int(json.loads(path.read_text(encoding="utf-8")).get("cycle", 0))
+    except Exception:
+        last = 0
+    path.write_text(json.dumps({"cycle": last + 1}), encoding="utf-8")
+    return last + 1
+
+
+def _handle_insession_report(server_name: str, report) -> None:
+    from driftsentry.paths import data_dir
+
+    status = data_dir() / "insession" / f"{server_name}.last.json"
+    status.parent.mkdir(parents=True, exist_ok=True)
+    status.write_text(json.dumps({
+        "checked_at": datetime.now(timezone.utc).isoformat(),
+        "verdict": report.verdict, "score": report.score,
+        "triggered_by": report.triggered_by, "residue": report.residue,
+    }, default=str, indent=2), encoding="utf-8")
+    if report.verdict != "alert":
+        log.info("in-session check of %r: %s (%.2f)", server_name, report.verdict, report.score)
+        return
+    from driftsentry.alerts import AlertStore, build_alerts
+    from driftsentry.policy import PolicyStore
+
+    alerts = build_alerts(report)
+    store = AlertStore()
+    for alert in alerts:
+        store.append(alert)
+    PolicyStore().update(server_name, status="quarantined", reason=alerts[0].cause,
+                         flagged_tools=[a.tool for a in alerts])
+    log.warning("in-session check of %r: ALERT %.2f (%s); quarantined",
+                server_name, report.score, report.triggered_by)
 
 
 def _make_enforcer(server_name: str):
@@ -339,8 +433,15 @@ async def run_stdio_proxy(
     env: dict[str, str] | None = None,
     enforce: bool = False,
     passive: bool = False,
+    in_session: bool = False,
+    verify_interval: float = 300.0,
 ) -> None:
     """Run the transparent proxy for one stdio MCP server until either end closes.
+
+    With ``in_session=True`` the proxy also verifies the server from INSIDE the
+    user's session (H2b): probes are injected into the live session at gaps
+    drawn from genuine traffic, every ``verify_interval`` seconds on average,
+    and their answers are kept from the client. Needs a keyed baseline.
 
     Parameters mirror what a rewritten client config supplies (Phase 2): a name
     for the server (used for the log file) and the real server's launch command.
@@ -372,6 +473,12 @@ async def run_stdio_proxy(
         log.warning("enforcement ENABLED for %r: calls to a quarantined server will be refused", server_name)
 
     server_params = StdioServerParameters(command=command, args=args, cwd=cwd, env=env)
+    import psutil
+
+    try:
+        before = {p.pid for p in psutil.Process().children(recursive=True)}
+    except Exception:  # pragma: no cover
+        before = set()
     try:
         # Toward the client (our stdin/stdout).
         async with stdio_server() as (client_read, client_write):
@@ -379,14 +486,28 @@ async def run_stdio_proxy(
             # never to our stdout, which carries JSON-RPC to the client.
             async with stdio_client(server_params, errlog=sys.stderr) as (server_read, server_write):
                 enforcer = _make_enforcer(server_name) if enforce else None
+                injector = None
+                server_pids: list[int] = []
+                if in_session:
+                    from driftsentry.baseline import _find_child_pids
+                    from driftsentry.injector import ProbeInjector
+
+                    injector = ProbeInjector(server_write)
+                    server_pids = _find_child_pids(before)
                 async with anyio.create_task_group() as tg:
                     tg.start_soon(
                         partial(
                             _pump, client_read, server_write, "c2s", plog, tg.cancel_scope,
                             reply_to=client_write, enforcer=enforcer,
+                            transform=injector.client_to_server if injector else None,
                         )
                     )
-                    tg.start_soon(_pump, server_read, client_write, "s2c", plog, tg.cancel_scope)
+                    tg.start_soon(partial(
+                        _pump, server_read, client_write, "s2c", plog, tg.cancel_scope,
+                        transform=injector.server_to_client if injector else None))
+                    if injector is not None:
+                        tg.start_soon(_insession_loop, server_name, injector,
+                                      server_pids, verify_interval)
     finally:
         # The summary record goes in BEFORE the handle closes. Until now the
         # passive result existed only as stderr lines, which no experiment can

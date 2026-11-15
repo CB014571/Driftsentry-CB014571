@@ -90,6 +90,7 @@ class SweepSpec:
     # H2b follow-up, off by default (eval/followup.py).
     in_session: bool = False
     shapes: dict[str, Any] | None = None
+    rules_version: str = "1.0"
 
 
 def _update_configs(spec: SweepSpec, common: dict) -> list[EpisodeConfig]:
@@ -135,6 +136,7 @@ def _configs(spec: SweepSpec) -> list[EpisodeConfig]:
         subsample_bank=spec.subsample_bank,
         in_session=spec.in_session,
         shapes=spec.shapes,
+        rules_version=spec.rules_version,
     )
     if spec.update_covers or spec.benign_update_covers:
         return _update_configs(spec, dict(common, per_tool=spec.per_tool))

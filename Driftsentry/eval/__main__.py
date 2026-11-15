@@ -260,6 +260,7 @@ def _cmd_t20(ns: argparse.Namespace) -> int:
 
 
 RQ3U_RULES = DEFAULT_RESULTS / "rq3u" / "rules_frozen.json"
+RQ3U_RULES_V1_1 = DEFAULT_RESULTS / "followup" / "h3b" / "rules_v1_1_frozen.json"
 
 
 def _cmd_rq3u(ns: argparse.Namespace) -> int:
@@ -276,7 +277,8 @@ def _cmd_rq3u(ns: argparse.Namespace) -> int:
     from eval.experiments import FAMILIES, SweepSpec, run_sweep, summarise
 
     try:
-        rules = verify_rules(RQ3U_RULES)
+        rules = (verify_rules(RQ3U_RULES) if ns.rules == "1.0"
+                 else verify_rules(RQ3U_RULES_V1_1, "1.1"))
     except (OSError, ValueError) as exc:
         print(f"error: the frozen rules do not verify, refusing to score: {exc}",
               file=sys.stderr)
@@ -306,7 +308,9 @@ def _cmd_rq3u(ns: argparse.Namespace) -> int:
         return 2
 
     spec = SweepSpec(
-        experiment_id="rq3u_L1" + ("_quick" if ns.quick else ""),
+        experiment_id=("rq3u_L1" + ("" if ns.rules == "1.0" else "_rules11")
+                       + ("_quick" if ns.quick else "")),
+        rules_version=ns.rules,
         probe_mode=ns.probe_mode,
         families=families, levels=split(ns.levels), seeds=seeds,
         benign_seeds=(), benign_update_seeds=(),
@@ -325,7 +329,8 @@ def _cmd_rq3u(ns: argparse.Namespace) -> int:
     print(f"seeds      : {seeds}   cycles {ns.cycles}   probes {ns.probe_mode}")
     print(f"episodes   : {n}\n")
 
-    out_dir = Path(ns.results) / "rq3u"
+    out_dir = (Path(ns.results) / "rq3u" if ns.rules == "1.0"
+               else RQ3U_RULES_V1_1.parent)
     results = run_sweep(spec, ns.attacker, ns.workspace, out_dir)
     print(summarise(results))
     print(f"\nrows written to {out_dir / (spec.experiment_id + '.csv')}")
@@ -371,18 +376,26 @@ def _cmd_real(ns: argparse.Namespace) -> int:
     for spec in specs:
         net = " (reaches the network when called)" if spec.get("network") else ""
         print(f"  {spec['package']}=={spec['old']} and =={spec['new']}{net}")
-    print(f"\nenvironments : {Path(ns.workspace) / 'real'}")
+    import os
+
+    if ns.interpreter:
+        os.environ["REAL_ENV_PYTHON"] = ns.interpreter
+    workspace = Path(ns.real_workspace) if ns.real_workspace else Path(ns.workspace) / "real"
+    out_dir = Path(ns.out) if ns.out else Path(ns.results) / "rq1"
+    print(f"\nenvironments : {workspace}")
+    print(f"interpreter  : {ns.interpreter or sys.executable}")
+    print(f"rules        : v{ns.rules}")
     print(f"runs         : {ns.runs} per phase")
-    print(f"out          : {Path(ns.results) / 'rq1'}")
+    print(f"out          : {out_dir}")
     if ns.dry_run:
         print("\n--dry-run: nothing installed, nothing run.")
         return 0
     print()
 
     done = anyio.run(lambda: run_all(
-        Path(ns.workspace) / "real", Path(ns.results) / "rq1",
+        workspace, out_dir,
         only=only, runs=ns.runs, resolve=not ns.no_sdk_walk,
-        clean=ns.clean))
+        clean=ns.clean, rules_version=ns.rules))
     print(report(done))
     return 0
 
@@ -468,6 +481,8 @@ def main(argv: list[str] | None = None) -> int:
     rq3u.add_argument("--probe-mode", choices=["keyed", "fixed"], default="keyed")
     rq3u.add_argument("--per-tool", default=None,
                       help="a frozen per-tool threshold file (T8); verified before use")
+    rq3u.add_argument("--rules", choices=("1.0", "1.1"), default="1.0",
+                      help="residue rules (default 1.0, as frozen; 1.1 is the H3b follow-up)")
     rq3u.add_argument("--quick", action="store_true",
                       help="one family, C0 and C2, one seed - checks the pipeline")
     rq3u.set_defaults(func=_cmd_rq3u)
@@ -493,6 +508,14 @@ def main(argv: list[str] | None = None) -> int:
                       help="rebuild the environments from scratch")
     real.add_argument("--dry-run", action="store_true",
                       help="print what would be installed and stop")
+    real.add_argument("--rules", choices=("1.0", "1.1"), default="1.0",
+                      help="residue rules to score the upgrade with (default 1.0, as frozen)")
+    real.add_argument("--interpreter", default=None,
+                      help="Python used to build the server environments")
+    real.add_argument("--real-workspace", default=None,
+                      help="where to build them (default <workspace>/real)")
+    real.add_argument("--out", default=None,
+                      help="results folder (default <results>/rq1)")
     real.set_defaults(func=_cmd_real)
 
     tables = sub.add_parser("tables", help="assemble the result tables (T21)")
