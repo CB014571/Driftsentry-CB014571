@@ -268,7 +268,12 @@ def starts_and_lists(python: Path, entry: Sequence[str],
         "    params = StdioServerParameters(command=sys.argv[1],\n"
         "                                   args=json.loads(sys.argv[2]),\n"
         "                                   cwd=(sys.argv[3] or None),\n"
-        "                                   env=json.loads(sys.argv[4]))\n"
+        # None, not {}, when there is nothing to add: mcp 1.0-1.1 start the
+        # server with a LITERALLY empty environment for {}, and on Windows a
+        # process without SYSTEMROOT hangs - measured on sqlite 0.6.2 and
+        # duckdb 1.0.1, which then looked unmeasurable. Newer SDKs merge {}
+        # with the defaults, which is why current releases never showed it.
+        "                                   env=(json.loads(sys.argv[4]) or None))\n"
         "    async with stdio_client(params) as (r, w):\n"
         "        async with ClientSession(r, w) as session:\n"
         "            await session.initialize()\n"

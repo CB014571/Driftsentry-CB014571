@@ -52,3 +52,18 @@ there. That step is now dated too.
 Both are launch and environment fixes. Neither touches the rules, thresholds or
 analysis, and at the time of the change no held-out *upgrade* had been scored
 except calculator's.
+
+## Amendment 3 (same day): the start-check's empty environment
+
+With the dated environments and the corrected launch line, sqlite 0.6.2 and
+duckdb 1.0.1 both started and listed their tools when started by hand, yet the
+runner still reported "no handshake within 60s". The runner's start-check
+(`real_envs.starts_and_lists`) runs a small MCP client *inside the server's
+own environment*, and passed `env={}` when the server needs no extra
+variables. mcp 1.0 to 1.1 start the server with a literally empty
+environment for `{}`; on Windows a process with no SYSTEMROOT hangs. Newer
+SDKs merge `{}` with the defaults, which is why no current release ever showed
+it. The check now passes `None`. DriftSentry's own client (mcp 1.28) already
+merged, so nothing it measured was affected.
+
+Again a harness fix, made before either server's upgrade was scored.

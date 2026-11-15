@@ -699,9 +699,27 @@ def _h3() -> tuple[str, str]:
         + v["reasons"] + [f"missing: {m}" for m in v["missing"]])
 
 
+def _validation_verdict() -> dict:
+    path = RESULTS / "followup" / "validation" / "verdict.json"
+    return _json(path) if path.is_file() else {}
+
+
 def _validation() -> list[tuple[str, str, str]]:
-    rows = [("Per-tool thresholds halve benign-update false alarms at equal recall",
-             MISSING, "no frozen per-tool threshold file exists")]
+    verdicts = _validation_verdict()
+    pt = verdicts.get("V-pertool")
+    if pt:
+        g, p = pt["global_arm"], pt["per_tool_arm"]
+        basis = (f"benign-update false alarms {g['benign_update_alarms']}/"
+                 f"{g['benign_update_episodes']} global vs {p['benign_update_alarms']}/"
+                 f"{p['benign_update_episodes']} per-tool; recall {g['detected']}/{g['fired']}"
+                 f" vs {p['detected']}/{p['fired']} (pre-registered, followup/validation)")
+        if pt.get("reason"):
+            basis = pt["reason"] + "; " + basis
+        rows = [("Per-tool thresholds halve benign-update false alarms at equal recall",
+                 pt["verdict"], basis)]
+    else:
+        rows = [("Per-tool thresholds halve benign-update false alarms at equal recall",
+                 MISSING, "no frozen per-tool threshold file exists")]
     # Full against hash-only, on ONE replication: the five L1 sweeps repeat the
     # same twelve configurations, so pooling them would overstate n (Table 2).
     from eval.stats import mcnemar_p
@@ -722,8 +740,16 @@ def _validation() -> list[tuple[str, str, str]]:
     else:
         rows.append(("Full DriftSentry detects significantly more than hash-only",
                      MISSING, "no exp3 L1 results"))
-    rows.append(("Catches attacks on tools the agent never calls, which passive cannot",
-                 MISSING, "no episode confined to a tool the replayed traffic avoids has been run"))
+    nc = verdicts.get("V-nevercalled")
+    if nc and nc.get("fired"):
+        t = nc["mcnemar"]
+        rows.append(("Catches attacks on tools the agent never calls, which passive cannot",
+                     nc["verdict"],
+                     f"full {nc['full']}/{nc['fired']}, passive {nc['passive']}/{nc['fired']}, "
+                     f"exact McNemar p={t['p']:.4g} (pre-registered, followup/validation)"))
+    else:
+        rows.append(("Catches attacks on tools the agent never calls, which passive cannot",
+                     MISSING, "no episode confined to a tool the replayed traffic avoids has been run"))
     return rows
 
 
@@ -743,13 +769,66 @@ def table_hypotheses() -> str:
     return _lines(lines + ["", "A FAIL is a result, not a defect; nothing was tuned to pass.", ""])
 
 
+def table_followups() -> str:
+    """Post-hoc follow-ups to the two failed hypotheses, each pre-registered.
+
+    Read from the verdict files the follow-up drivers write. H2 and H3 above
+    are unchanged by anything here.
+    """
+    lines = ["### Table 11. Follow-ups to the failed hypotheses (post-hoc, pre-registered)", "",
+             "Designed after H2 and H3 failed; each frozen with a sha256 before its "
+             "data. H2 and H3 stay FAIL in Table 10.", "",
+             "| | mechanism | result | basis |", "| --- | --- | --- | --- |"]
+    h2b = RESULTS / "followup" / "h2b" / "verdict.json"
+    if h2b.is_file():
+        v = _json(h2b)
+        fam = ", ".join(f"{k} {a:.3f}" for k, a in sorted(v["family_auc"].items())
+                        if isinstance(a, (int, float)))
+        l1, l6 = v["recall_L1"], v["recall_L6"]
+        lines.append(
+            f"| H2b | in-session verification, shaped probe values | {v['verdict']} | "
+            f"best AUC {v['best_auc']:.3f} ({v['best_family']}; {fam}); probe-earned recall "
+            f"L1 {l1['probe_earned']}/{l1['fired']}, L6 {l6['probe_earned']}/{l6['fired']}; "
+            f"false-alarm rise {v['false_alarm_rise_pp']} pp |")
+    else:
+        lines.append(f"| H2b | in-session verification, shaped probe values | {MISSING} | "
+                     f"run `python -m eval h2b collect|fit|matrix|control|verdict` |")
+    held = RESULTS / "followup" / "h3b" / "held_out"
+    synth = RESULTS / "followup" / "h3b" / "rq3u_L1_rules11_analysis.json"
+    if held.is_dir() and synth.is_file():
+        from eval.followup_h3b import held_out_result
+
+        res = held_out_result()
+        measured = {k: r for k, r in res.items() if r.get("measured")}
+        left = [k for k, r in measured.items() if r["left_residue"]]
+        a = _json(synth)
+        pooled = a.get("pooled", {}).get("residue", {})
+        tests = a.get("mcnemar_vs_residue", {})
+        sig = all(t.get("significant") for t in tests.values()) if tests else False
+        pct = 100.0 * len(left) / len(measured) if measured else None
+        ok = (measured and pct is not None and pct <= 15.0 and sig
+              and (pooled.get("rate", 0) or 0) * 100 >= 80.0)
+        lines.append(
+            f"| H3b | residue rules v1.1, judged on held-out upgrades | "
+            f"{'PASS' if ok else 'FAIL'} | held-out: {len(left)}/{len(measured)} measured upgrades "
+            f"left residue ({', '.join(f'{k}: ' + ('residue' if r.get('left_residue') else 'accepted') if r.get('measured') else f'{k}: not measured' for k, r in res.items())}); "
+            f"synthetic re-run residue {pooled.get('k', '?')}/{pooled.get('n', '?')} pooled C0-C2, "
+            f"baselines beaten (Holm): {sig} |")
+    else:
+        lines.append(f"| H3b | residue rules v1.1, judged on held-out upgrades | {MISSING} | "
+                     f"run `python -m eval real --rules 1.1 --as-of-release ...` and "
+                     f"`python -m eval rq3u --rules 1.1` |")
+    return _lines(lines + ["", "A follow-up that passes shows the weakness was "
+                           "fixable; it does not turn the original FAIL into a PASS.", ""])
+
+
 # --------------------------------------------------------------------------- #
 # Assembly
 # --------------------------------------------------------------------------- #
 TABLES = (table_probe_modes, table_paired_demonstration, table_three_way,
           table_rq3_auc, table_evasion, table_real_upgrades,
           table_countermeasures, table_rq3a_detection, table_rq3a_false_alarms,
-          table_rq3b, table_hypotheses)
+          table_rq3b, table_hypotheses, table_followups)
 
 
 def build(out_path: str | Path | None = None) -> str:

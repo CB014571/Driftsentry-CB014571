@@ -379,7 +379,7 @@ def _cmd_rq3u_analyse(ns: argparse.Namespace) -> int:
     if not csv_path.is_file():
         print(f"error: no RQ3a results at {csv_path}", file=sys.stderr)
         return 2
-    analyse(csv_path, Path(ns.results) / "rq1")
+    analyse(csv_path, Path(ns.real_dir) if ns.real_dir else Path(ns.results) / "rq1")
     return 0
 
 
@@ -525,6 +525,8 @@ def main(argv: list[str] | None = None) -> int:
     rq3a = sub.add_parser("rq3u-analyse", help="RQ3 statistics and the H3 verdict (T30)")
     rq3a.add_argument("--csv", default=None,
                       help="an RQ3a results file; default the full sweep")
+    rq3a.add_argument("--real-dir", default=None,
+                      help="real-upgrade results to pair with it; default <results>/rq1")
     rq3a.set_defaults(func=_cmd_rq3u_analyse)
 
     real = sub.add_parser("real", help="false alarms on real version upgrades (Gap 3)")
