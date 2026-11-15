@@ -156,7 +156,9 @@ def _tool_schemas(python: Path, entry: Sequence[str],
         "    params = StdioServerParameters(command=sys.argv[1],\n"
         "                                   args=json.loads(sys.argv[2]),\n"
         "                                   cwd=(sys.argv[3] or None),\n"
-        "                                   env=json.loads(sys.argv[4]))\n"
+        # None for "nothing to add": see real_envs.starts_and_lists (H3b
+        # amendment 3) - old SDKs start a server with an EMPTY env for {}.
+        "                                   env=(json.loads(sys.argv[4]) or None))\n"
         "    async with stdio_client(params) as (r, w):\n"
         "        async with ClientSession(r, w) as session:\n"
             "            await session.initialize()\n"
