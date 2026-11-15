@@ -1,0 +1,84 @@
+{
+  "rules": {
+    "version": "1.2",
+    "base": "1.1",
+    "rows": [
+      {
+        "declared": "none (definition unchanged)",
+        "explains": "nothing",
+        "never": "any change; the check reduces to the base detector"
+      },
+      {
+        "declared": "output field added or changed (outputSchema)",
+        "explains": "structure and value changes in that field of that tool",
+        "never": "changes in other fields or tools, new outbound hosts, file writes"
+      },
+      {
+        "declared": "input parameter added or changed (inputSchema)",
+        "explains": "response changes on calls that use the parameter",
+        "never": "response changes on probes that do not use it"
+      },
+      {
+        "declared": "description changed",
+        "explains": "nothing in responses; shown to the user",
+        "never": "any behaviour change"
+      },
+      {
+        "declared": "new tool",
+        "explains": "the new tool's own behaviour, which gets its own baseline",
+        "never": "any change in existing tools"
+      },
+      {
+        "declared": "readOnlyHint true or openWorldHint false (unchanged)",
+        "explains": "nothing",
+        "never": "file writes or process starts; outbound connections"
+      },
+      {
+        "declared": "hint widened (read-only removed, open-world added)",
+        "explains": "the newly allowed kind of effect",
+        "never": "reported to the user as a declaration escalation in every case"
+      },
+      {
+        "declared": "open-world tool",
+        "explains": "changes in response content",
+        "never": "a new outbound host is held for user review, counted separately"
+      }
+    ],
+    "always_residue": [
+      "new content flags (instruction-like text, secret-like output)",
+      "determinism breaks on fields not declared",
+      "any change in a tool whose definition did not change"
+    ],
+    "annotation_defaults": "MCP spec 2025-06-18: readOnlyHint false, destructiveHint true, idempotentHint false, openWorldHint true",
+    "open_world": "explicit",
+    "framework_normalisation": [
+      {
+        "artefact": "structuredContent that is exactly the JSON of a text block in the same response",
+        "treatment": "removed before comparison: it repeats the text, so any real change shows in the text"
+      },
+      {
+        "artefact": "an error reworded: the probe's answer was an error at baseline and is still an error",
+        "treatment": "the change in wording is explained (an update may change how it reports a failure, and an SDK upgrade changes the envelope around it). A success that became an error, or an error that became a success, is not covered; content flags and side effects on an error stay residue"
+      }
+    ],
+    "formalisation": {
+      "declared": "outputSchema added to a tool that had none",
+      "explains": "nothing by itself: a schema for output the tool already returned is not a change in behaviour, so declared fields are NOT masked; only the mirrored structuredContent is removed",
+      "never": "any change in the text answer"
+    },
+    "renaming": {
+      "declared": "a tool removed and a tool added whose names are equal once lower-cased with every non-alphanumeric character removed, and whose input-schema property names are equal the same way",
+      "condition": "the pairing is one-to-one: no other removed or added tool normalises to the same name",
+      "explains": "the change of name only: the new name is probed and compared with the old name's approval record; any change in behaviour, side effects or content flags is scored as residue as always",
+      "never": "a pairing by description, by similarity, or of more than one candidate"
+    },
+    "removal": {
+      "declared": "a tool the new release no longer lists (and that no renaming pairs with a new tool)",
+      "explains": "the answer to a probe of that tool: it can no longer be called by anyone, so a changed or failed answer is not a change in behaviour that can harm",
+      "never": "side effects or content flags observed during that call - those stay residue"
+    }
+  },
+  "_sha256": "a10065105841191bbc7662b6b400e468dc91f0978a1df7fbcced8c9946802aed",
+  "_frozen_at": "2026-11-15T14:38:38.453941+00:00",
+  "_git_commit": "9599cb980c39ee742bdcf17ae7c1f697dc874c65"
+}

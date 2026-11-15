@@ -1,0 +1,60 @@
+{
+  "id": "H3c",
+  "written": "2026-11-15T20:08:38",
+  "code_commit": "9599cb980c39ee742bdcf17ae7c1f697dc874c65",
+  "status": "post-hoc follow-up, designed after H3 and H3b failed; both stay FAIL. Tests product v1.1's update check, rules v1.2.",
+  "rules": {
+    "version": "1.2",
+    "file": "rules_v1_2_frozen.json",
+    "sha256": "c858848bda371b217091c84a5e148ba41708aefa104bbfea0792b3f653d088ef"
+  },
+  "designed_on": [
+    "time",
+    "git",
+    "motherduck",
+    "alchemy",
+    "calculator",
+    "sqlite",
+    "duckdb"
+  ],
+  "held_out": [
+    "excel-mcp-server",
+    "office-word-mcp-server",
+    "mcp-server-tree-sitter"
+  ],
+  "release_pairs": {
+    "excel-mcp-server": {
+      "old": "0.1.8",
+      "new": "2.3.0",
+      "old_date": "2026-04-12",
+      "new_date": "2026-11-09"
+    },
+    "office-word-mcp-server": {
+      "old": "1.1.7",
+      "new": "1.1.11",
+      "old_date": "2025-06-19",
+      "new_date": "2025-12-31"
+    },
+    "mcp-server-tree-sitter": {
+      "old": "0.5.1",
+      "new": "0.7.0",
+      "old_date": "2025-05-03",
+      "new_date": "2026-04-09"
+    }
+  },
+  "release_rule": "new = the latest release on PyPI; old = the latest release at least 6 months older than new. If the old release cannot start, the next newer release still >= 6 months older is tried; if none starts the server is unmeasurable.",
+  "held_out_interpreter": "C:/Users/LEGION/AppData/Local/Python/pythoncore-3.12-64/python.exe",
+  "hypothesis": "Under residue rules v1.2, (a) at most 15.0% of the held-out real benign upgrades leave a residue; (b) residue detection of attacks hidden in updates, re-run on the RQ3a matrix, is at least 80.0% pooled over C0-C2 and beats accept_rebaseline, definition_diff and new_host_only (exact McNemar, Holm p < 0.05); (c) synthetic benign updates raise no more false alarms than under v1.0.",
+  "thresholds": {
+    "detect_at_least_pct": 80.0,
+    "real_upgrades_at_most_pct": 15.0,
+    "holm_alpha": 0.05
+  },
+  "procedure": {
+    "held_out": "python -m eval real --servers excel-server,office-word-server,tree-sitter --rules 1.2 --interpreter <3.12> --as-of-release --runs 3; a server leaves a residue if any of its 3 upgrade runs has residue_verdict residue_alert",
+    "synthetic": "python -m eval rq3u --rules 1.2 (same families, covers, seeds and cycles as v1.0 and v1.1); analysed with eval.rq3u_analyse",
+    "design_check": "the seven design servers re-run under v1.2 are reported as design evidence only, never as part of the verdict",
+    "unmeasurable": "a held-out server that cannot start, or for which no tool is confirmed read-only, is reported as unmeasurable and not counted either way",
+    "weak_test": "each held-out server's baseline error rate is reported; one at 100% is labelled a weak test, not removed"
+  }
+}
