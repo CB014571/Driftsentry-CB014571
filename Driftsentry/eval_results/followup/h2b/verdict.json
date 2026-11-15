@@ -1,0 +1,49 @@
+{
+  "hypothesis": "H2b",
+  "verdict": "FAIL",
+  "checks": {
+    "auc_at_or_below_ceiling": false,
+    "recall_within_tolerance": false,
+    "false_alarms_contained": true
+  },
+  "best_family": "all",
+  "best_auc": 0.8874242663716347,
+  "family_auc": {
+    "argument": 0.7370093777988515,
+    "client": 0.4991465149359886,
+    "environment": 0.4991465149359886,
+    "session": 0.5319055898003267,
+    "timing": 0.8015792107897372,
+    "all": 0.8874242663716347
+  },
+  "recall_L1": {
+    "fired": 11,
+    "probe_earned": 11,
+    "any_detection": 11,
+    "recall_pct": 100.0
+  },
+  "recall_L6": {
+    "fired": 0,
+    "probe_earned": 0,
+    "any_detection": 0,
+    "recall_pct": null
+  },
+  "recall_gap_pp": null,
+  "false_alarms_insession": {
+    "episodes": 10,
+    "alarms": 5,
+    "pct": 50.0
+  },
+  "false_alarms_control": {
+    "episodes": 6,
+    "alarms": 3,
+    "pct": 50.0
+  },
+  "false_alarm_rise_pp": 0.0,
+  "thresholds": {
+    "auc_ceiling": 0.6,
+    "recall_within_pp": 10.0,
+    "false_alarm_rise_pp": 2.0
+  },
+  "note": "Post-hoc follow-up to H2, which stays FAIL. A FAIL here is a result too."
+}
