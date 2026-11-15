@@ -1,0 +1,1380 @@
+[
+  {
+    "_meta": null,
+    "annotations": null,
+    "description": "Configure the server.\n\n        Args:\n            config_path: Path to YAML config file\n            cache_enabled: Whether to enable parse tree caching\n            max_file_size_mb: Maximum file size in MB\n            log_level: Logging level (DEBUG, INFO, WARNING, ERROR)\n\n        Returns:\n            Current configuration\n        ",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "cache_enabled": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cache Enabled"
+        },
+        "config_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Config Path"
+        },
+        "log_level": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Log Level"
+        },
+        "max_file_size_mb": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max File Size Mb"
+        }
+      },
+      "title": "configureArguments",
+      "type": "object"
+    },
+    "name": "configure",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "configureOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": null,
+    "description": "Register a project directory for code exploration.\n\n        Args:\n            path: Path to the project directory\n            name: Optional name for the project (defaults to directory name)\n            description: Optional description of the project\n\n        Returns:\n            Project information\n        ",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "title": "register_project_toolArguments",
+      "type": "object"
+    },
+    "name": "register_project_tool",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "register_project_toolOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": null,
+    "description": "List all registered projects.\n\n        Returns:\n            List of project information\n        ",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {},
+      "title": "list_projects_toolArguments",
+      "type": "object"
+    },
+    "name": "list_projects_tool",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Result",
+          "type": "array"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "list_projects_toolOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": null,
+    "description": "Remove a registered project.\n\n        Args:\n            name: Project name\n\n        Returns:\n            Success message\n        ",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "remove_project_toolArguments",
+      "type": "object"
+    },
+    "name": "remove_project_tool",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "remove_project_toolOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": null,
+    "description": "List available languages.\n\n        Returns:\n            Information about available languages\n        ",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {},
+      "title": "list_languagesArguments",
+      "type": "object"
+    },
+    "name": "list_languages",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "list_languagesOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": null,
+    "description": "Check if a tree-sitter language parser is available.\n\n        Args:\n            language: Language to check\n\n        Returns:\n            Success message\n        ",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "language": {
+          "title": "Language",
+          "type": "string"
+        }
+      },
+      "required": [
+        "language"
+      ],
+      "title": "check_language_availableArguments",
+      "type": "object"
+    },
+    "name": "check_language_available",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "check_language_availableOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": null,
+    "description": "List files in a project.\n\n        Args:\n            project: Project name\n            pattern: Optional glob pattern (e.g., \"**/*.py\")\n            max_depth: Maximum directory depth\n            extensions: List of file extensions to include (without dot)\n\n        Returns:\n            List of file paths\n        ",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "extensions": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Extensions"
+        },
+        "max_depth": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Depth"
+        },
+        "pattern": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pattern"
+        },
+        "project": {
+          "title": "Project",
+          "type": "string"
+        }
+      },
+      "required": [
+        "project"
+      ],
+      "title": "list_filesArguments",
+      "type": "object"
+    },
+    "name": "list_files",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Result",
+          "type": "array"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "list_filesOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": null,
+    "description": "Get content of a file.\n\n        Args:\n            project: Project name\n            path: File path relative to project root\n            max_lines: Maximum number of lines to return\n            start_line: First line to include (0-based)\n\n        Returns:\n            File content\n        ",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "max_lines": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Lines"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "project": {
+          "title": "Project",
+          "type": "string"
+        },
+        "start_line": {
+          "default": 0,
+          "title": "Start Line",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "project",
+        "path"
+      ],
+      "title": "get_fileArguments",
+      "type": "object"
+    },
+    "name": "get_file",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "title": "Result",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "get_fileOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": null,
+    "description": "Get metadata for a file.\n\n        Args:\n            project: Project name\n            path: File path relative to project root\n\n        Returns:\n            File metadata\n        ",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "project": {
+          "title": "Project",
+          "type": "string"
+        }
+      },
+      "required": [
+        "project",
+        "path"
+      ],
+      "title": "get_file_metadataArguments",
+      "type": "object"
+    },
+    "name": "get_file_metadata",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "get_file_metadataOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": null,
+    "description": "Get abstract syntax tree for a file.\n\n        Args:\n            project: Project name\n            path: File path relative to project root\n            max_depth: Maximum depth of the tree (default: 5)\n            include_text: Whether to include node text\n\n        Returns:\n            AST as a nested dictionary\n        ",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "include_text": {
+          "default": true,
+          "title": "Include Text",
+          "type": "boolean"
+        },
+        "max_depth": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Depth"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "project": {
+          "title": "Project",
+          "type": "string"
+        }
+      },
+      "required": [
+        "project",
+        "path"
+      ],
+      "title": "get_astArguments",
+      "type": "object"
+    },
+    "name": "get_ast",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "get_astOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": null,
+    "description": "Find the AST node at a specific position.\n\n        Args:\n            project: Project name\n            path: File path relative to project root\n            row: Line number (0-based)\n            column: Column number (0-based)\n\n        Returns:\n            Node information or None if not found\n        ",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "column": {
+          "title": "Column",
+          "type": "integer"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "project": {
+          "title": "Project",
+          "type": "string"
+        },
+        "row": {
+          "title": "Row",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "project",
+        "path",
+        "row",
+        "column"
+      ],
+      "title": "get_node_at_positionArguments",
+      "type": "object"
+    },
+    "name": "get_node_at_position",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Result"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "get_node_at_positionOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": null,
+    "description": "Search for text pattern in project files.\n\n        Args:\n            project: Project name\n            pattern: Text pattern to search for\n            file_pattern: Optional glob pattern (e.g., \"**/*.py\")\n            max_results: Maximum number of results\n            case_sensitive: Whether to do case-sensitive matching\n            whole_word: Whether to match whole words only\n            use_regex: Whether to treat pattern as a regular expression\n            context_lines: Number of context lines to include\n\n        Returns:\n            List of matches with file, line number, and text\n        ",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "case_sensitive": {
+          "default": false,
+          "title": "Case Sensitive",
+          "type": "boolean"
+        },
+        "context_lines": {
+          "default": 2,
+          "title": "Context Lines",
+          "type": "integer"
+        },
+        "file_pattern": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "File Pattern"
+        },
+        "max_results": {
+          "default": 100,
+          "title": "Max Results",
+          "type": "integer"
+        },
+        "pattern": {
+          "title": "Pattern",
+          "type": "string"
+        },
+        "project": {
+          "title": "Project",
+          "type": "string"
+        },
+        "use_regex": {
+          "default": false,
+          "title": "Use Regex",
+          "type": "boolean"
+        },
+        "whole_word": {
+          "default": false,
+          "title": "Whole Word",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "project",
+        "pattern"
+      ],
+      "title": "find_textArguments",
+      "type": "object"
+    },
+    "name": "find_text",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Result",
+          "type": "array"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "find_textOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": null,
+    "description": "Run a tree-sitter query on project files.\n\n        Args:\n            project: Project name\n            query: Tree-sitter query string\n            file_path: Optional specific file to query\n            language: Language to use (required if file_path not provided)\n            max_results: Maximum number of results\n            capture_filter: Optional capture name to filter results (e.g. \"class.name\")\n            compact: If true, return only {capture, text} per match\n\n        Returns:\n            List of query matches\n        ",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "capture_filter": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Capture Filter"
+        },
+        "compact": {
+          "default": false,
+          "title": "Compact",
+          "type": "boolean"
+        },
+        "file_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "File Path"
+        },
+        "language": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Language"
+        },
+        "max_results": {
+          "default": 100,
+          "title": "Max Results",
+          "type": "integer"
+        },
+        "project": {
+          "title": "Project",
+          "type": "string"
+        },
+        "query": {
+          "title": "Query",
+          "type": "string"
+        }
+      },
+      "required": [
+        "project",
+        "query"
+      ],
+      "title": "run_queryArguments",
+      "type": "object"
+    },
+    "name": "run_query",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Result",
+          "type": "array"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "run_queryOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": null,
+    "description": "Get a predefined tree-sitter query template.\n\n        Args:\n            language: Language name\n            template_name: Template name (e.g., \"functions\", \"classes\")\n\n        Returns:\n            Query template information\n        ",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "language": {
+          "title": "Language",
+          "type": "string"
+        },
+        "template_name": {
+          "title": "Template Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "language",
+        "template_name"
+      ],
+      "title": "get_query_template_toolArguments",
+      "type": "object"
+    },
+    "name": "get_query_template_tool",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "get_query_template_toolOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": null,
+    "description": "List available query templates.\n\n        Args:\n            language: Optional language to filter by\n\n        Returns:\n            Available templates\n        ",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "language": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Language"
+        }
+      },
+      "title": "list_query_templates_toolArguments",
+      "type": "object"
+    },
+    "name": "list_query_templates_tool",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "list_query_templates_toolOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": null,
+    "description": "Build a tree-sitter query from templates or patterns.\n\n        Args:\n            language: Language name\n            patterns: List of template names or custom patterns\n            combine: How to combine patterns (\"or\" or \"and\")\n\n        Returns:\n            Combined query\n        ",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "combine": {
+          "default": "or",
+          "title": "Combine",
+          "type": "string"
+        },
+        "language": {
+          "title": "Language",
+          "type": "string"
+        },
+        "patterns": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Patterns",
+          "type": "array"
+        }
+      },
+      "required": [
+        "language",
+        "patterns"
+      ],
+      "title": "build_queryArguments",
+      "type": "object"
+    },
+    "name": "build_query",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "build_queryOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": null,
+    "description": "Adapt a query from one language to another.\n\n        Args:\n            query: Original query string\n            from_language: Source language\n            to_language: Target language\n\n        Returns:\n            Adapted query\n        ",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "from_language": {
+          "title": "From Language",
+          "type": "string"
+        },
+        "query": {
+          "title": "Query",
+          "type": "string"
+        },
+        "to_language": {
+          "title": "To Language",
+          "type": "string"
+        }
+      },
+      "required": [
+        "query",
+        "from_language",
+        "to_language"
+      ],
+      "title": "adapt_queryArguments",
+      "type": "object"
+    },
+    "name": "adapt_query",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "adapt_queryOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": null,
+    "description": "Get descriptions of common node types for a language.\n\n        Args:\n            language: Language name\n\n        Returns:\n            Dictionary of node types and descriptions\n        ",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "language": {
+          "title": "Language",
+          "type": "string"
+        }
+      },
+      "required": [
+        "language"
+      ],
+      "title": "get_node_typesArguments",
+      "type": "object"
+    },
+    "name": "get_node_types",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "get_node_typesOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": null,
+    "description": "Extract symbols from a file.\n\n        Args:\n            project: Project name\n            file_path: Path to the file\n            symbol_types: Types of symbols to extract (functions, classes, imports, etc.)\n\n        Returns:\n            Dictionary of symbols by type\n        ",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "file_path": {
+          "title": "File Path",
+          "type": "string"
+        },
+        "project": {
+          "title": "Project",
+          "type": "string"
+        },
+        "symbol_types": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Symbol Types"
+        }
+      },
+      "required": [
+        "project",
+        "file_path"
+      ],
+      "title": "get_symbolsArguments",
+      "type": "object"
+    },
+    "name": "get_symbols",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "get_symbolsOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": null,
+    "description": "Analyze overall project structure.\n\n        Args:\n            project: Project name\n            scan_depth: Depth of detailed analysis (higher is slower)\n            ctx: Optional MCP context for progress reporting\n\n        Returns:\n            Project analysis\n        ",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "ctx": {
+          "anyOf": [
+            {},
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ctx"
+        },
+        "project": {
+          "title": "Project",
+          "type": "string"
+        },
+        "scan_depth": {
+          "default": 3,
+          "title": "Scan Depth",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "project"
+      ],
+      "title": "analyze_projectArguments",
+      "type": "object"
+    },
+    "name": "analyze_project",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "analyze_projectOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": null,
+    "description": "Find dependencies of a file.\n\n        Args:\n            project: Project name\n            file_path: Path to the file\n\n        Returns:\n            Dictionary of imports/includes\n        ",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "file_path": {
+          "title": "File Path",
+          "type": "string"
+        },
+        "project": {
+          "title": "Project",
+          "type": "string"
+        }
+      },
+      "required": [
+        "project",
+        "file_path"
+      ],
+      "title": "get_dependenciesArguments",
+      "type": "object"
+    },
+    "name": "get_dependencies",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "get_dependenciesOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": null,
+    "description": "Analyze code complexity.\n\n        Args:\n            project: Project name\n            file_path: Path to the file\n\n        Returns:\n            Complexity metrics\n        ",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "file_path": {
+          "title": "File Path",
+          "type": "string"
+        },
+        "project": {
+          "title": "Project",
+          "type": "string"
+        }
+      },
+      "required": [
+        "project",
+        "file_path"
+      ],
+      "title": "analyze_complexityArguments",
+      "type": "object"
+    },
+    "name": "analyze_complexity",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "analyze_complexityOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": null,
+    "description": "Find code structurally similar to a snippet using AST fingerprinting.\n\n        Parses the snippet and candidate code blocks into ASTs, extracts\n        structural fingerprints, and computes Jaccard similarity.\n\n        Args:\n            project: Project name\n            snippet: Code snippet to find similar code for\n            language: Language of the snippet (required)\n            threshold: Minimum Jaccard similarity (0.0-1.0, default 0.6)\n            max_results: Maximum number of results\n\n        Returns:\n            List of similar code blocks with similarity scores\n        ",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "language": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Language"
+        },
+        "max_results": {
+          "default": 10,
+          "title": "Max Results",
+          "type": "integer"
+        },
+        "project": {
+          "title": "Project",
+          "type": "string"
+        },
+        "snippet": {
+          "title": "Snippet",
+          "type": "string"
+        },
+        "threshold": {
+          "default": 0.6,
+          "title": "Threshold",
+          "type": "number"
+        }
+      },
+      "required": [
+        "project",
+        "snippet"
+      ],
+      "title": "find_similar_codeArguments",
+      "type": "object"
+    },
+    "name": "find_similar_code",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Result",
+          "type": "array"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "find_similar_codeOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": null,
+    "description": "Find usage of a symbol.\n\n        Args:\n            project: Project name\n            symbol: Symbol name to find\n            file_path: Optional file to look in (for local symbols)\n            language: Language to search in\n\n        Returns:\n            List of usage locations\n        ",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "file_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "File Path"
+        },
+        "language": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Language"
+        },
+        "project": {
+          "title": "Project",
+          "type": "string"
+        },
+        "symbol": {
+          "title": "Symbol",
+          "type": "string"
+        }
+      },
+      "required": [
+        "project",
+        "symbol"
+      ],
+      "title": "find_usageArguments",
+      "type": "object"
+    },
+    "name": "find_usage",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Result",
+          "type": "array"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "find_usageOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": null,
+    "description": "Clear the parse tree cache.\n\n        Args:\n            project: Optional project to clear cache for\n            file_path: Optional specific file to clear cache for\n\n        Returns:\n            Status message\n        ",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "file_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "File Path"
+        },
+        "project": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Project"
+        }
+      },
+      "title": "clear_cacheArguments",
+      "type": "object"
+    },
+    "name": "clear_cache",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "clear_cacheOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": null,
+    "description": "Diagnose issues with YAML configuration loading.\n\n        Args:\n            config_path: Path to YAML config file\n\n        Returns:\n            Diagnostic information\n        ",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "config_path": {
+          "title": "Config Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "config_path"
+      ],
+      "title": "diagnose_configArguments",
+      "type": "object"
+    },
+    "name": "diagnose_config",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "diagnose_configOutput",
+      "type": "object"
+    },
+    "title": null
+  }
+]
