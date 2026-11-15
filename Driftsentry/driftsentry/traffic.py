@@ -66,6 +66,27 @@ class ToolShape:
     #: drawn uniformly from a range is its own fingerprint when the real
     #: lengths cluster. Lengths only - never the values themselves.
     lengths: list[int] = field(default_factory=list)
+    #: The character-class pattern of every observed argument (H2c): ``A``
+    #: upper-case letter, ``a`` lower-case, ``9`` digit, anything else kept.
+    #: ``C-1001`` is stored as ``A-9999`` and ``New York`` as ``Aaa Aaaa``.
+    #: Matching one real pattern, rather than the AVERAGE digit and space
+    #: ratio, matters when real values are of several kinds: the average of an
+    #: ID and a city name is neither. No letter or digit is ever stored, so the
+    #: user's actual values are not kept.
+    skeletons: list[str] = field(default_factory=list)
+
+
+def skeleton(text: str) -> str:
+    """Character classes of ``text``; letters and digits are not kept."""
+    out = []
+    for ch in text:
+        if ch.isdigit():
+            out.append("9")
+        elif ch.isalpha():
+            out.append("A" if ch.isupper() else "a")
+        else:
+            out.append(ch)
+    return "".join(out)
 
 
 @dataclass
@@ -208,6 +229,7 @@ def learn(log_path: str | Path, server: str = "") -> TrafficProfile:
             digit_ratio=(sum(c.isdigit() for c in joined) / len(joined)) if joined else 0.0,
             space_ratio=(joined.count(" ") / len(joined)) if joined else 0.0,
             lengths=sorted(lengths),
+            skeletons=sorted(skeleton(v) for v in values),
         )
 
     profile = TrafficProfile(

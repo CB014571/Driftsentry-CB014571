@@ -270,6 +270,35 @@ def _cmd_h2b(ns: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_h2c(ns: argparse.Namespace) -> int:
+    """H2c: product v1.1 - continuous watch, skeleton values, real-call guard."""
+    import asyncio
+
+    from eval import followup_h2c as h2c
+
+    workspace = Path(ns.workspace_h2c)
+    if ns.stage == "preregister":
+        doc = h2c.preregister()
+        print(json.dumps(doc, indent=2))
+        print(f"\nfrozen: {h2c.PREREG}")
+        return 0
+    _quiet()
+    if ns.stage == "collect":
+        print(json.dumps(asyncio.run(h2c.collect(ns.attacker, workspace)), indent=2))
+    elif ns.stage == "fit":
+        res = h2c.fit(ns.attacker)
+        print(f"best family: {res['best_family']}  AUC {res['best_auc']:.3f}")
+        for name, fam in res["families"].items():
+            print(f"  {name:<12} {fam.get('auc')}")
+    elif ns.stage == "matrix":
+        h2c.matrix(ns.attacker, workspace)
+    elif ns.stage == "control":
+        h2c.control(ns.attacker, workspace)
+    elif ns.stage == "verdict":
+        print(json.dumps(h2c.verdict(), indent=2))
+    return 0
+
+
 def _cmd_t20(ns: argparse.Namespace) -> int:
     """Do the countermeasures close the channels, and at what cost?"""
     _quiet()
@@ -569,6 +598,13 @@ def main(argv: list[str] | None = None) -> int:
     h2b.add_argument("--workspace-h2b", default=str(ROOT / ".eval_workspace_h2b"),
                      help="scratch directory for this follow-up only")
     h2b.set_defaults(func=_cmd_h2b)
+
+    h2c = sub.add_parser("h2c", help="product v1.1: in-session verification with the real-call guard")
+    h2c.add_argument("stage", choices=("preregister", "collect", "fit", "matrix",
+                                       "control", "verdict"))
+    h2c.add_argument("--workspace-h2c", default=str(ROOT / ".eval_workspace_h2c"),
+                     help="scratch directory for H2c only; the collector deletes it")
+    h2c.set_defaults(func=_cmd_h2c)
 
     h3b = sub.add_parser("h3b", help="follow-up to H3: residue rules v1.1 on held-out upgrades")
     h3b.add_argument("stage", choices=("preregister", "verdict"))

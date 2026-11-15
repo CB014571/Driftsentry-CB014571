@@ -46,7 +46,7 @@ from driftsentry.families import summarize_family
 from driftsentry.fielddrift import FieldProfile, compare as compare_fields
 from driftsentry.redact import echo_ratio, redact
 from driftsentry.rules import content_flags
-from driftsentry.sandbox import Observation, SandboxMonitor
+from driftsentry.sandbox import ContinuousMonitor, Observation, SandboxMonitor
 
 log = logging.getLogger("driftsentry.baseline")
 
@@ -95,8 +95,17 @@ async def _call_once(
     prepare = getattr(session, "prepare_probe", None)
     if prepare is not None:
         await prepare(tool_name)
-    if monitor is not None:
+    continuous = isinstance(monitor, ContinuousMonitor)
+    if monitor is not None and not continuous:
         monitor.start()
+    # Pacing AFTER the window opens (H2c). Opening a SandboxMonitor window
+    # costs ~0.12 s on Windows; pacing first and then opening it made every
+    # probe late by that much. A session that splits pacing out
+    # (``pace_probe``) is paced here, so the wait absorbs that cost.
+    pace = getattr(session, "pace_probe", None)
+    if pace is not None:
+        await pace(tool_name)
+    window_start = time.monotonic()
     started = time.perf_counter()
     try:
         result = await session.call_tool(tool_name, args)
@@ -107,8 +116,26 @@ async def _call_once(
             "isError": True,
         }
     latency_ms = (time.perf_counter() - started) * 1000.0
-    observation = monitor.stop() if monitor is not None else Observation(available=False)
+    if continuous:
+        # Answered later from timestamped sweeps; see _resolve_windows.
+        observation = _PendingWindow(monitor, window_start, time.monotonic())
+    else:
+        observation = monitor.stop() if monitor is not None else Observation(available=False)
     return payload, latency_ms, observation
+
+
+class _PendingWindow:
+    """A call's side-effect window, resolved after the cycle's calls are done."""
+
+    def __init__(self, monitor: ContinuousMonitor, start: float, end: float) -> None:
+        self.monitor, self.start, self.end = monitor, start, end
+
+    def resolve(self) -> Observation:
+        return self.monitor.window(self.start, self.end)
+
+
+def _resolve(observation: Any) -> Observation:
+    return observation.resolve() if isinstance(observation, _PendingWindow) else observation
 
 
 def _probe_client_info(server: str, mimic_host: bool):
@@ -696,6 +723,14 @@ async def _reprobe_keyed(
             await anyio.sleep(min(remaining, 30.0))
 
     last_call_at: float | None = None
+    defer = isinstance(monitor, ContinuousMonitor)
+    pending_calls: list[tuple] = []
+
+    def _score_probe(tool, family, probe, payloads, observations):
+        _score_keyed_probe(tool, family, probe, payloads, observations,
+                           embedder=embedder, declared_output=declared_output,
+                           framework_view=framework_view, baseline=baseline,
+                           checks=checks)
 
     for tool in baseline.tools:
         if not tool.probed:
@@ -730,6 +765,7 @@ async def _reprobe_keyed(
 
         for probe in probes:
             payloads, observations = [], []
+            pending_calls.append((tool, family, probe, payloads, observations))
             for _ in range(samples_per_probe):
                 if profile is not None and last_call_at is not None:
                     from driftsentry.camouflage import gap_from_profile
@@ -752,52 +788,66 @@ async def _reprobe_keyed(
                 last_call_at = time.monotonic()
                 payloads.append(payload)
                 observations.append(observation)
+            if not defer:
+                _score_probe(*pending_calls.pop())
 
-            normalized = [normalize_result(p) for p in payloads]
-            # Same redaction as at capture time, or the comparison is meaningless.
-            vectors = embedder.embed([redact(n.text, probe.args) for n in normalized])
-
-            samples = [
-                ProbeSample(
-                    embedding=vec, normalized=norm, latency_ms=0.0,
-                    hosts=obs.hosts, files=obs.files,
-                    content_flags=content_flags(norm.text),
-                )
-                for vec, norm, obs in zip(vectors, normalized, observations)
-            ]
-            measured = compare_to_family(family, samples)
-            masked, mask_note = None, ""
-            paths = (declared_output or {}).get(tool.tool)
-            if paths:
-                masked, mask_note = _masked_keyed(payloads, observations, paths,
-                                                  probe, family, embedder)
-            framework = (_framework_keyed(payloads, observations, tool.tool, paths,
-                                          _had_output_schema(baseline, tool.tool),
-                                          probe, family, embedder)
-                         if framework_view else None)
-            checks.append(ProbeCheck(
-                tool=tool.tool,
-                probe_id=probe.probe_id,
-                distance=measured["distance"],
-                band=measured["band"],
-                ratio=measured["ratio"],
-                within_band=measured["within_band"],
-                shape_known=measured["shape_known"],
-                new_hosts=measured["new_hosts"],
-                new_files=measured["new_files"],
-                new_content_flags=measured["new_content_flags"],
-                observed_shape_hash=measured["observed_shape_hash"],
-                observed_excerpt=measured["observed_excerpt"],
-                baseline_excerpt=measured["baseline_excerpt"],
-                became_error=measured["became_error"],
-                determinism_break=measured["determinism_break"],
-                comparability=measured["comparability"],
-                arg_names=sorted(probe.args),
-                masked=masked,
-                mask_note=mask_note,
-                framework=framework,
-            ))
+    # With a continuous monitor nothing is scored between calls (H2c): the
+    # embedding and comparison of one probe used to sit between it and the
+    # next call, which is a gap no user produces.
+    while pending_calls:
+        _score_probe(*pending_calls.pop(0))
     return checks
+
+
+def _score_keyed_probe(tool, family, probe, payloads, observations, *, embedder,
+                       declared_output, framework_view, baseline, checks) -> None:
+    from driftsentry.families import compare_to_family
+
+    observations[:] = [_resolve(o) for o in observations]
+    normalized = [normalize_result(p) for p in payloads]
+    # Same redaction as at capture time, or the comparison is meaningless.
+    vectors = embedder.embed([redact(n.text, probe.args) for n in normalized])
+
+    samples = [
+        ProbeSample(
+            embedding=vec, normalized=norm, latency_ms=0.0,
+            hosts=obs.hosts, files=obs.files,
+            content_flags=content_flags(norm.text),
+        )
+        for vec, norm, obs in zip(vectors, normalized, observations)
+    ]
+    measured = compare_to_family(family, samples)
+    masked, mask_note = None, ""
+    paths = (declared_output or {}).get(tool.tool)
+    if paths:
+        masked, mask_note = _masked_keyed(payloads, observations, paths,
+                                          probe, family, embedder)
+    framework = (_framework_keyed(payloads, observations, tool.tool, paths,
+                                  _had_output_schema(baseline, tool.tool),
+                                  probe, family, embedder)
+                 if framework_view else None)
+    checks.append(ProbeCheck(
+        tool=tool.tool,
+        probe_id=probe.probe_id,
+        distance=measured["distance"],
+        band=measured["band"],
+        ratio=measured["ratio"],
+        within_band=measured["within_band"],
+        shape_known=measured["shape_known"],
+        new_hosts=measured["new_hosts"],
+        new_files=measured["new_files"],
+        new_content_flags=measured["new_content_flags"],
+        observed_shape_hash=measured["observed_shape_hash"],
+        observed_excerpt=measured["observed_excerpt"],
+        baseline_excerpt=measured["baseline_excerpt"],
+        became_error=measured["became_error"],
+        determinism_break=measured["determinism_break"],
+        comparability=measured["comparability"],
+        arg_names=sorted(probe.args),
+        masked=masked,
+        mask_note=mask_note,
+        framework=framework,
+    ))
 
 
 async def reprobe(
@@ -819,6 +869,7 @@ async def reprobe(
     server_pids: list[int] | None = None,
     shapes: dict[str, Any] | None = None,
     framework_view: bool = False,
+    watch: ContinuousMonitor | None = None,
 ) -> ReprobeReport:
     """Replay a stored baseline's probes against a live server and measure drift.
 
@@ -854,21 +905,30 @@ async def reprobe(
         if baseline.probe_mode != "keyed":
             raise ValueError("in-session verification needs a keyed baseline")
         pids = list(server_pids or [])
-        monitor = SandboxMonitor(pids) if (monitor_sandbox and pids) else None
-        listed = await session.list_tools()
-        observed_definitions = [t.model_dump(mode="json", by_alias=True)
-                                for t in listed.tools]
-        checks = await _reprobe_keyed(
-            session, baseline, embedder, monitor,
-            samples_per_probe=samples_per_probe, cycle=cycle, key=key,
-            # The session paces itself: it interleaves probes with the
-            # user's calls at the user's own gaps.
-            mimic_traffic=False,
-            subsample_bank=subsample_bank,
-            declared_output=_declared_output_paths(baseline, observed_definitions),
-            shapes=shapes,
-            framework_view=framework_view,
-        )
+        # One continuous watch for the session (H2c): no per-probe snapshot,
+        # so watching a probe adds nothing to its timing. ``watch`` lets the
+        # caller share the watch it already runs for the real-call guard.
+        own_watch = watch is None and monitor_sandbox and bool(pids)
+        monitor = (ContinuousMonitor(pids).start() if own_watch
+                   else (watch if monitor_sandbox else None))
+        try:
+            listed = await session.list_tools()
+            observed_definitions = [t.model_dump(mode="json", by_alias=True)
+                                    for t in listed.tools]
+            checks = await _reprobe_keyed(
+                session, baseline, embedder, monitor,
+                samples_per_probe=samples_per_probe, cycle=cycle, key=key,
+                # The session paces itself: it interleaves probes with the
+                # user's calls at the user's own gaps.
+                mimic_traffic=False,
+                subsample_bank=subsample_bank,
+                declared_output=_declared_output_paths(baseline, observed_definitions),
+                shapes=shapes,
+                framework_view=framework_view,
+            )
+        finally:
+            if own_watch and monitor is not None:
+                monitor.close()
         return ReprobeReport(
             server=baseline.server,
             baseline_definition_hash=baseline.definition_hash,

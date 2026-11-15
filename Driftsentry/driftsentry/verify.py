@@ -62,8 +62,15 @@ async def verify_server(
     server_pids: list[int] | None = None,
     shapes: dict[str, Any] | None = None,
     rules_version: str = "1.0",
+    watch: Any = None,
+    guard: Any = None,
 ) -> DriftReport:
     """Re-probe a server and score the result.
+
+    ``watch`` and ``guard`` (H2c, in-session only): a continuous process
+    watch shared with the real-call guard, and the guard itself. Real-call
+    findings gathered since the last cycle are folded into this report, so a
+    server that behaves for probes and attacks the user still alerts.
 
     ``update_check`` (T25): when the tool definitions the re-probe observed
     differ from the baseline's, compute the declared diff and score in
@@ -97,6 +104,7 @@ async def verify_server(
         session=session,
         server_pids=server_pids,
         shapes=shapes,
+        watch=watch,
         # Rules v1.1 needs the framework view; v1.0 (the default) does not,
         # so nothing extra is measured for any existing experiment.
         framework_view=(update_check and rules_version == "1.1"),
@@ -113,7 +121,7 @@ async def verify_server(
                                      measurement.observed_definitions)
         if not candidate.empty:
             declared_diff, mode = candidate, "residue"
-    return score_report(
+    report = score_report(
         measurement,
         threshold_ratio=threshold_ratio,
         calibration_source=source,
@@ -122,6 +130,11 @@ async def verify_server(
         declared_diff=declared_diff,
         rules_version=rules_version,
     )
+    if guard is not None:
+        from driftsentry.guard import apply_guard
+
+        apply_guard(report, guard.take())
+    return report
 
 
 async def calibrate_servers(

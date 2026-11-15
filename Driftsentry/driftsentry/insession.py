@@ -75,6 +75,10 @@ class CallRecord:
     end: float = 0.0
     failed: bool = False
     text: str = ""
+    # H2c: monotonic times and the raw answer, for the real-call guard.
+    mono_start: float = 0.0
+    mono_end: float = 0.0
+    result: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -115,12 +119,20 @@ class InSessionChannel:
         return await self.session.list_tools()
 
     async def prepare_probe(self, tool: str) -> None:
-        """Send the genuine calls due before this probe, then pace the probe."""
+        """Send the genuine calls due before this probe.
+
+        Pacing is NOT done here any more (H2c): baseline._call_once calls
+        ``pace_probe`` after the side-effect window opens, so whatever opening
+        it costs is absorbed by the wait instead of being added to it.
+        """
         while self._queue:
             g, p = len(self._queue), self._probes_left
             if self._rng.random() >= g / (g + p):
                 break
             await self._send_genuine(self._queue.pop(0))
+
+    async def pace_probe(self, tool: str) -> None:
+        """Wait until this probe lands a genuine-looking gap after the last call."""
         await self._pace(self._probe_wait())
 
     async def call_tool(self, name: str, arguments: dict[str, Any] | None = None) -> Any:
@@ -174,18 +186,21 @@ class InSessionChannel:
         wanted = call.get("proc_age_s") if self._first_call() else call.get("gap_s")
         await self._pace(wanted)
         record = CallRecord("genuine", call["tool"], dict(call.get("args") or {}),
-                            start=time.time())
+                            start=time.time(), mono_start=time.monotonic())
         self.records.append(record)
         try:
             result = await self.session.call_tool(call["tool"], call.get("args") or {})
             record.text = "\n".join(getattr(b, "text", "") or ""
                                     for b in (getattr(result, "content", None) or []))
             record.failed = bool(getattr(result, "isError", False))
+            dump = getattr(result, "model_dump", None)
+            record.result = dump(mode="json") if dump is not None else {}
         except Exception as exc:  # noqa: BLE001 - a failed user call is still traffic
             record.text, record.failed = f"error: {exc}", True
         finally:
             record.end = time.time()
             self._last_end = time.monotonic()
+            record.mono_end = self._last_end
 
 
 def expected_probe_calls(baseline: Any, samples_per_probe: int, subsample_bank: bool) -> int:
