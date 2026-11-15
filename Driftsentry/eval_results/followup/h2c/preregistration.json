@@ -1,0 +1,46 @@
+{
+  "id": "H2c",
+  "written": "2026-11-15T18:38:20",
+  "code_commit": "aef6ae6d322c2ca99074da21ba5962ac54cb71d8",
+  "status": "post-hoc follow-up, designed after H2 and H2b failed; both stay FAIL. Tests product v1.1.",
+  "hypotheses": {
+    "H2c-1": "With continuous out-of-process watching, scoring after the calls, pacing after the window, and skeleton-matched keyed values, the best cross-validated recogniser (any family, including 'all') re-fitted on v1.1 in-session traffic reaches AUC <= 0.6.",
+    "H2c-2": "With the real-call guard on, caught-either-way recall at L6 is within 10.0 points of L1, and benign false alarms (guard included) rise by at most 2.0 points over separate-session keyed verification on the same seeds."
+  },
+  "thresholds": {
+    "auc_ceiling": 0.6,
+    "recall_within_pp": 10.0,
+    "false_alarm_rise_pp": 2.0,
+    "recall_rule": "one-sided: L6 caught-either-way recall may be at most recall_within_pp points BELOW L1; L6 above L1 is not a failure"
+  },
+  "procedure": {
+    "collection_sessions": 60,
+    "genuine_sessions_replayed_per_live_session": 8,
+    "samples_per_probe": 1,
+    "subsample_bank": true,
+    "baseline_probes_per_family": 8,
+    "guard": true,
+    "recogniser": "eval.rq3_distinguish.analyse, 5-fold GroupKFold by process (mixed groups, as H2b amendment 1), re-fitted on this traffic; best family exported to L6",
+    "matrix": {
+      "levels": [
+        "L1",
+        "L6"
+      ],
+      "seeds": [
+        1,
+        2
+      ],
+      "cycles": 4,
+      "families": "all six"
+    },
+    "recall": "caught either way: an episode is detected only in a cycle whose alert was earned - probe-earned (alert and attacker events in a probe window) or guard-earned (guard alert and attacker events in a genuine window); denominator = episodes whose attack fired",
+    "false_alarm_control": "separate-session keyed verification, benign seeds, re-run here",
+    "stated_blind_spot": "silent-tamper on real calls is invisible to the guard"
+  },
+  "genuine_split": {
+    "rule": "sha256(json(session)) first 8 hex digits mod 2: 0 -> A (shapes, skeletons, gaps), 1 -> B (replayed)",
+    "n_sessions_a": 58,
+    "n_sessions_b": 57,
+    "profile_a_sha256": "274245f7cb628df9bbff84bf447760d85a75877f888702a15915d71346bdb90b"
+  }
+}
