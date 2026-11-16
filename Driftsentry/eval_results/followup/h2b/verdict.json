@@ -3,8 +3,8 @@
   "verdict": "FAIL",
   "checks": {
     "auc_at_or_below_ceiling": false,
-    "recall_within_tolerance": false,
-    "false_alarms_contained": true
+    "recall_within_tolerance": true,
+    "false_alarms_contained": false
   },
   "best_family": "all",
   "best_auc": 0.8874242663716347,
@@ -23,23 +23,23 @@
     "recall_pct": 100.0
   },
   "recall_L6": {
-    "fired": 0,
-    "probe_earned": 0,
-    "any_detection": 0,
-    "recall_pct": null
+    "fired": 10,
+    "probe_earned": 10,
+    "any_detection": 10,
+    "recall_pct": 100.0
   },
-  "recall_gap_pp": null,
+  "recall_gap_pp": 0.0,
   "false_alarms_insession": {
-    "episodes": 10,
-    "alarms": 5,
-    "pct": 50.0
+    "episodes": 12,
+    "alarms": 7,
+    "pct": 58.333333333333336
   },
   "false_alarms_control": {
     "episodes": 6,
     "alarms": 3,
     "pct": 50.0
   },
-  "false_alarm_rise_pp": 0.0,
+  "false_alarm_rise_pp": 8.333333333333336,
   "thresholds": {
     "auc_ceiling": 0.6,
     "recall_within_pp": 10.0,
