@@ -371,6 +371,61 @@ def _compact(value: str, target: int) -> str | None:
     return None
 
 
+#: English letter frequencies, so a filled skeleton's letters have roughly the
+#: character entropy of real words rather than of uniform noise.
+_LETTERS = "etaoinshrdlcumwfgypbvkjxqz"
+_LETTER_WEIGHTS = (12.7, 9.1, 8.2, 7.5, 7.0, 6.7, 6.3, 6.1, 6.0, 4.3, 4.0, 2.8, 2.8,
+                   2.4, 2.4, 2.2, 2.0, 2.0, 1.9, 1.5, 1.0, 0.8, 0.2, 0.2, 0.1, 0.1)
+
+#: How far (in shaped_string's score) a template value may sit from the chosen
+#: real pattern before the pattern itself is filled instead.
+SKELETON_TOLERANCE = 1.0
+
+
+def fill_skeleton(pattern: str, rng: random.Random) -> str:
+    """A keyed value with exactly ``pattern``'s character classes."""
+    out = []
+    for ch in pattern:
+        if ch == "9":
+            out.append(str(rng.randrange(10)))
+        elif ch in ("a", "A"):
+            letter = rng.choices(_LETTERS, weights=_LETTER_WEIGHTS)[0]
+            out.append(letter.upper() if ch == "A" else letter)
+        else:
+            out.append(ch)
+    return "".join(out)
+
+
+def _skeleton_string(own_grammar: str, pattern: str,
+                     rng: random.Random) -> tuple[str, str]:
+    """Match ONE real pattern (H2c): a template value if one is close, else fill it.
+
+    A template value is preferred because it is a real word or a real-looking
+    ID; when none comes within SKELETON_TOLERANCE of the pattern's length,
+    digit, space and word counts, the pattern is filled with keyed characters.
+    """
+    target = len(pattern)
+    digit_t = _ratio(pattern, lambda c: c == "9")
+    space_t = _ratio(pattern, str.isspace)
+    words_t = len(pattern.split())
+
+    def score(v: str) -> float:
+        return (abs(len(v) - target) + 4.0 * abs(_ratio(v, str.isdigit) - digit_t)
+                + 4.0 * abs(_ratio(v, str.isspace) - space_t)
+                + abs(len(v.split()) - words_t))
+
+    best: tuple[str, str] | None = None
+    for i in range(SHAPE_CANDIDATES):
+        grammar = own_grammar if i % 2 == 0 else rng.choice(SHAPE_ALTERNATES)
+        value = str(probe_templates.generate(grammar, rng))
+        for v in (value, _compact(value, target)):
+            if v is not None and (best is None or score(v) < score(best[1])):
+                best = (grammar, v)
+    if best is not None and score(best[1]) <= SKELETON_TOLERANCE:
+        return best
+    return "skeleton", fill_skeleton(pattern, rng)
+
+
 def shaped_string(own_grammar: str, shape: Any, rng: random.Random) -> tuple[str, str]:
     """A keyed string whose length and character mix follow genuine traffic.
 
@@ -380,6 +435,9 @@ def shaped_string(own_grammar: str, shape: Any, rng: random.Random) -> tuple[str
     as unshaped ones. An empty string is a candidate only when real traffic
     sent one - which the genuine corpus does.
     """
+    patterns = list(getattr(shape, "skeletons", []) or [])
+    if patterns:
+        return _skeleton_string(own_grammar, patterns[rng.randrange(len(patterns))], rng)
     lengths = list(getattr(shape, "lengths", []) or [])
     target = lengths[rng.randrange(len(lengths))]
     digit_t = float(getattr(shape, "digit_ratio", 0.0) or 0.0)

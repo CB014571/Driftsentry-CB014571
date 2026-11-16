@@ -11,8 +11,9 @@ from driftsentry.__main__ import _print_update, build_parser
 def test_baseline_takes_a_probe_mode_and_keeps_fixed_as_the_default():
     p = build_parser()
     base = ["baseline", "--server", "s", "--exec", "python", "x.py"]
-    assert p.parse_args(base).probe_mode == "fixed"
-    assert p.parse_args(base[:3] + ["--probe-mode", "keyed"] + base[3:]).probe_mode == "keyed"
+    # Keyed is the product default: Experiment 1 showed fixed values are recognised.
+    assert p.parse_args(base).probe_mode == "keyed"
+    assert p.parse_args(base[:3] + ["--probe-mode", "fixed"] + base[3:]).probe_mode == "fixed"
 
 
 def test_verify_update_check_is_off_by_default():

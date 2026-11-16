@@ -1,0 +1,1577 @@
+[
+  {
+    "_meta": null,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": null,
+      "openWorldHint": null,
+      "readOnlyHint": null,
+      "title": "Apply Formula"
+    },
+    "description": "\n    Apply Excel formula to cell.\n    Excel formula will write to cell with verification.\n    ",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "cell": {
+          "title": "Cell",
+          "type": "string"
+        },
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "formula": {
+          "title": "Formula",
+          "type": "string"
+        },
+        "sheet_name": {
+          "title": "Sheet Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filepath",
+        "sheet_name",
+        "cell",
+        "formula"
+      ],
+      "title": "apply_formulaArguments",
+      "type": "object"
+    },
+    "name": "apply_formula",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "title": "Result",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "apply_formulaOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": {
+      "destructiveHint": null,
+      "idempotentHint": null,
+      "openWorldHint": null,
+      "readOnlyHint": true,
+      "title": "Validate Formula Syntax"
+    },
+    "description": "Validate Excel formula syntax without applying it.",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "cell": {
+          "title": "Cell",
+          "type": "string"
+        },
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "formula": {
+          "title": "Formula",
+          "type": "string"
+        },
+        "sheet_name": {
+          "title": "Sheet Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filepath",
+        "sheet_name",
+        "cell",
+        "formula"
+      ],
+      "title": "validate_formula_syntaxArguments",
+      "type": "object"
+    },
+    "name": "validate_formula_syntax",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "title": "Result",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "validate_formula_syntaxOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": null,
+      "openWorldHint": null,
+      "readOnlyHint": null,
+      "title": "Format Range"
+    },
+    "description": "Apply formatting to a range of cells.",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "alignment": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Alignment"
+        },
+        "bg_color": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bg Color"
+        },
+        "bold": {
+          "default": false,
+          "title": "Bold",
+          "type": "boolean"
+        },
+        "border_color": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Border Color"
+        },
+        "border_style": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Border Style"
+        },
+        "conditional_format": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Conditional Format"
+        },
+        "end_cell": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "End Cell"
+        },
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "font_color": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Font Color"
+        },
+        "font_size": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Font Size"
+        },
+        "italic": {
+          "default": false,
+          "title": "Italic",
+          "type": "boolean"
+        },
+        "merge_cells": {
+          "default": false,
+          "title": "Merge Cells",
+          "type": "boolean"
+        },
+        "number_format": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Number Format"
+        },
+        "protection": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Protection"
+        },
+        "sheet_name": {
+          "title": "Sheet Name",
+          "type": "string"
+        },
+        "start_cell": {
+          "title": "Start Cell",
+          "type": "string"
+        },
+        "underline": {
+          "default": false,
+          "title": "Underline",
+          "type": "boolean"
+        },
+        "wrap_text": {
+          "default": false,
+          "title": "Wrap Text",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "filepath",
+        "sheet_name",
+        "start_cell"
+      ],
+      "title": "format_rangeArguments",
+      "type": "object"
+    },
+    "name": "format_range",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "title": "Result",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "format_rangeOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": {
+      "destructiveHint": null,
+      "idempotentHint": null,
+      "openWorldHint": null,
+      "readOnlyHint": true,
+      "title": "Read Data from Excel"
+    },
+    "description": "\n    Read data from Excel worksheet with cell metadata including validation rules.\n    \n    Args:\n        filepath: Path to Excel file\n        sheet_name: Name of worksheet\n        start_cell: Starting cell (default A1)\n        end_cell: Ending cell (optional, auto-expands if not provided)\n        preview_only: Whether to return preview only\n    \n    Returns:  \n    JSON string containing structured cell data with validation metadata.\n    Each cell includes: address, value, row, column, and validation info (if any).\n    ",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "end_cell": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "End Cell"
+        },
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "preview_only": {
+          "default": false,
+          "title": "Preview Only",
+          "type": "boolean"
+        },
+        "sheet_name": {
+          "title": "Sheet Name",
+          "type": "string"
+        },
+        "start_cell": {
+          "default": "A1",
+          "title": "Start Cell",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filepath",
+        "sheet_name"
+      ],
+      "title": "read_data_from_excelArguments",
+      "type": "object"
+    },
+    "name": "read_data_from_excel",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "title": "Result",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "read_data_from_excelOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": null,
+      "openWorldHint": null,
+      "readOnlyHint": null,
+      "title": "Write Data to Excel"
+    },
+    "description": "\n    Write data to Excel worksheet.\n    Excel formula will write to cell without any verification.\n\n    PARAMETERS:  \n    filepath: Path to Excel file\n    sheet_name: Name of worksheet to write to\n    data: List of lists containing data to write to the worksheet, sublists are assumed to be rows\n    start_cell: Cell to start writing to, default is \"A1\"\n  \n    ",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "data": {
+          "items": {
+            "items": {},
+            "type": "array"
+          },
+          "title": "Data",
+          "type": "array"
+        },
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "sheet_name": {
+          "title": "Sheet Name",
+          "type": "string"
+        },
+        "start_cell": {
+          "default": "A1",
+          "title": "Start Cell",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filepath",
+        "sheet_name",
+        "data"
+      ],
+      "title": "write_data_to_excelArguments",
+      "type": "object"
+    },
+    "name": "write_data_to_excel",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "title": "Result",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "write_data_to_excelOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": null,
+      "openWorldHint": null,
+      "readOnlyHint": null,
+      "title": "Create Workbook"
+    },
+    "description": "Create new Excel workbook.",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filepath"
+      ],
+      "title": "create_workbookArguments",
+      "type": "object"
+    },
+    "name": "create_workbook",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "title": "Result",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "create_workbookOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": null,
+      "openWorldHint": null,
+      "readOnlyHint": null,
+      "title": "Create Worksheet"
+    },
+    "description": "Create new worksheet in workbook.",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "sheet_name": {
+          "title": "Sheet Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filepath",
+        "sheet_name"
+      ],
+      "title": "create_worksheetArguments",
+      "type": "object"
+    },
+    "name": "create_worksheet",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "title": "Result",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "create_worksheetOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": null,
+      "openWorldHint": null,
+      "readOnlyHint": null,
+      "title": "Create Chart"
+    },
+    "description": "Create chart in worksheet.",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "chart_type": {
+          "title": "Chart Type",
+          "type": "string"
+        },
+        "data_range": {
+          "title": "Data Range",
+          "type": "string"
+        },
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "sheet_name": {
+          "title": "Sheet Name",
+          "type": "string"
+        },
+        "target_cell": {
+          "title": "Target Cell",
+          "type": "string"
+        },
+        "title": {
+          "default": "",
+          "title": "Title",
+          "type": "string"
+        },
+        "x_axis": {
+          "default": "",
+          "title": "X Axis",
+          "type": "string"
+        },
+        "y_axis": {
+          "default": "",
+          "title": "Y Axis",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filepath",
+        "sheet_name",
+        "data_range",
+        "chart_type",
+        "target_cell"
+      ],
+      "title": "create_chartArguments",
+      "type": "object"
+    },
+    "name": "create_chart",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "title": "Result",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "create_chartOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": null,
+      "openWorldHint": null,
+      "readOnlyHint": null,
+      "title": "Create Pivot Table"
+    },
+    "description": "Create pivot table in worksheet.",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "agg_func": {
+          "default": "mean",
+          "title": "Agg Func",
+          "type": "string"
+        },
+        "columns": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Columns"
+        },
+        "data_range": {
+          "title": "Data Range",
+          "type": "string"
+        },
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "rows": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Rows",
+          "type": "array"
+        },
+        "sheet_name": {
+          "title": "Sheet Name",
+          "type": "string"
+        },
+        "values": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Values",
+          "type": "array"
+        }
+      },
+      "required": [
+        "filepath",
+        "sheet_name",
+        "data_range",
+        "rows",
+        "values"
+      ],
+      "title": "create_pivot_tableArguments",
+      "type": "object"
+    },
+    "name": "create_pivot_table",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "title": "Result",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "create_pivot_tableOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": null,
+      "openWorldHint": null,
+      "readOnlyHint": null,
+      "title": "Create Table"
+    },
+    "description": "Creates a native Excel table from a specified range of data.",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "data_range": {
+          "title": "Data Range",
+          "type": "string"
+        },
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "sheet_name": {
+          "title": "Sheet Name",
+          "type": "string"
+        },
+        "table_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Table Name"
+        },
+        "table_style": {
+          "default": "TableStyleMedium9",
+          "title": "Table Style",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filepath",
+        "sheet_name",
+        "data_range"
+      ],
+      "title": "create_tableArguments",
+      "type": "object"
+    },
+    "name": "create_table",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "title": "Result",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "create_tableOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": null,
+      "openWorldHint": null,
+      "readOnlyHint": null,
+      "title": "Copy Worksheet"
+    },
+    "description": "Copy worksheet within workbook.",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "source_sheet": {
+          "title": "Source Sheet",
+          "type": "string"
+        },
+        "target_sheet": {
+          "title": "Target Sheet",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filepath",
+        "source_sheet",
+        "target_sheet"
+      ],
+      "title": "copy_worksheetArguments",
+      "type": "object"
+    },
+    "name": "copy_worksheet",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "title": "Result",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "copy_worksheetOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": null,
+      "openWorldHint": null,
+      "readOnlyHint": null,
+      "title": "Delete Worksheet"
+    },
+    "description": "Delete worksheet from workbook.",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "sheet_name": {
+          "title": "Sheet Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filepath",
+        "sheet_name"
+      ],
+      "title": "delete_worksheetArguments",
+      "type": "object"
+    },
+    "name": "delete_worksheet",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "title": "Result",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "delete_worksheetOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": null,
+      "openWorldHint": null,
+      "readOnlyHint": null,
+      "title": "Rename Worksheet"
+    },
+    "description": "Rename worksheet in workbook.",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "new_name": {
+          "title": "New Name",
+          "type": "string"
+        },
+        "old_name": {
+          "title": "Old Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filepath",
+        "old_name",
+        "new_name"
+      ],
+      "title": "rename_worksheetArguments",
+      "type": "object"
+    },
+    "name": "rename_worksheet",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "title": "Result",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "rename_worksheetOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": {
+      "destructiveHint": null,
+      "idempotentHint": null,
+      "openWorldHint": null,
+      "readOnlyHint": true,
+      "title": "Get Workbook Metadata"
+    },
+    "description": "Get metadata about workbook including sheets, ranges, etc.",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "include_ranges": {
+          "default": false,
+          "title": "Include Ranges",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "filepath"
+      ],
+      "title": "get_workbook_metadataArguments",
+      "type": "object"
+    },
+    "name": "get_workbook_metadata",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "title": "Result",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "get_workbook_metadataOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": null,
+      "openWorldHint": null,
+      "readOnlyHint": null,
+      "title": "Merge Cells"
+    },
+    "description": "Merge a range of cells.",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "end_cell": {
+          "title": "End Cell",
+          "type": "string"
+        },
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "sheet_name": {
+          "title": "Sheet Name",
+          "type": "string"
+        },
+        "start_cell": {
+          "title": "Start Cell",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filepath",
+        "sheet_name",
+        "start_cell",
+        "end_cell"
+      ],
+      "title": "merge_cellsArguments",
+      "type": "object"
+    },
+    "name": "merge_cells",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "title": "Result",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "merge_cellsOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": null,
+      "openWorldHint": null,
+      "readOnlyHint": null,
+      "title": "Unmerge Cells"
+    },
+    "description": "Unmerge a range of cells.",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "end_cell": {
+          "title": "End Cell",
+          "type": "string"
+        },
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "sheet_name": {
+          "title": "Sheet Name",
+          "type": "string"
+        },
+        "start_cell": {
+          "title": "Start Cell",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filepath",
+        "sheet_name",
+        "start_cell",
+        "end_cell"
+      ],
+      "title": "unmerge_cellsArguments",
+      "type": "object"
+    },
+    "name": "unmerge_cells",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "title": "Result",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "unmerge_cellsOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": {
+      "destructiveHint": null,
+      "idempotentHint": null,
+      "openWorldHint": null,
+      "readOnlyHint": true,
+      "title": "Get Merged Cells"
+    },
+    "description": "Get merged cells in a worksheet.",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "sheet_name": {
+          "title": "Sheet Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filepath",
+        "sheet_name"
+      ],
+      "title": "get_merged_cellsArguments",
+      "type": "object"
+    },
+    "name": "get_merged_cells",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "title": "Result",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "get_merged_cellsOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": null,
+      "openWorldHint": null,
+      "readOnlyHint": null,
+      "title": "Copy Range"
+    },
+    "description": "Copy a range of cells to another location.",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "sheet_name": {
+          "title": "Sheet Name",
+          "type": "string"
+        },
+        "source_end": {
+          "title": "Source End",
+          "type": "string"
+        },
+        "source_start": {
+          "title": "Source Start",
+          "type": "string"
+        },
+        "target_sheet": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Target Sheet"
+        },
+        "target_start": {
+          "title": "Target Start",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filepath",
+        "sheet_name",
+        "source_start",
+        "source_end",
+        "target_start"
+      ],
+      "title": "copy_rangeArguments",
+      "type": "object"
+    },
+    "name": "copy_range",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "title": "Result",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "copy_rangeOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": null,
+      "openWorldHint": null,
+      "readOnlyHint": null,
+      "title": "Delete Range"
+    },
+    "description": "Delete a range of cells and shift remaining cells.",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "end_cell": {
+          "title": "End Cell",
+          "type": "string"
+        },
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "sheet_name": {
+          "title": "Sheet Name",
+          "type": "string"
+        },
+        "shift_direction": {
+          "default": "up",
+          "title": "Shift Direction",
+          "type": "string"
+        },
+        "start_cell": {
+          "title": "Start Cell",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filepath",
+        "sheet_name",
+        "start_cell",
+        "end_cell"
+      ],
+      "title": "delete_rangeArguments",
+      "type": "object"
+    },
+    "name": "delete_range",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "title": "Result",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "delete_rangeOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": {
+      "destructiveHint": null,
+      "idempotentHint": null,
+      "openWorldHint": null,
+      "readOnlyHint": true,
+      "title": "Validate Excel Range"
+    },
+    "description": "Validate if a range exists and is properly formatted.",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "end_cell": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "End Cell"
+        },
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "sheet_name": {
+          "title": "Sheet Name",
+          "type": "string"
+        },
+        "start_cell": {
+          "title": "Start Cell",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filepath",
+        "sheet_name",
+        "start_cell"
+      ],
+      "title": "validate_excel_rangeArguments",
+      "type": "object"
+    },
+    "name": "validate_excel_range",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "title": "Result",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "validate_excel_rangeOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": {
+      "destructiveHint": null,
+      "idempotentHint": null,
+      "openWorldHint": null,
+      "readOnlyHint": true,
+      "title": "Get Data Validation Info"
+    },
+    "description": "\n    Get all data validation rules in a worksheet.\n    \n    This tool helps identify which cell ranges have validation rules\n    and what types of validation are applied.\n    \n    Args:\n        filepath: Path to Excel file\n        sheet_name: Name of worksheet\n        \n    Returns:\n        JSON string containing all validation rules in the worksheet\n    ",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "sheet_name": {
+          "title": "Sheet Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filepath",
+        "sheet_name"
+      ],
+      "title": "get_data_validation_infoArguments",
+      "type": "object"
+    },
+    "name": "get_data_validation_info",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "title": "Result",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "get_data_validation_infoOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": null,
+      "openWorldHint": null,
+      "readOnlyHint": null,
+      "title": "Insert Rows"
+    },
+    "description": "Insert one or more rows starting at the specified row.",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "count": {
+          "default": 1,
+          "title": "Count",
+          "type": "integer"
+        },
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "sheet_name": {
+          "title": "Sheet Name",
+          "type": "string"
+        },
+        "start_row": {
+          "title": "Start Row",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "filepath",
+        "sheet_name",
+        "start_row"
+      ],
+      "title": "insert_rowsArguments",
+      "type": "object"
+    },
+    "name": "insert_rows",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "title": "Result",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "insert_rowsOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": null,
+      "openWorldHint": null,
+      "readOnlyHint": null,
+      "title": "Insert Columns"
+    },
+    "description": "Insert one or more columns starting at the specified column.",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "count": {
+          "default": 1,
+          "title": "Count",
+          "type": "integer"
+        },
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "sheet_name": {
+          "title": "Sheet Name",
+          "type": "string"
+        },
+        "start_col": {
+          "title": "Start Col",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "filepath",
+        "sheet_name",
+        "start_col"
+      ],
+      "title": "insert_columnsArguments",
+      "type": "object"
+    },
+    "name": "insert_columns",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "title": "Result",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "insert_columnsOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": null,
+      "openWorldHint": null,
+      "readOnlyHint": null,
+      "title": "Delete Rows"
+    },
+    "description": "Delete one or more rows starting at the specified row.",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "count": {
+          "default": 1,
+          "title": "Count",
+          "type": "integer"
+        },
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "sheet_name": {
+          "title": "Sheet Name",
+          "type": "string"
+        },
+        "start_row": {
+          "title": "Start Row",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "filepath",
+        "sheet_name",
+        "start_row"
+      ],
+      "title": "delete_sheet_rowsArguments",
+      "type": "object"
+    },
+    "name": "delete_sheet_rows",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "title": "Result",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "delete_sheet_rowsOutput",
+      "type": "object"
+    },
+    "title": null
+  },
+  {
+    "_meta": null,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": null,
+      "openWorldHint": null,
+      "readOnlyHint": null,
+      "title": "Delete Columns"
+    },
+    "description": "Delete one or more columns starting at the specified column.",
+    "execution": null,
+    "icons": null,
+    "inputSchema": {
+      "properties": {
+        "count": {
+          "default": 1,
+          "title": "Count",
+          "type": "integer"
+        },
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "sheet_name": {
+          "title": "Sheet Name",
+          "type": "string"
+        },
+        "start_col": {
+          "title": "Start Col",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "filepath",
+        "sheet_name",
+        "start_col"
+      ],
+      "title": "delete_sheet_columnsArguments",
+      "type": "object"
+    },
+    "name": "delete_sheet_columns",
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "title": "Result",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "delete_sheet_columnsOutput",
+      "type": "object"
+    },
+    "title": null
+  }
+]

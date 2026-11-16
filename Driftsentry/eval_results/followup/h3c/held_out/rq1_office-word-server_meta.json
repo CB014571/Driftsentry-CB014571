@@ -1,0 +1,435 @@
+{
+  "server": "office-word-server",
+  "old_version": "1.1.7",
+  "new_version": "1.1.11",
+  "probed_tools": [
+    "get_document_info",
+    "get_document_text",
+    "get_document_outline",
+    "list_available_documents",
+    "search_and_replace",
+    "format_text",
+    "format_table",
+    "customize_footnote_style",
+    "get_paragraph_text_from_document",
+    "find_text_in_document",
+    "convert_to_pdf"
+  ],
+  "withheld_tools": {
+    "create_document": "name suggests state change ('create')",
+    "copy_document": "name suggests state change ('copy')",
+    "add_paragraph": "name suggests state change ('add')",
+    "add_heading": "name suggests state change ('add')",
+    "add_picture": "name suggests state change ('add')",
+    "add_table": "name suggests state change ('add')",
+    "add_page_break": "name suggests state change ('add')",
+    "delete_paragraph": "name suggests state change ('delete')",
+    "create_custom_style": "name suggests state change ('create')",
+    "protect_document": "description suggests state change ('add')",
+    "unprotect_document": "description suggests state change ('remove')",
+    "add_footnote_to_document": "name suggests state change ('add')",
+    "add_endnote_to_document": "name suggests state change ('add')"
+  },
+  "environments": [
+    {
+      "server": "office-word-server",
+      "version": "1.1.7",
+      "root": "F:\\fyp project-wt\\Driftsentry\\.eval_workspace_h3c\\real\\office-word-server-old",
+      "sdk_version": "1.9.4",
+      "sdk_resolved_by": "pip",
+      "attempts": [
+        {
+          "mcp": "1.9.4",
+          "source": "pip",
+          "ok": true,
+          "detail": "started"
+        }
+      ]
+    },
+    {
+      "server": "office-word-server",
+      "version": "1.1.11",
+      "root": "F:\\fyp project-wt\\Driftsentry\\.eval_workspace_h3c\\real\\office-word-server-new",
+      "sdk_version": "1.25.0",
+      "sdk_resolved_by": "pip",
+      "attempts": [
+        {
+          "mcp": "1.25.0",
+          "source": "pip",
+          "ok": true,
+          "detail": "started"
+        }
+      ]
+    }
+  ],
+  "declared": {
+    "tools_added": [
+      "add_footnote_after_text",
+      "add_footnote_before_text",
+      "add_footnote_enhanced",
+      "add_footnote_robust",
+      "apply_table_alternating_rows",
+      "auto_fit_table_columns",
+      "delete_footnote_from_document",
+      "delete_footnote_robust",
+      "format_table_cell_text",
+      "get_all_comments",
+      "get_comments_by_author",
+      "get_comments_for_paragraph",
+      "get_document_xml",
+      "highlight_table_header",
+      "insert_header_near_text",
+      "insert_line_or_paragraph_near_text",
+      "insert_numbered_list_near_text",
+      "merge_table_cells",
+      "merge_table_cells_horizontal",
+      "merge_table_cells_vertical",
+      "replace_block_between_manual_anchors",
+      "replace_paragraph_block_below_header",
+      "set_table_alignment_all",
+      "set_table_cell_alignment",
+      "set_table_cell_padding",
+      "set_table_cell_shading",
+      "set_table_column_width",
+      "set_table_column_widths",
+      "set_table_width",
+      "validate_document_footnotes"
+    ],
+    "tools_removed": [],
+    "tools_renamed": {},
+    "tools": {
+      "add_heading": {
+        "name": "add_heading",
+        "description_changed": true,
+        "input_changes": [
+          {
+            "path": "bold",
+            "kind": "added"
+          },
+          {
+            "path": "border_bottom",
+            "kind": "added"
+          },
+          {
+            "path": "font_name",
+            "kind": "added"
+          },
+          {
+            "path": "font_size",
+            "kind": "added"
+          },
+          {
+            "path": "italic",
+            "kind": "added"
+          }
+        ],
+        "output_changes": [],
+        "annotations": {},
+        "escalations": []
+      },
+      "add_paragraph": {
+        "name": "add_paragraph",
+        "description_changed": true,
+        "input_changes": [
+          {
+            "path": "bold",
+            "kind": "added"
+          },
+          {
+            "path": "color",
+            "kind": "added"
+          },
+          {
+            "path": "font_name",
+            "kind": "added"
+          },
+          {
+            "path": "font_size",
+            "kind": "added"
+          },
+          {
+            "path": "italic",
+            "kind": "added"
+          }
+        ],
+        "output_changes": [],
+        "annotations": {},
+        "escalations": []
+      },
+      "find_text_in_document": {
+        "name": "find_text_in_document",
+        "description_changed": false,
+        "input_changes": [],
+        "output_changes": [],
+        "annotations": {
+          "readOnlyHint": {
+            "old_value": false,
+            "new_value": true,
+            "old_explicit": false,
+            "new_explicit": true
+          }
+        },
+        "escalations": []
+      },
+      "get_document_info": {
+        "name": "get_document_info",
+        "description_changed": false,
+        "input_changes": [],
+        "output_changes": [],
+        "annotations": {
+          "readOnlyHint": {
+            "old_value": false,
+            "new_value": true,
+            "old_explicit": false,
+            "new_explicit": true
+          }
+        },
+        "escalations": []
+      },
+      "get_document_outline": {
+        "name": "get_document_outline",
+        "description_changed": false,
+        "input_changes": [],
+        "output_changes": [],
+        "annotations": {
+          "readOnlyHint": {
+            "old_value": false,
+            "new_value": true,
+            "old_explicit": false,
+            "new_explicit": true
+          }
+        },
+        "escalations": []
+      },
+      "get_document_text": {
+        "name": "get_document_text",
+        "description_changed": false,
+        "input_changes": [],
+        "output_changes": [],
+        "annotations": {
+          "readOnlyHint": {
+            "old_value": false,
+            "new_value": true,
+            "old_explicit": false,
+            "new_explicit": true
+          }
+        },
+        "escalations": []
+      },
+      "get_paragraph_text_from_document": {
+        "name": "get_paragraph_text_from_document",
+        "description_changed": false,
+        "input_changes": [],
+        "output_changes": [],
+        "annotations": {
+          "readOnlyHint": {
+            "old_value": false,
+            "new_value": true,
+            "old_explicit": false,
+            "new_explicit": true
+          }
+        },
+        "escalations": []
+      },
+      "list_available_documents": {
+        "name": "list_available_documents",
+        "description_changed": false,
+        "input_changes": [],
+        "output_changes": [],
+        "annotations": {
+          "readOnlyHint": {
+            "old_value": false,
+            "new_value": true,
+            "old_explicit": false,
+            "new_explicit": true
+          }
+        },
+        "escalations": []
+      }
+    }
+  },
+  "baseline_error_rate": 0.0909,
+  "error": null,
+  "runs": [
+    {
+      "server": "office-word-server",
+      "phase": "old",
+      "run": 1,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:129f667942a692b8125b394296f36e27dcc3d2a2957f53707cb5d6ea4080b99c",
+      "alerted": false,
+      "per_tool": {
+        "get_document_info": 0.0,
+        "get_document_text": 0.0,
+        "get_document_outline": 0.0,
+        "list_available_documents": 0.0,
+        "search_and_replace": 0.0,
+        "format_text": 0.0,
+        "format_table": 0.0,
+        "customize_footnote_style": 0.0,
+        "get_paragraph_text_from_document": 0.0,
+        "find_text_in_document": 0.0,
+        "convert_to_pdf": 0.0
+      },
+      "error": null,
+      "update_check": false,
+      "residue_verdict": "",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "office-word-server",
+      "phase": "old",
+      "run": 2,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:129f667942a692b8125b394296f36e27dcc3d2a2957f53707cb5d6ea4080b99c",
+      "alerted": false,
+      "per_tool": {
+        "get_document_info": 0.0,
+        "get_document_text": 0.0,
+        "get_document_outline": 0.0,
+        "list_available_documents": 0.0,
+        "search_and_replace": 0.0,
+        "format_text": 0.0,
+        "format_table": 0.0,
+        "customize_footnote_style": 0.0,
+        "get_paragraph_text_from_document": 0.0,
+        "find_text_in_document": 0.0,
+        "convert_to_pdf": 0.0
+      },
+      "error": null,
+      "update_check": false,
+      "residue_verdict": "",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "office-word-server",
+      "phase": "old",
+      "run": 3,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:129f667942a692b8125b394296f36e27dcc3d2a2957f53707cb5d6ea4080b99c",
+      "alerted": false,
+      "per_tool": {
+        "get_document_info": 0.0,
+        "get_document_text": 0.0,
+        "get_document_outline": 0.0,
+        "list_available_documents": 0.0,
+        "search_and_replace": 0.0,
+        "format_text": 0.0,
+        "format_table": 0.0,
+        "customize_footnote_style": 0.0,
+        "get_paragraph_text_from_document": 0.0,
+        "find_text_in_document": 0.0,
+        "convert_to_pdf": 0.0
+      },
+      "error": null,
+      "update_check": false,
+      "residue_verdict": "",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "office-word-server",
+      "phase": "new",
+      "run": 1,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": true,
+      "definition_hash": "sha256:5d151b995ef86541d820592dd6f49de815ba9ae4f9b547ee16a641149e703c89",
+      "alerted": false,
+      "per_tool": {
+        "get_document_info": 0.0,
+        "get_document_text": 0.0,
+        "get_document_outline": 0.0,
+        "list_available_documents": 0.0,
+        "search_and_replace": 0.0,
+        "format_text": 0.0,
+        "format_table": 0.0,
+        "customize_footnote_style": 0.0,
+        "get_paragraph_text_from_document": 0.0,
+        "find_text_in_document": 0.0,
+        "convert_to_pdf": 0.0
+      },
+      "error": null,
+      "update_check": true,
+      "residue_verdict": "accepted",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "office-word-server",
+      "phase": "new",
+      "run": 2,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": true,
+      "definition_hash": "sha256:5d151b995ef86541d820592dd6f49de815ba9ae4f9b547ee16a641149e703c89",
+      "alerted": false,
+      "per_tool": {
+        "get_document_info": 0.0,
+        "get_document_text": 0.0,
+        "get_document_outline": 0.0,
+        "list_available_documents": 0.0,
+        "search_and_replace": 0.0,
+        "format_text": 0.0,
+        "format_table": 0.0,
+        "customize_footnote_style": 0.0,
+        "get_paragraph_text_from_document": 0.0,
+        "find_text_in_document": 0.0,
+        "convert_to_pdf": 0.0
+      },
+      "error": null,
+      "update_check": true,
+      "residue_verdict": "accepted",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "office-word-server",
+      "phase": "new",
+      "run": 3,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": true,
+      "definition_hash": "sha256:5d151b995ef86541d820592dd6f49de815ba9ae4f9b547ee16a641149e703c89",
+      "alerted": false,
+      "per_tool": {
+        "get_document_info": 0.0,
+        "get_document_text": 0.0,
+        "get_document_outline": 0.0,
+        "list_available_documents": 0.0,
+        "search_and_replace": 0.0,
+        "format_text": 0.0,
+        "format_table": 0.0,
+        "customize_footnote_style": 0.0,
+        "get_paragraph_text_from_document": 0.0,
+        "find_text_in_document": 0.0,
+        "convert_to_pdf": 0.0
+      },
+      "error": null,
+      "update_check": true,
+      "residue_verdict": "accepted",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    }
+  ]
+}

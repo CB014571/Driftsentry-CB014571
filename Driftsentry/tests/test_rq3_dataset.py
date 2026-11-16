@@ -425,7 +425,7 @@ def test_a_fresh_file_writes_the_current_header(tmp_path):
 # The columns a file written before RQ3a lacks: the 17 update columns, and
 # the 2 H2b columns appended after them. A file that predates the update
 # columns is exactly this many short of today's header.
-_UPDATE_AND_LATER_COLUMNS = 17 + 2
+_UPDATE_AND_LATER_COLUMNS = 17 + 2 + 1   # + guard_fired (H2c)
 
 
 def _prefix_file(tmp_path, n_dropped):

@@ -129,6 +129,9 @@ class EpisodeConfig:
     # shaped by ``shapes``. Off by default; nothing earlier changes.
     in_session: bool = False
     shapes: dict[str, Any] | None = None
+    # H2c: the real-call guard runs on the replayed genuine calls too, so a
+    # server that behaves for probes and attacks the user is still caught.
+    guard: bool = False
 
     # Residue rules for update episodes. "1.0" is the frozen set every RQ3a
     # result was scored with; "1.1" is the follow-up (H3b).
@@ -168,6 +171,7 @@ class EpisodeConfig:
                if self.per_tool else {}),
             **({"in_session": True, "shaped": bool(self.shapes)}
                if self.in_session else {}),
+            **({"guard": True} if self.guard else {}),
         }
 
 
@@ -311,7 +315,8 @@ class Episode:
             cycle=cycle, key=key,
             mimic_host=cfg.mimic_host, mimic_traffic=cfg.mimic_traffic,
             subsample_bank=cfg.subsample_bank,
-            framework_view=(cfg.rules_version == "1.1"),
+            framework_view=(cfg.rules_version in ("1.1", "1.2")),
+            rename_aware=(cfg.rules_version == "1.2"),
         )
         threshold, source = ((cfg.threshold_ratio, "explicit")
                              if cfg.threshold_ratio is not None
@@ -410,7 +415,8 @@ class Episode:
                         seed=cfg.seed, replay_sessions=cfg.replay_sessions,
                         threshold_ratio=cfg.threshold_ratio,
                         monitor_sandbox=cfg.monitor_sandbox,
-                        shapes=cfg.shapes, profile=load_profile_a())
+                        shapes=cfg.shapes, profile=load_profile_a(),
+                        guard=cfg.guard)
                 else:
                     report = await verify_server(
                         baseline,
@@ -502,6 +508,8 @@ class Episode:
                     events = read_attacker_events(self.atk_home)
                     row.probe_window_events = events_in_windows(events, call_records, "probe")
                     row.genuine_window_events = events_in_windows(events, call_records, "genuine")
+                    row.guard_fired = any(p.probe_id == "real-call"
+                                          for t in report.tools for p in t.probes)
                 if scored is not None:
                     _fill_update_columns(row, scored, cfg.update_cover)
                     row.full_detected = full_detected(scored.full)
@@ -514,7 +522,10 @@ class Episode:
                 # In-session (H2b), only a probe-earned alert ends the episode:
                 # an alert raised by what a GENUINE call left behind must not
                 # stop the cycles in which a probe could still earn one.
-                earned = (not cfg.in_session) or row.probe_window_events > 0
+                # H2c adds the guard's own earning rule: a real-call alert
+                # counts when the attacker's log shows it fired on a REAL call.
+                earned = ((not cfg.in_session) or row.probe_window_events > 0
+                          or (row.guard_fired and row.genuine_window_events > 0))
                 if detected and earned and cfg.stop_on_alert and not update:
                     break
 

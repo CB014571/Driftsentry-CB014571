@@ -314,8 +314,68 @@ async def _pump(
         cancel_scope.cancel()
 
 
+class _RealCallTap:
+    """Hands each finished REAL call to the guard, off the forwarding path (H2c).
+
+    Sits in front of the injector on both pumps. On the way to the server it
+    notes a client tools/call (after renumbering, by the id the server sees);
+    on the way back it matches the answer, stamps the end, and queues the
+    call. Probe answers never reach here as real calls: the injector owns
+    those ids and they are not recorded on the way out.
+    """
+
+    def __init__(self, injector, queue_send) -> None:
+        self.injector = injector
+        self._queue = queue_send
+        self._open: dict[Any, tuple[str, dict, float]] = {}
+
+    def client_to_server(self, item: SessionMessage) -> SessionMessage:
+        import time as _t
+
+        out = self.injector.client_to_server(item)
+        root = out.message.root
+        if getattr(root, "method", None) == "tools/call" and getattr(root, "id", None) is not None:
+            params = getattr(root, "params", None) or {}
+            self._open[root.id] = (params.get("name"), dict(params.get("arguments") or {}),
+                                   _t.monotonic())
+        return out
+
+    def server_to_client(self, item: SessionMessage) -> SessionMessage | None:
+        import time as _t
+
+        root = item.message.root
+        started = self._open.pop(getattr(root, "id", None), None)
+        out = self.injector.server_to_client(item)
+        if started is not None:
+            result = getattr(root, "result", None)
+            try:
+                self._queue.send_nowait((*started, _t.monotonic(),
+                                         dict(result) if isinstance(result, dict) else {}))
+            except Exception:  # noqa: BLE001 - a full queue drops a check, never a call
+                log.debug("guard queue full; one real call left unchecked")
+        return out
+
+
+async def _guard_worker(server_name: str, guard, queue_recv) -> None:
+    """Check queued real calls; alert and quarantine on a finding."""
+    async for tool, args, start, end, result in queue_recv:
+        findings = await anyio.to_thread.run_sync(guard.check, tool, args, result, start, end)
+        if not findings:
+            continue
+        from driftsentry.guard import apply_guard
+        from driftsentry.scorer import DriftReport
+
+        report = DriftReport(server=server_name,
+                             scored_at=datetime.now(timezone.utc).isoformat(),
+                             mode="guard", threshold_ratio=0.0,
+                             calibration_source="real-call guard",
+                             embedding_backend="", definition_changed=False,
+                             baseline_definition_hash="", observed_definition_hash="")
+        _handle_insession_report(server_name, apply_guard(report, guard.take()))
+
+
 async def _insession_loop(server_name: str, injector, server_pids: list[int],
-                          interval: float) -> None:
+                          interval: float, watch=None) -> None:
     """Verify from inside the live session until the proxy stops (H2b).
 
     Each cycle number is taken from a counter kept on disk, so probe values
@@ -327,6 +387,7 @@ async def _insession_loop(server_name: str, injector, server_pids: list[int],
     from driftsentry.injector import LiveSessionChannel
     from driftsentry.store import BaselineStore
     from driftsentry.traffic import load_or_learn as load_traffic
+    from driftsentry.residue import PRODUCT_RULES
     from driftsentry.verify import verify_server
 
     baseline = BaselineStore().load(server_name)
@@ -347,7 +408,7 @@ async def _insession_loop(server_name: str, injector, server_pids: list[int],
             report = await verify_server(
                 baseline, session=channel, server_pids=server_pids,
                 samples_per_probe=1, subsample_bank=True, cycle=cycle, key=key,
-                update_check=True)
+                update_check=True, watch=watch, rules_version=PRODUCT_RULES)
             _handle_insession_report(server_name, report)
         except Exception as exc:  # noqa: BLE001 - never take the user's session down
             log.warning("in-session verification cycle %d failed: %s", cycle, exc)
@@ -487,27 +548,48 @@ async def run_stdio_proxy(
             async with stdio_client(server_params, errlog=sys.stderr) as (server_read, server_write):
                 enforcer = _make_enforcer(server_name) if enforce else None
                 injector = None
+                tap = None
+                watch = None
+                guard = None
                 server_pids: list[int] = []
                 if in_session:
                     from driftsentry.baseline import _find_child_pids
+                    from driftsentry.guard import RealCallGuard
                     from driftsentry.injector import ProbeInjector
+                    from driftsentry.sandbox import ContinuousMonitor
+                    from driftsentry.store import BaselineStore
 
                     injector = ProbeInjector(server_write)
                     server_pids = _find_child_pids(before)
-                async with anyio.create_task_group() as tg:
-                    tg.start_soon(
-                        partial(
-                            _pump, client_read, server_write, "c2s", plog, tg.cancel_scope,
-                            reply_to=client_write, enforcer=enforcer,
-                            transform=injector.client_to_server if injector else None,
+                    # One watch for the whole session, shared by probes and
+                    # the real-call guard (H2c).
+                    watch = ContinuousMonitor(server_pids).start() if server_pids else None
+                    enrolled = BaselineStore().load(server_name)
+                    if enrolled is not None:
+                        guard_send, guard_recv = anyio.create_memory_object_stream(256)
+                        guard = RealCallGuard(server_name, enrolled, watch)
+                        tap = _RealCallTap(injector, guard_send)
+                to_server = tap or injector
+                try:
+                    async with anyio.create_task_group() as tg:
+                        tg.start_soon(
+                            partial(
+                                _pump, client_read, server_write, "c2s", plog, tg.cancel_scope,
+                                reply_to=client_write, enforcer=enforcer,
+                                transform=to_server.client_to_server if to_server else None,
+                            )
                         )
-                    )
-                    tg.start_soon(partial(
-                        _pump, server_read, client_write, "s2c", plog, tg.cancel_scope,
-                        transform=injector.server_to_client if injector else None))
-                    if injector is not None:
-                        tg.start_soon(_insession_loop, server_name, injector,
-                                      server_pids, verify_interval)
+                        tg.start_soon(partial(
+                            _pump, server_read, client_write, "s2c", plog, tg.cancel_scope,
+                            transform=to_server.server_to_client if to_server else None))
+                        if injector is not None:
+                            tg.start_soon(_insession_loop, server_name, injector,
+                                          server_pids, verify_interval, watch)
+                        if guard is not None:
+                            tg.start_soon(_guard_worker, server_name, guard, guard_recv)
+                finally:
+                    if watch is not None:
+                        watch.close()
     finally:
         # The summary record goes in BEFORE the handle closes. Until now the
         # passive result existed only as stderr lines, which no experiment can

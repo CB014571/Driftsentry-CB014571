@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "driftsentry"
-version = "1.0.0"
+version = "1.1.0"
 description = "A proxy-based detector for behavioural rug-pull attacks in the Model Context Protocol"
 readme = "README.md"
 requires-python = ">=3.11"

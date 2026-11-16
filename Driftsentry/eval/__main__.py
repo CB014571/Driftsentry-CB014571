@@ -218,6 +218,18 @@ def _cmd_h3b(ns: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_h3c(ns: argparse.Namespace) -> int:
+    """H3c: rules v1.2 on held-out real upgrades (eval/followup_h3c.py)."""
+    from eval import followup_h3c
+
+    if ns.stage == "preregister":
+        print(json.dumps(followup_h3c.preregister(ns.interpreter or ""), indent=2))
+        return 0
+    followup_h3c.verify_preregistration()
+    print(json.dumps(followup_h3c.held_out_result(), indent=2))
+    return 0
+
+
 def _cmd_validate(ns: argparse.Namespace) -> int:
     """The two validation claims never measured (eval/followup_validation.py)."""
     from eval import followup_validation as v
@@ -270,6 +282,35 @@ def _cmd_h2b(ns: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_h2c(ns: argparse.Namespace) -> int:
+    """H2c: product v1.1 - continuous watch, skeleton values, real-call guard."""
+    import asyncio
+
+    from eval import followup_h2c as h2c
+
+    workspace = Path(ns.workspace_h2c)
+    if ns.stage == "preregister":
+        doc = h2c.preregister()
+        print(json.dumps(doc, indent=2))
+        print(f"\nfrozen: {h2c.PREREG}")
+        return 0
+    _quiet()
+    if ns.stage == "collect":
+        print(json.dumps(asyncio.run(h2c.collect(ns.attacker, workspace)), indent=2))
+    elif ns.stage == "fit":
+        res = h2c.fit(ns.attacker)
+        print(f"best family: {res['best_family']}  AUC {res['best_auc']:.3f}")
+        for name, fam in res["families"].items():
+            print(f"  {name:<12} {fam.get('auc')}")
+    elif ns.stage == "matrix":
+        h2c.matrix(ns.attacker, workspace)
+    elif ns.stage == "control":
+        h2c.control(ns.attacker, workspace)
+    elif ns.stage == "verdict":
+        print(json.dumps(h2c.verdict(), indent=2))
+    return 0
+
+
 def _cmd_t20(ns: argparse.Namespace) -> int:
     """Do the countermeasures close the channels, and at what cost?"""
     _quiet()
@@ -294,6 +335,7 @@ def _cmd_t20(ns: argparse.Namespace) -> int:
 
 RQ3U_RULES = DEFAULT_RESULTS / "rq3u" / "rules_frozen.json"
 RQ3U_RULES_V1_1 = DEFAULT_RESULTS / "followup" / "h3b" / "rules_v1_1_frozen.json"
+RQ3U_RULES_V1_2 = DEFAULT_RESULTS / "followup" / "h3c" / "rules_v1_2_frozen.json"
 
 
 def _cmd_rq3u(ns: argparse.Namespace) -> int:
@@ -311,7 +353,8 @@ def _cmd_rq3u(ns: argparse.Namespace) -> int:
 
     try:
         rules = (verify_rules(RQ3U_RULES) if ns.rules == "1.0"
-                 else verify_rules(RQ3U_RULES_V1_1, "1.1"))
+                 else verify_rules(RQ3U_RULES_V1_1, "1.1") if ns.rules == "1.1"
+                 else verify_rules(RQ3U_RULES_V1_2, "1.2"))
     except (OSError, ValueError) as exc:
         print(f"error: the frozen rules do not verify, refusing to score: {exc}",
               file=sys.stderr)
@@ -341,7 +384,7 @@ def _cmd_rq3u(ns: argparse.Namespace) -> int:
         return 2
 
     spec = SweepSpec(
-        experiment_id=("rq3u_L1" + ("" if ns.rules == "1.0" else "_rules11")
+        experiment_id=("rq3u_L1" + {"1.0": "", "1.1": "_rules11", "1.2": "_rules12"}[ns.rules]
                        + ("_quick" if ns.quick else "")),
         rules_version=ns.rules,
         probe_mode=ns.probe_mode,
@@ -363,7 +406,8 @@ def _cmd_rq3u(ns: argparse.Namespace) -> int:
     print(f"episodes   : {n}\n")
 
     out_dir = (Path(ns.results) / "rq3u" if ns.rules == "1.0"
-               else RQ3U_RULES_V1_1.parent)
+               else RQ3U_RULES_V1_1.parent if ns.rules == "1.1"
+               else RQ3U_RULES_V1_2.parent)
     results = run_sweep(spec, ns.attacker, ns.workspace, out_dir)
     print(summarise(results))
     print(f"\nrows written to {out_dir / (spec.experiment_id + '.csv')}")
@@ -516,7 +560,7 @@ def main(argv: list[str] | None = None) -> int:
     rq3u.add_argument("--probe-mode", choices=["keyed", "fixed"], default="keyed")
     rq3u.add_argument("--per-tool", default=None,
                       help="a frozen per-tool threshold file (T8); verified before use")
-    rq3u.add_argument("--rules", choices=("1.0", "1.1"), default="1.0",
+    rq3u.add_argument("--rules", choices=("1.0", "1.1", "1.2"), default="1.0",
                       help="residue rules (default 1.0, as frozen; 1.1 is the H3b follow-up)")
     rq3u.add_argument("--quick", action="store_true",
                       help="one family, C0 and C2, one seed - checks the pipeline")
@@ -545,7 +589,7 @@ def main(argv: list[str] | None = None) -> int:
                       help="rebuild the environments from scratch")
     real.add_argument("--dry-run", action="store_true",
                       help="print what would be installed and stop")
-    real.add_argument("--rules", choices=("1.0", "1.1"), default="1.0",
+    real.add_argument("--rules", choices=("1.0", "1.1", "1.2"), default="1.0",
                       help="residue rules to score the upgrade with (default 1.0, as frozen)")
     real.add_argument("--as-of-release", action="store_true",
                       help="install each release with only the dependencies that "
@@ -570,11 +614,24 @@ def main(argv: list[str] | None = None) -> int:
                      help="scratch directory for this follow-up only")
     h2b.set_defaults(func=_cmd_h2b)
 
+    h2c = sub.add_parser("h2c", help="product v1.1: in-session verification with the real-call guard")
+    h2c.add_argument("stage", choices=("preregister", "collect", "fit", "matrix",
+                                       "control", "verdict"))
+    h2c.add_argument("--workspace-h2c", default=str(ROOT / ".eval_workspace_h2c"),
+                     help="scratch directory for H2c only; the collector deletes it")
+    h2c.set_defaults(func=_cmd_h2c)
+
     h3b = sub.add_parser("h3b", help="follow-up to H3: residue rules v1.1 on held-out upgrades")
     h3b.add_argument("stage", choices=("preregister", "verdict"))
     h3b.add_argument("--interpreter", default=None,
                      help="the Python the held-out environments are built with")
     h3b.set_defaults(func=_cmd_h3b)
+
+    h3c = sub.add_parser("h3c", help="product v1.1: residue rules v1.2 on held-out upgrades")
+    h3c.add_argument("stage", choices=("preregister", "verdict"))
+    h3c.add_argument("--interpreter", default=None,
+                     help="the Python the held-out environments are built with")
+    h3c.set_defaults(func=_cmd_h3c)
 
     val = sub.add_parser("validate", help="the two validation claims never measured")
     val.add_argument("stage", choices=("preregister", "pertool-fit", "pertool",

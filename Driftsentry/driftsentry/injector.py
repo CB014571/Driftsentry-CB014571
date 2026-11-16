@@ -158,6 +158,9 @@ class LiveSessionChannel:
         return await self.injector.list_tools()
 
     async def prepare_probe(self, tool: str) -> None:
+        """Nothing to send first: the user makes their own calls, live."""
+
+    async def pace_probe(self, tool: str) -> None:
         from driftsentry.camouflage import gap_from_profile, startup_from_profile
 
         if self.injector.last_call is None:

@@ -1,0 +1,693 @@
+{
+  "server": "tree-sitter",
+  "old_version": "0.5.1",
+  "new_version": "0.7.0",
+  "probed_tools": [
+    "configure",
+    "register_project_tool",
+    "list_projects_tool",
+    "list_languages",
+    "check_language_available",
+    "list_files",
+    "get_file",
+    "get_file_metadata",
+    "get_ast",
+    "get_node_at_position",
+    "find_text",
+    "get_query_template_tool",
+    "list_query_templates_tool",
+    "build_query",
+    "adapt_query",
+    "get_node_types",
+    "get_symbols",
+    "analyze_project",
+    "get_dependencies",
+    "analyze_complexity",
+    "find_similar_code",
+    "find_usage",
+    "clear_cache",
+    "diagnose_config"
+  ],
+  "withheld_tools": {
+    "remove_project_tool": "name suggests state change ('remove')",
+    "run_query": "name suggests state change ('run')"
+  },
+  "environments": [
+    {
+      "server": "tree-sitter",
+      "version": "0.5.1",
+      "root": "F:\\fyp project-wt\\Driftsentry\\.eval_workspace_h3c\\real\\tree-sitter-old",
+      "sdk_version": "1.7.1",
+      "sdk_resolved_by": "pip",
+      "attempts": [
+        {
+          "mcp": "1.7.1",
+          "source": "pip",
+          "ok": true,
+          "detail": "started"
+        }
+      ]
+    },
+    {
+      "server": "tree-sitter",
+      "version": "0.7.0",
+      "root": "F:\\fyp project-wt\\Driftsentry\\.eval_workspace_h3c\\real\\tree-sitter-new",
+      "sdk_version": "1.27.0",
+      "sdk_resolved_by": "pip",
+      "attempts": [
+        {
+          "mcp": "1.27.0",
+          "source": "pip",
+          "ok": true,
+          "detail": "started"
+        }
+      ]
+    }
+  ],
+  "declared": {
+    "tools_added": [],
+    "tools_removed": [],
+    "tools_renamed": {},
+    "tools": {
+      "adapt_query": {
+        "name": "adapt_query",
+        "description_changed": false,
+        "input_changes": [],
+        "output_changes": [
+          {
+            "path": "result",
+            "kind": "added"
+          }
+        ],
+        "annotations": {},
+        "escalations": []
+      },
+      "analyze_complexity": {
+        "name": "analyze_complexity",
+        "description_changed": false,
+        "input_changes": [],
+        "output_changes": [
+          {
+            "path": "result",
+            "kind": "added"
+          }
+        ],
+        "annotations": {},
+        "escalations": []
+      },
+      "analyze_project": {
+        "name": "analyze_project",
+        "description_changed": false,
+        "input_changes": [],
+        "output_changes": [
+          {
+            "path": "result",
+            "kind": "added"
+          }
+        ],
+        "annotations": {},
+        "escalations": []
+      },
+      "build_query": {
+        "name": "build_query",
+        "description_changed": false,
+        "input_changes": [],
+        "output_changes": [
+          {
+            "path": "result",
+            "kind": "added"
+          }
+        ],
+        "annotations": {},
+        "escalations": []
+      },
+      "check_language_available": {
+        "name": "check_language_available",
+        "description_changed": false,
+        "input_changes": [],
+        "output_changes": [
+          {
+            "path": "result",
+            "kind": "added"
+          }
+        ],
+        "annotations": {},
+        "escalations": []
+      },
+      "clear_cache": {
+        "name": "clear_cache",
+        "description_changed": false,
+        "input_changes": [],
+        "output_changes": [
+          {
+            "path": "result",
+            "kind": "added"
+          }
+        ],
+        "annotations": {},
+        "escalations": []
+      },
+      "configure": {
+        "name": "configure",
+        "description_changed": false,
+        "input_changes": [],
+        "output_changes": [
+          {
+            "path": "result",
+            "kind": "added"
+          }
+        ],
+        "annotations": {},
+        "escalations": []
+      },
+      "diagnose_config": {
+        "name": "diagnose_config",
+        "description_changed": false,
+        "input_changes": [],
+        "output_changes": [
+          {
+            "path": "result",
+            "kind": "added"
+          }
+        ],
+        "annotations": {},
+        "escalations": []
+      },
+      "find_similar_code": {
+        "name": "find_similar_code",
+        "description_changed": true,
+        "input_changes": [],
+        "output_changes": [
+          {
+            "path": "result",
+            "kind": "added"
+          }
+        ],
+        "annotations": {},
+        "escalations": []
+      },
+      "find_text": {
+        "name": "find_text",
+        "description_changed": false,
+        "input_changes": [],
+        "output_changes": [
+          {
+            "path": "result",
+            "kind": "added"
+          }
+        ],
+        "annotations": {},
+        "escalations": []
+      },
+      "find_usage": {
+        "name": "find_usage",
+        "description_changed": false,
+        "input_changes": [],
+        "output_changes": [
+          {
+            "path": "result",
+            "kind": "added"
+          }
+        ],
+        "annotations": {},
+        "escalations": []
+      },
+      "get_ast": {
+        "name": "get_ast",
+        "description_changed": false,
+        "input_changes": [],
+        "output_changes": [
+          {
+            "path": "result",
+            "kind": "added"
+          }
+        ],
+        "annotations": {},
+        "escalations": []
+      },
+      "get_dependencies": {
+        "name": "get_dependencies",
+        "description_changed": false,
+        "input_changes": [],
+        "output_changes": [
+          {
+            "path": "result",
+            "kind": "added"
+          }
+        ],
+        "annotations": {},
+        "escalations": []
+      },
+      "get_file": {
+        "name": "get_file",
+        "description_changed": false,
+        "input_changes": [],
+        "output_changes": [
+          {
+            "path": "result",
+            "kind": "added"
+          }
+        ],
+        "annotations": {},
+        "escalations": []
+      },
+      "get_file_metadata": {
+        "name": "get_file_metadata",
+        "description_changed": false,
+        "input_changes": [],
+        "output_changes": [
+          {
+            "path": "result",
+            "kind": "added"
+          }
+        ],
+        "annotations": {},
+        "escalations": []
+      },
+      "get_node_at_position": {
+        "name": "get_node_at_position",
+        "description_changed": false,
+        "input_changes": [],
+        "output_changes": [
+          {
+            "path": "result",
+            "kind": "added"
+          }
+        ],
+        "annotations": {},
+        "escalations": []
+      },
+      "get_node_types": {
+        "name": "get_node_types",
+        "description_changed": false,
+        "input_changes": [],
+        "output_changes": [
+          {
+            "path": "result",
+            "kind": "added"
+          }
+        ],
+        "annotations": {},
+        "escalations": []
+      },
+      "get_query_template_tool": {
+        "name": "get_query_template_tool",
+        "description_changed": false,
+        "input_changes": [],
+        "output_changes": [
+          {
+            "path": "result",
+            "kind": "added"
+          }
+        ],
+        "annotations": {},
+        "escalations": []
+      },
+      "get_symbols": {
+        "name": "get_symbols",
+        "description_changed": false,
+        "input_changes": [],
+        "output_changes": [
+          {
+            "path": "result",
+            "kind": "added"
+          }
+        ],
+        "annotations": {},
+        "escalations": []
+      },
+      "list_files": {
+        "name": "list_files",
+        "description_changed": false,
+        "input_changes": [],
+        "output_changes": [
+          {
+            "path": "result",
+            "kind": "added"
+          }
+        ],
+        "annotations": {},
+        "escalations": []
+      },
+      "list_languages": {
+        "name": "list_languages",
+        "description_changed": false,
+        "input_changes": [],
+        "output_changes": [
+          {
+            "path": "result",
+            "kind": "added"
+          }
+        ],
+        "annotations": {},
+        "escalations": []
+      },
+      "list_projects_tool": {
+        "name": "list_projects_tool",
+        "description_changed": false,
+        "input_changes": [],
+        "output_changes": [
+          {
+            "path": "result",
+            "kind": "added"
+          }
+        ],
+        "annotations": {},
+        "escalations": []
+      },
+      "list_query_templates_tool": {
+        "name": "list_query_templates_tool",
+        "description_changed": false,
+        "input_changes": [],
+        "output_changes": [
+          {
+            "path": "result",
+            "kind": "added"
+          }
+        ],
+        "annotations": {},
+        "escalations": []
+      },
+      "register_project_tool": {
+        "name": "register_project_tool",
+        "description_changed": false,
+        "input_changes": [],
+        "output_changes": [
+          {
+            "path": "result",
+            "kind": "added"
+          }
+        ],
+        "annotations": {},
+        "escalations": []
+      },
+      "remove_project_tool": {
+        "name": "remove_project_tool",
+        "description_changed": false,
+        "input_changes": [],
+        "output_changes": [
+          {
+            "path": "result",
+            "kind": "added"
+          }
+        ],
+        "annotations": {},
+        "escalations": []
+      },
+      "run_query": {
+        "name": "run_query",
+        "description_changed": true,
+        "input_changes": [
+          {
+            "path": "capture_filter",
+            "kind": "added"
+          },
+          {
+            "path": "compact",
+            "kind": "added"
+          }
+        ],
+        "output_changes": [
+          {
+            "path": "result",
+            "kind": "added"
+          }
+        ],
+        "annotations": {},
+        "escalations": []
+      }
+    }
+  },
+  "baseline_error_rate": 0.5972,
+  "error": null,
+  "runs": [
+    {
+      "server": "tree-sitter",
+      "phase": "old",
+      "run": 1,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:db4569b6b393abe97105b0215f4c850206df0a822ebcc09b526af4c93823f5fa",
+      "alerted": false,
+      "per_tool": {
+        "get_node_types": 0.0,
+        "get_dependencies": 0.0,
+        "find_usage": 0.0,
+        "configure": 0.0,
+        "register_project_tool": 0.0,
+        "list_projects_tool": 0.0,
+        "list_languages": 0.0,
+        "check_language_available": 0.0,
+        "list_files": 0.0,
+        "get_file": 0.0,
+        "get_file_metadata": 0.0,
+        "get_ast": 0.0,
+        "get_node_at_position": 0.0,
+        "find_text": 0.0,
+        "get_query_template_tool": 0.0,
+        "list_query_templates_tool": 0.0,
+        "build_query": 0.0,
+        "adapt_query": 0.0,
+        "get_symbols": 0.0,
+        "analyze_project": 0.0,
+        "analyze_complexity": 0.0,
+        "find_similar_code": 0.0,
+        "clear_cache": 0.0,
+        "diagnose_config": 0.0
+      },
+      "error": null,
+      "update_check": false,
+      "residue_verdict": "",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "tree-sitter",
+      "phase": "old",
+      "run": 2,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:db4569b6b393abe97105b0215f4c850206df0a822ebcc09b526af4c93823f5fa",
+      "alerted": false,
+      "per_tool": {
+        "get_node_types": 0.0,
+        "get_dependencies": 0.0,
+        "find_usage": 0.0,
+        "configure": 0.0,
+        "register_project_tool": 0.0,
+        "list_projects_tool": 0.0,
+        "list_languages": 0.0,
+        "check_language_available": 0.0,
+        "list_files": 0.0,
+        "get_file": 0.0,
+        "get_file_metadata": 0.0,
+        "get_ast": 0.0,
+        "get_node_at_position": 0.0,
+        "find_text": 0.0,
+        "get_query_template_tool": 0.0,
+        "list_query_templates_tool": 0.0,
+        "build_query": 0.0,
+        "adapt_query": 0.0,
+        "get_symbols": 0.0,
+        "analyze_project": 0.0,
+        "analyze_complexity": 0.0,
+        "find_similar_code": 0.0,
+        "clear_cache": 0.0,
+        "diagnose_config": 0.0
+      },
+      "error": null,
+      "update_check": false,
+      "residue_verdict": "",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "tree-sitter",
+      "phase": "old",
+      "run": 3,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:db4569b6b393abe97105b0215f4c850206df0a822ebcc09b526af4c93823f5fa",
+      "alerted": false,
+      "per_tool": {
+        "get_node_types": 0.0,
+        "get_dependencies": 0.0,
+        "find_usage": 0.0,
+        "configure": 0.0,
+        "register_project_tool": 0.0,
+        "list_projects_tool": 0.0,
+        "list_languages": 0.0,
+        "check_language_available": 0.0,
+        "list_files": 0.0,
+        "get_file": 0.0,
+        "get_file_metadata": 0.0,
+        "get_ast": 0.0,
+        "get_node_at_position": 0.0,
+        "find_text": 0.0,
+        "get_query_template_tool": 0.0,
+        "list_query_templates_tool": 0.0,
+        "build_query": 0.0,
+        "adapt_query": 0.0,
+        "get_symbols": 0.0,
+        "analyze_project": 0.0,
+        "analyze_complexity": 0.0,
+        "find_similar_code": 0.0,
+        "clear_cache": 0.0,
+        "diagnose_config": 0.0
+      },
+      "error": null,
+      "update_check": false,
+      "residue_verdict": "",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "tree-sitter",
+      "phase": "new",
+      "run": 1,
+      "score": 2.0,
+      "verdict": "alert",
+      "triggered_by": "rule:new_egress_host",
+      "definition_changed": true,
+      "definition_hash": "sha256:03db3b79dbf1e1f16717086a831149a00818557c2d8d73e9134f21123c3ac4ef",
+      "alerted": true,
+      "per_tool": {
+        "check_language_available": 2.0,
+        "configure": 1.6354,
+        "list_languages": 1.15,
+        "list_query_templates_tool": 1.15,
+        "list_projects_tool": 0.85,
+        "build_query": 0.85,
+        "adapt_query": 0.85,
+        "get_node_types": 0.85,
+        "clear_cache": 0.85,
+        "diagnose_config": 0.85,
+        "get_dependencies": 0.0,
+        "find_usage": 0.0,
+        "register_project_tool": 0.0,
+        "list_files": 0.0,
+        "get_file": 0.0,
+        "get_file_metadata": 0.0,
+        "get_ast": 0.0,
+        "get_node_at_position": 0.0,
+        "find_text": 0.0,
+        "get_query_template_tool": 0.0,
+        "get_symbols": 0.0,
+        "analyze_project": 0.0,
+        "analyze_complexity": 0.0,
+        "find_similar_code": 0.0
+      },
+      "error": null,
+      "update_check": true,
+      "residue_verdict": "residue_alert",
+      "residue_signals": [
+        "behavioural_drift",
+        "determinism_break",
+        "new_egress_host"
+      ],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "tree-sitter",
+      "phase": "new",
+      "run": 2,
+      "score": 1.6354,
+      "verdict": "alert",
+      "triggered_by": "behavioural_drift",
+      "definition_changed": true,
+      "definition_hash": "sha256:03db3b79dbf1e1f16717086a831149a00818557c2d8d73e9134f21123c3ac4ef",
+      "alerted": true,
+      "per_tool": {
+        "configure": 1.6354,
+        "list_languages": 1.15,
+        "list_query_templates_tool": 1.15,
+        "list_projects_tool": 0.85,
+        "check_language_available": 0.85,
+        "build_query": 0.85,
+        "adapt_query": 0.85,
+        "get_node_types": 0.85,
+        "clear_cache": 0.85,
+        "diagnose_config": 0.85,
+        "get_dependencies": 0.0,
+        "find_usage": 0.0,
+        "register_project_tool": 0.0,
+        "list_files": 0.0,
+        "get_file": 0.0,
+        "get_file_metadata": 0.0,
+        "get_ast": 0.0,
+        "get_node_at_position": 0.0,
+        "find_text": 0.0,
+        "get_query_template_tool": 0.0,
+        "get_symbols": 0.0,
+        "analyze_project": 0.0,
+        "analyze_complexity": 0.0,
+        "find_similar_code": 0.0
+      },
+      "error": null,
+      "update_check": true,
+      "residue_verdict": "residue_alert",
+      "residue_signals": [
+        "behavioural_drift",
+        "determinism_break"
+      ],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "tree-sitter",
+      "phase": "new",
+      "run": 3,
+      "score": 1.6354,
+      "verdict": "alert",
+      "triggered_by": "behavioural_drift",
+      "definition_changed": true,
+      "definition_hash": "sha256:03db3b79dbf1e1f16717086a831149a00818557c2d8d73e9134f21123c3ac4ef",
+      "alerted": true,
+      "per_tool": {
+        "configure": 1.6354,
+        "list_languages": 1.15,
+        "list_query_templates_tool": 1.15,
+        "list_projects_tool": 0.85,
+        "check_language_available": 0.85,
+        "build_query": 0.85,
+        "adapt_query": 0.85,
+        "get_node_types": 0.85,
+        "clear_cache": 0.85,
+        "diagnose_config": 0.85,
+        "get_dependencies": 0.0,
+        "find_usage": 0.0,
+        "register_project_tool": 0.0,
+        "list_files": 0.0,
+        "get_file": 0.0,
+        "get_file_metadata": 0.0,
+        "get_ast": 0.0,
+        "get_node_at_position": 0.0,
+        "find_text": 0.0,
+        "get_query_template_tool": 0.0,
+        "get_symbols": 0.0,
+        "analyze_project": 0.0,
+        "analyze_complexity": 0.0,
+        "find_similar_code": 0.0
+      },
+      "error": null,
+      "update_check": true,
+      "residue_verdict": "residue_alert",
+      "residue_signals": [
+        "behavioural_drift",
+        "determinism_break"
+      ],
+      "escalations": [],
+      "held_for_review": 0
+    }
+  ]
+}

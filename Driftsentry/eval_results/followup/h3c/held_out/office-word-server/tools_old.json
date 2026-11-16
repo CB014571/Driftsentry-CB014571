@@ -1,0 +1,660 @@
+[
+  {
+    "annotations": null,
+    "description": "Create a new Word document with optional metadata.",
+    "inputSchema": {
+      "properties": {
+        "author": {
+          "default": null,
+          "title": "Author",
+          "type": "string"
+        },
+        "filename": {
+          "title": "Filename",
+          "type": "string"
+        },
+        "title": {
+          "default": null,
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename"
+      ],
+      "type": "object"
+    },
+    "name": "create_document"
+  },
+  {
+    "annotations": null,
+    "description": "Create a copy of a Word document.",
+    "inputSchema": {
+      "properties": {
+        "destination_filename": {
+          "default": null,
+          "title": "Destination Filename",
+          "type": "string"
+        },
+        "source_filename": {
+          "title": "Source Filename",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_filename"
+      ],
+      "type": "object"
+    },
+    "name": "copy_document"
+  },
+  {
+    "annotations": null,
+    "description": "Get information about a Word document.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "title": "Filename",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename"
+      ],
+      "type": "object"
+    },
+    "name": "get_document_info"
+  },
+  {
+    "annotations": null,
+    "description": "Extract all text from a Word document.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "title": "Filename",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename"
+      ],
+      "type": "object"
+    },
+    "name": "get_document_text"
+  },
+  {
+    "annotations": null,
+    "description": "Get the structure of a Word document.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "title": "Filename",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename"
+      ],
+      "type": "object"
+    },
+    "name": "get_document_outline"
+  },
+  {
+    "annotations": null,
+    "description": "List all .docx files in the specified directory.",
+    "inputSchema": {
+      "properties": {
+        "directory": {
+          "default": ".",
+          "title": "Directory",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "name": "list_available_documents"
+  },
+  {
+    "annotations": null,
+    "description": "Add a paragraph to a Word document.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "title": "Filename",
+          "type": "string"
+        },
+        "style": {
+          "default": null,
+          "title": "Style",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename",
+        "text"
+      ],
+      "type": "object"
+    },
+    "name": "add_paragraph"
+  },
+  {
+    "annotations": null,
+    "description": "Add a heading to a Word document.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "title": "Filename",
+          "type": "string"
+        },
+        "level": {
+          "default": 1,
+          "title": "Level",
+          "type": "integer"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename",
+        "text"
+      ],
+      "type": "object"
+    },
+    "name": "add_heading"
+  },
+  {
+    "annotations": null,
+    "description": "Add an image to a Word document.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "title": "Filename",
+          "type": "string"
+        },
+        "image_path": {
+          "title": "Image Path",
+          "type": "string"
+        },
+        "width": {
+          "default": null,
+          "title": "Width",
+          "type": "number"
+        }
+      },
+      "required": [
+        "filename",
+        "image_path"
+      ],
+      "type": "object"
+    },
+    "name": "add_picture"
+  },
+  {
+    "annotations": null,
+    "description": "Add a table to a Word document.",
+    "inputSchema": {
+      "properties": {
+        "cols": {
+          "title": "Cols",
+          "type": "integer"
+        },
+        "data": {
+          "default": null,
+          "items": {},
+          "title": "Data",
+          "type": "array"
+        },
+        "filename": {
+          "title": "Filename",
+          "type": "string"
+        },
+        "rows": {
+          "title": "Rows",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "filename",
+        "rows",
+        "cols"
+      ],
+      "type": "object"
+    },
+    "name": "add_table"
+  },
+  {
+    "annotations": null,
+    "description": "Add a page break to the document.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "title": "Filename",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename"
+      ],
+      "type": "object"
+    },
+    "name": "add_page_break"
+  },
+  {
+    "annotations": null,
+    "description": "Delete a paragraph from a document.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "title": "Filename",
+          "type": "string"
+        },
+        "paragraph_index": {
+          "title": "Paragraph Index",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "filename",
+        "paragraph_index"
+      ],
+      "type": "object"
+    },
+    "name": "delete_paragraph"
+  },
+  {
+    "annotations": null,
+    "description": "Search for text and replace all occurrences.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "title": "Filename",
+          "type": "string"
+        },
+        "find_text": {
+          "title": "Find Text",
+          "type": "string"
+        },
+        "replace_text": {
+          "title": "Replace Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename",
+        "find_text",
+        "replace_text"
+      ],
+      "type": "object"
+    },
+    "name": "search_and_replace"
+  },
+  {
+    "annotations": null,
+    "description": "Create a custom style in the document.",
+    "inputSchema": {
+      "properties": {
+        "base_style": {
+          "default": null,
+          "title": "Base Style",
+          "type": "string"
+        },
+        "bold": {
+          "default": null,
+          "title": "Bold",
+          "type": "boolean"
+        },
+        "color": {
+          "default": null,
+          "title": "Color",
+          "type": "string"
+        },
+        "filename": {
+          "title": "Filename",
+          "type": "string"
+        },
+        "font_name": {
+          "default": null,
+          "title": "Font Name",
+          "type": "string"
+        },
+        "font_size": {
+          "default": null,
+          "title": "Font Size",
+          "type": "integer"
+        },
+        "italic": {
+          "default": null,
+          "title": "Italic",
+          "type": "boolean"
+        },
+        "style_name": {
+          "title": "Style Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename",
+        "style_name"
+      ],
+      "type": "object"
+    },
+    "name": "create_custom_style"
+  },
+  {
+    "annotations": null,
+    "description": "Format a specific range of text within a paragraph.",
+    "inputSchema": {
+      "properties": {
+        "bold": {
+          "default": null,
+          "title": "Bold",
+          "type": "boolean"
+        },
+        "color": {
+          "default": null,
+          "title": "Color",
+          "type": "string"
+        },
+        "end_pos": {
+          "title": "End Pos",
+          "type": "integer"
+        },
+        "filename": {
+          "title": "Filename",
+          "type": "string"
+        },
+        "font_name": {
+          "default": null,
+          "title": "Font Name",
+          "type": "string"
+        },
+        "font_size": {
+          "default": null,
+          "title": "Font Size",
+          "type": "integer"
+        },
+        "italic": {
+          "default": null,
+          "title": "Italic",
+          "type": "boolean"
+        },
+        "paragraph_index": {
+          "title": "Paragraph Index",
+          "type": "integer"
+        },
+        "start_pos": {
+          "title": "Start Pos",
+          "type": "integer"
+        },
+        "underline": {
+          "default": null,
+          "title": "Underline",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "filename",
+        "paragraph_index",
+        "start_pos",
+        "end_pos"
+      ],
+      "type": "object"
+    },
+    "name": "format_text"
+  },
+  {
+    "annotations": null,
+    "description": "Format a table with borders, shading, and structure.",
+    "inputSchema": {
+      "properties": {
+        "border_style": {
+          "default": null,
+          "title": "Border Style",
+          "type": "string"
+        },
+        "filename": {
+          "title": "Filename",
+          "type": "string"
+        },
+        "has_header_row": {
+          "default": null,
+          "title": "Has Header Row",
+          "type": "boolean"
+        },
+        "shading": {
+          "default": null,
+          "items": {},
+          "title": "Shading",
+          "type": "array"
+        },
+        "table_index": {
+          "title": "Table Index",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "filename",
+        "table_index"
+      ],
+      "type": "object"
+    },
+    "name": "format_table"
+  },
+  {
+    "annotations": null,
+    "description": "Add password protection to a Word document.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "title": "Filename",
+          "type": "string"
+        },
+        "password": {
+          "title": "Password",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename",
+        "password"
+      ],
+      "type": "object"
+    },
+    "name": "protect_document"
+  },
+  {
+    "annotations": null,
+    "description": "Remove password protection from a Word document.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "title": "Filename",
+          "type": "string"
+        },
+        "password": {
+          "title": "Password",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename",
+        "password"
+      ],
+      "type": "object"
+    },
+    "name": "unprotect_document"
+  },
+  {
+    "annotations": null,
+    "description": "Add a footnote to a specific paragraph in a Word document.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "title": "Filename",
+          "type": "string"
+        },
+        "footnote_text": {
+          "title": "Footnote Text",
+          "type": "string"
+        },
+        "paragraph_index": {
+          "title": "Paragraph Index",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "filename",
+        "paragraph_index",
+        "footnote_text"
+      ],
+      "type": "object"
+    },
+    "name": "add_footnote_to_document"
+  },
+  {
+    "annotations": null,
+    "description": "Add an endnote to a specific paragraph in a Word document.",
+    "inputSchema": {
+      "properties": {
+        "endnote_text": {
+          "title": "Endnote Text",
+          "type": "string"
+        },
+        "filename": {
+          "title": "Filename",
+          "type": "string"
+        },
+        "paragraph_index": {
+          "title": "Paragraph Index",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "filename",
+        "paragraph_index",
+        "endnote_text"
+      ],
+      "type": "object"
+    },
+    "name": "add_endnote_to_document"
+  },
+  {
+    "annotations": null,
+    "description": "Customize footnote numbering and formatting in a Word document.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "title": "Filename",
+          "type": "string"
+        },
+        "font_name": {
+          "default": null,
+          "title": "Font Name",
+          "type": "string"
+        },
+        "font_size": {
+          "default": null,
+          "title": "Font Size",
+          "type": "integer"
+        },
+        "numbering_format": {
+          "default": "1, 2, 3",
+          "title": "Numbering Format",
+          "type": "string"
+        },
+        "start_number": {
+          "default": 1,
+          "title": "Start Number",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "filename"
+      ],
+      "type": "object"
+    },
+    "name": "customize_footnote_style"
+  },
+  {
+    "annotations": null,
+    "description": "Get text from a specific paragraph in a Word document.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "title": "Filename",
+          "type": "string"
+        },
+        "paragraph_index": {
+          "title": "Paragraph Index",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "filename",
+        "paragraph_index"
+      ],
+      "type": "object"
+    },
+    "name": "get_paragraph_text_from_document"
+  },
+  {
+    "annotations": null,
+    "description": "Find occurrences of specific text in a Word document.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "title": "Filename",
+          "type": "string"
+        },
+        "match_case": {
+          "default": true,
+          "title": "Match Case",
+          "type": "boolean"
+        },
+        "text_to_find": {
+          "title": "Text To Find",
+          "type": "string"
+        },
+        "whole_word": {
+          "default": false,
+          "title": "Whole Word",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "filename",
+        "text_to_find"
+      ],
+      "type": "object"
+    },
+    "name": "find_text_in_document"
+  },
+  {
+    "annotations": null,
+    "description": "Convert a Word document to PDF format.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "title": "Filename",
+          "type": "string"
+        },
+        "output_filename": {
+          "default": null,
+          "title": "Output Filename",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename"
+      ],
+      "type": "object"
+    },
+    "name": "convert_to_pdf"
+  }
+]

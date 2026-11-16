@@ -1,0 +1,774 @@
+{
+  "server": "excel-server",
+  "old_version": "0.1.8",
+  "new_version": "2.3.0",
+  "probed_tools": [
+    "validate_formula_syntax",
+    "read_data_from_excel",
+    "get_workbook_metadata",
+    "get_merged_cells",
+    "validate_excel_range",
+    "get_data_validation_info"
+  ],
+  "withheld_tools": {
+    "apply_formula": "annotation: destructiveHint=true",
+    "format_range": "annotation: destructiveHint=true",
+    "write_data_to_excel": "annotation: destructiveHint=true",
+    "create_workbook": "annotation: destructiveHint=true",
+    "create_worksheet": "annotation: destructiveHint=true",
+    "create_chart": "annotation: destructiveHint=true",
+    "create_pivot_table": "annotation: destructiveHint=true",
+    "create_table": "annotation: destructiveHint=true",
+    "copy_worksheet": "annotation: destructiveHint=true",
+    "delete_worksheet": "annotation: destructiveHint=true",
+    "rename_worksheet": "annotation: destructiveHint=true",
+    "merge_cells": "annotation: destructiveHint=true",
+    "unmerge_cells": "annotation: destructiveHint=true",
+    "copy_range": "annotation: destructiveHint=true",
+    "delete_range": "annotation: destructiveHint=true",
+    "insert_rows": "annotation: destructiveHint=true",
+    "insert_columns": "annotation: destructiveHint=true",
+    "delete_sheet_rows": "annotation: destructiveHint=true",
+    "delete_sheet_columns": "annotation: destructiveHint=true"
+  },
+  "environments": [
+    {
+      "server": "excel-server",
+      "version": "0.1.8",
+      "root": "F:\\fyp project-wt\\Driftsentry\\.eval_workspace_h3c\\real\\excel-server-old",
+      "sdk_version": "1.27.0",
+      "sdk_resolved_by": "pip",
+      "attempts": [
+        {
+          "mcp": "1.27.0",
+          "source": "pip",
+          "ok": true,
+          "detail": "started"
+        }
+      ]
+    },
+    {
+      "server": "excel-server",
+      "version": "2.3.0",
+      "root": "F:\\fyp project-wt\\Driftsentry\\.eval_workspace_h3c\\real\\excel-server-new",
+      "sdk_version": "2.3.0",
+      "sdk_resolved_by": "pip",
+      "attempts": [
+        {
+          "mcp": "2.3.0",
+          "source": "pip",
+          "ok": true,
+          "detail": "started"
+        }
+      ]
+    }
+  ],
+  "declared": {
+    "tools_added": [
+      "add_conditional_format",
+      "add_data_validation",
+      "add_slicer",
+      "add_sparklines",
+      "clear_range",
+      "copy_sheet",
+      "create_sheet",
+      "delete_chart",
+      "delete_defined_name",
+      "delete_image",
+      "delete_note",
+      "delete_pivot_table",
+      "delete_rows_or_columns",
+      "delete_sheet",
+      "delete_slicer",
+      "delete_sparklines",
+      "describe_sheet",
+      "describe_workbook",
+      "export_csv",
+      "export_workbook",
+      "find_cells",
+      "goal_seek",
+      "import_csv",
+      "import_workbook",
+      "insert_image",
+      "insert_rows_or_columns",
+      "list_workbooks",
+      "read_range",
+      "read_vba",
+      "rename_sheet",
+      "replace_cells",
+      "set_defined_name",
+      "set_note",
+      "set_sheet_layout",
+      "set_table",
+      "set_workbook_settings",
+      "sort_range",
+      "trace_formula",
+      "transform_range",
+      "write_range"
+    ],
+    "tools_removed": [
+      "apply_formula",
+      "copy_worksheet",
+      "create_table",
+      "create_worksheet",
+      "delete_range",
+      "delete_sheet_columns",
+      "delete_sheet_rows",
+      "delete_worksheet",
+      "get_data_validation_info",
+      "get_merged_cells",
+      "get_workbook_metadata",
+      "insert_columns",
+      "insert_rows",
+      "read_data_from_excel",
+      "rename_worksheet",
+      "unmerge_cells",
+      "validate_excel_range",
+      "validate_formula_syntax",
+      "write_data_to_excel"
+    ],
+    "tools_renamed": {},
+    "tools": {
+      "copy_range": {
+        "name": "copy_range",
+        "description_changed": true,
+        "input_changes": [
+          {
+            "path": "at",
+            "kind": "added"
+          },
+          {
+            "path": "filepath",
+            "kind": "removed"
+          },
+          {
+            "path": "paste",
+            "kind": "added"
+          },
+          {
+            "path": "path",
+            "kind": "added"
+          },
+          {
+            "path": "range",
+            "kind": "added"
+          },
+          {
+            "path": "sheet",
+            "kind": "added"
+          },
+          {
+            "path": "sheet_name",
+            "kind": "removed"
+          },
+          {
+            "path": "skip_blanks",
+            "kind": "added"
+          },
+          {
+            "path": "source_end",
+            "kind": "removed"
+          },
+          {
+            "path": "source_start",
+            "kind": "removed"
+          },
+          {
+            "path": "target_sheet",
+            "kind": "removed"
+          },
+          {
+            "path": "target_start",
+            "kind": "removed"
+          },
+          {
+            "path": "to_sheet",
+            "kind": "added"
+          },
+          {
+            "path": "transpose",
+            "kind": "added"
+          }
+        ],
+        "output_changes": [
+          {
+            "path": "result",
+            "kind": "removed"
+          }
+        ],
+        "annotations": {
+          "openWorldHint": {
+            "old_value": true,
+            "new_value": false,
+            "old_explicit": false,
+            "new_explicit": true
+          }
+        },
+        "escalations": []
+      },
+      "create_chart": {
+        "name": "create_chart",
+        "description_changed": true,
+        "input_changes": [
+          {
+            "path": "at",
+            "kind": "added"
+          },
+          {
+            "path": "categories",
+            "kind": "added"
+          },
+          {
+            "path": "chart_type",
+            "kind": "enum_changed"
+          },
+          {
+            "path": "data_range",
+            "kind": "removed"
+          },
+          {
+            "path": "filepath",
+            "kind": "removed"
+          },
+          {
+            "path": "name",
+            "kind": "added"
+          },
+          {
+            "path": "options",
+            "kind": "added"
+          },
+          {
+            "path": "path",
+            "kind": "added"
+          },
+          {
+            "path": "replace",
+            "kind": "added"
+          },
+          {
+            "path": "series",
+            "kind": "added"
+          },
+          {
+            "path": "series_in",
+            "kind": "added"
+          },
+          {
+            "path": "sheet",
+            "kind": "added"
+          },
+          {
+            "path": "sheet_name",
+            "kind": "removed"
+          },
+          {
+            "path": "source",
+            "kind": "added"
+          },
+          {
+            "path": "target_cell",
+            "kind": "removed"
+          },
+          {
+            "path": "title",
+            "kind": "removed"
+          },
+          {
+            "path": "x_axis",
+            "kind": "removed"
+          },
+          {
+            "path": "y_axis",
+            "kind": "removed"
+          }
+        ],
+        "output_changes": [
+          {
+            "path": "result",
+            "kind": "removed"
+          }
+        ],
+        "annotations": {
+          "openWorldHint": {
+            "old_value": true,
+            "new_value": false,
+            "old_explicit": false,
+            "new_explicit": true
+          }
+        },
+        "escalations": []
+      },
+      "create_pivot_table": {
+        "name": "create_pivot_table",
+        "description_changed": true,
+        "input_changes": [
+          {
+            "path": "agg_func",
+            "kind": "removed"
+          },
+          {
+            "path": "at",
+            "kind": "added"
+          },
+          {
+            "path": "calculated_fields",
+            "kind": "added"
+          },
+          {
+            "path": "column_fields",
+            "kind": "added"
+          },
+          {
+            "path": "columns",
+            "kind": "removed"
+          },
+          {
+            "path": "data_range",
+            "kind": "removed"
+          },
+          {
+            "path": "field_settings",
+            "kind": "added"
+          },
+          {
+            "path": "filepath",
+            "kind": "removed"
+          },
+          {
+            "path": "filter_fields",
+            "kind": "added"
+          },
+          {
+            "path": "layout",
+            "kind": "added"
+          },
+          {
+            "path": "name",
+            "kind": "added"
+          },
+          {
+            "path": "path",
+            "kind": "added"
+          },
+          {
+            "path": "row_fields",
+            "kind": "added"
+          },
+          {
+            "path": "rows",
+            "kind": "removed"
+          },
+          {
+            "path": "sheet",
+            "kind": "added"
+          },
+          {
+            "path": "sheet_name",
+            "kind": "removed"
+          },
+          {
+            "path": "source",
+            "kind": "added"
+          },
+          {
+            "path": "subtotals",
+            "kind": "added"
+          },
+          {
+            "path": "value_fields",
+            "kind": "added"
+          },
+          {
+            "path": "values",
+            "kind": "removed"
+          },
+          {
+            "path": "values_in",
+            "kind": "added"
+          }
+        ],
+        "output_changes": [
+          {
+            "path": "result",
+            "kind": "removed"
+          }
+        ],
+        "annotations": {
+          "destructiveHint": {
+            "old_value": true,
+            "new_value": false,
+            "old_explicit": true,
+            "new_explicit": true
+          },
+          "openWorldHint": {
+            "old_value": true,
+            "new_value": false,
+            "old_explicit": false,
+            "new_explicit": true
+          }
+        },
+        "escalations": []
+      },
+      "create_workbook": {
+        "name": "create_workbook",
+        "description_changed": true,
+        "input_changes": [
+          {
+            "path": "filepath",
+            "kind": "removed"
+          },
+          {
+            "path": "overwrite",
+            "kind": "added"
+          },
+          {
+            "path": "path",
+            "kind": "added"
+          },
+          {
+            "path": "sheets",
+            "kind": "added"
+          }
+        ],
+        "output_changes": [
+          {
+            "path": "result",
+            "kind": "removed"
+          }
+        ],
+        "annotations": {
+          "openWorldHint": {
+            "old_value": true,
+            "new_value": false,
+            "old_explicit": false,
+            "new_explicit": true
+          }
+        },
+        "escalations": []
+      },
+      "format_range": {
+        "name": "format_range",
+        "description_changed": true,
+        "input_changes": [
+          {
+            "path": "alignment",
+            "kind": "removed"
+          },
+          {
+            "path": "bg_color",
+            "kind": "removed"
+          },
+          {
+            "path": "bold",
+            "kind": "removed"
+          },
+          {
+            "path": "border_color",
+            "kind": "removed"
+          },
+          {
+            "path": "border_style",
+            "kind": "removed"
+          },
+          {
+            "path": "conditional_format",
+            "kind": "removed"
+          },
+          {
+            "path": "end_cell",
+            "kind": "removed"
+          },
+          {
+            "path": "filepath",
+            "kind": "removed"
+          },
+          {
+            "path": "font_color",
+            "kind": "removed"
+          },
+          {
+            "path": "font_size",
+            "kind": "removed"
+          },
+          {
+            "path": "italic",
+            "kind": "removed"
+          },
+          {
+            "path": "merge_cells",
+            "kind": "removed"
+          },
+          {
+            "path": "number_format",
+            "kind": "removed"
+          },
+          {
+            "path": "path",
+            "kind": "added"
+          },
+          {
+            "path": "protection",
+            "kind": "removed"
+          },
+          {
+            "path": "range",
+            "kind": "added"
+          },
+          {
+            "path": "sheet",
+            "kind": "added"
+          },
+          {
+            "path": "sheet_name",
+            "kind": "removed"
+          },
+          {
+            "path": "start_cell",
+            "kind": "removed"
+          },
+          {
+            "path": "style",
+            "kind": "added"
+          },
+          {
+            "path": "underline",
+            "kind": "removed"
+          },
+          {
+            "path": "wrap_text",
+            "kind": "removed"
+          }
+        ],
+        "output_changes": [
+          {
+            "path": "result",
+            "kind": "removed"
+          }
+        ],
+        "annotations": {
+          "destructiveHint": {
+            "old_value": true,
+            "new_value": false,
+            "old_explicit": true,
+            "new_explicit": true
+          },
+          "openWorldHint": {
+            "old_value": true,
+            "new_value": false,
+            "old_explicit": false,
+            "new_explicit": true
+          }
+        },
+        "escalations": []
+      },
+      "merge_cells": {
+        "name": "merge_cells",
+        "description_changed": true,
+        "input_changes": [
+          {
+            "path": "action",
+            "kind": "added"
+          },
+          {
+            "path": "end_cell",
+            "kind": "removed"
+          },
+          {
+            "path": "filepath",
+            "kind": "removed"
+          },
+          {
+            "path": "path",
+            "kind": "added"
+          },
+          {
+            "path": "range",
+            "kind": "added"
+          },
+          {
+            "path": "sheet",
+            "kind": "added"
+          },
+          {
+            "path": "sheet_name",
+            "kind": "removed"
+          },
+          {
+            "path": "start_cell",
+            "kind": "removed"
+          }
+        ],
+        "output_changes": [
+          {
+            "path": "result",
+            "kind": "removed"
+          }
+        ],
+        "annotations": {
+          "openWorldHint": {
+            "old_value": true,
+            "new_value": false,
+            "old_explicit": false,
+            "new_explicit": true
+          }
+        },
+        "escalations": []
+      }
+    }
+  },
+  "baseline_error_rate": 1.0,
+  "error": null,
+  "runs": [
+    {
+      "server": "excel-server",
+      "phase": "old",
+      "run": 1,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:f84a24d8707acf611970c66e485f652e7ba588b96034e7b7961f87d741114c43",
+      "alerted": false,
+      "per_tool": {
+        "validate_formula_syntax": 0.0,
+        "get_workbook_metadata": 0.0,
+        "get_merged_cells": 0.0,
+        "read_data_from_excel": 0.0,
+        "validate_excel_range": 0.0,
+        "get_data_validation_info": 0.0
+      },
+      "error": null,
+      "update_check": false,
+      "residue_verdict": "",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "excel-server",
+      "phase": "old",
+      "run": 2,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:f84a24d8707acf611970c66e485f652e7ba588b96034e7b7961f87d741114c43",
+      "alerted": false,
+      "per_tool": {
+        "validate_formula_syntax": 0.0,
+        "get_workbook_metadata": 0.0,
+        "get_merged_cells": 0.0,
+        "read_data_from_excel": 0.0,
+        "validate_excel_range": 0.0,
+        "get_data_validation_info": 0.0
+      },
+      "error": null,
+      "update_check": false,
+      "residue_verdict": "",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "excel-server",
+      "phase": "old",
+      "run": 3,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": false,
+      "definition_hash": "sha256:f84a24d8707acf611970c66e485f652e7ba588b96034e7b7961f87d741114c43",
+      "alerted": false,
+      "per_tool": {
+        "validate_formula_syntax": 0.0,
+        "get_workbook_metadata": 0.0,
+        "get_merged_cells": 0.0,
+        "read_data_from_excel": 0.0,
+        "validate_excel_range": 0.0,
+        "get_data_validation_info": 0.0
+      },
+      "error": null,
+      "update_check": false,
+      "residue_verdict": "",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "excel-server",
+      "phase": "new",
+      "run": 1,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": true,
+      "definition_hash": "sha256:92af459dd5f2b97db3655cf8a959c926135ddd45eb22867a0d415fa198b8a2e4",
+      "alerted": false,
+      "per_tool": {
+        "validate_formula_syntax": 0.0,
+        "read_data_from_excel": 0.0,
+        "get_workbook_metadata": 0.0,
+        "get_merged_cells": 0.0,
+        "validate_excel_range": 0.0,
+        "get_data_validation_info": 0.0
+      },
+      "error": null,
+      "update_check": true,
+      "residue_verdict": "accepted",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "excel-server",
+      "phase": "new",
+      "run": 2,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": true,
+      "definition_hash": "sha256:92af459dd5f2b97db3655cf8a959c926135ddd45eb22867a0d415fa198b8a2e4",
+      "alerted": false,
+      "per_tool": {
+        "validate_formula_syntax": 0.0,
+        "read_data_from_excel": 0.0,
+        "get_workbook_metadata": 0.0,
+        "get_merged_cells": 0.0,
+        "validate_excel_range": 0.0,
+        "get_data_validation_info": 0.0
+      },
+      "error": null,
+      "update_check": true,
+      "residue_verdict": "accepted",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    },
+    {
+      "server": "excel-server",
+      "phase": "new",
+      "run": 3,
+      "score": 0.0,
+      "verdict": "ok",
+      "triggered_by": null,
+      "definition_changed": true,
+      "definition_hash": "sha256:92af459dd5f2b97db3655cf8a959c926135ddd45eb22867a0d415fa198b8a2e4",
+      "alerted": false,
+      "per_tool": {
+        "validate_formula_syntax": 0.0,
+        "read_data_from_excel": 0.0,
+        "get_workbook_metadata": 0.0,
+        "get_merged_cells": 0.0,
+        "validate_excel_range": 0.0,
+        "get_data_validation_info": 0.0
+      },
+      "error": null,
+      "update_check": true,
+      "residue_verdict": "accepted",
+      "residue_signals": [],
+      "escalations": [],
+      "held_for_review": 0
+    }
+  ]
+}

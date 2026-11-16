@@ -47,6 +47,21 @@
       ],
       "conditions": "mcp-server-motherduck in local DuckDB mode only, never its cloud mode; all three against throwaway database files.",
       "consequence": "RQ3b has 7 real servers (4 + 3), short of the 15 H3 asks for. Per GAPS_PLAN_v2's own fallback, RQ3b is reported on the approved servers and the shortfall is stated in the report's limitations; the false-alarm rate carries a wide interval and is not claimed to generalise."
+    },
+    "h3c_scope": {
+      "decided": "2026-11-15",
+      "by": "user",
+      "approved": [
+        "excel-mcp-server",
+        "office-word-mcp-server",
+        "mcp-server-tree-sitter"
+      ],
+      "supersedes": "rq3b_scope.not_approved (2026-11-09) for these three only, after the user was reminded of that refusal and confirmed",
+      "conditions": "held-out test of residue rules v1.2 only; local, stdio, throwaway environments and fixture files; never configured into Claude or any app",
+      "not_used": {
+        "chroma-mcp": "its default embedding function downloads a model (network)"
+      },
+      "release_rule": "new = the latest release on PyPI; old = the latest release at least 6 months older than new. If the old release cannot start, the next newer release still >= 6 months older is tried; if none starts the server is unmeasurable."
     }
   },
   "_what_this_is": [
@@ -366,6 +381,80 @@
       "label": null,
       "approved": "2026-11-09",
       "why_shortlisted": "SQLAlchemy over a throwaway SQLite file, given through DB_URL."
+    },
+    {
+      "name": "excel-mcp-server",
+      "launcher": "pip",
+      "package": "excel-mcp-server",
+      "entry": [
+        "-c",
+        "import sys\nsys.argv = ['excel-mcp-server', 'stdio']\ntry:\n    from excel_mcp.cli import main\nexcept ImportError:\n    from excel_mcp.__main__ import app as main\nmain()"
+      ],
+      "entry_note": "0.1.x exposes a typer app (excel_mcp.__main__:app), 2.x an argparse main (excel_mcp.cli:main); both take the 'stdio' subcommand",
+      "env": {
+        "EXCEL_FILES_PATH": "{db_dir}"
+      },
+      "fixture": "xlsx",
+      "old": "0.1.8",
+      "new": "2.3.0",
+      "old_date": "2026-04-12",
+      "new_date": "2026-11-09",
+      "releases": 26,
+      "needs_key": false,
+      "network": false,
+      "read_only_tools": [],
+      "read_only_tools_confirmed": false,
+      "label": null,
+      "approved": "2026-11-15",
+      "why_shortlisted": "Local workbooks only (openpyxl). A major-version jump."
+    },
+    {
+      "name": "office-word-mcp-server",
+      "launcher": "pip",
+      "package": "office-word-mcp-server",
+      "entry": [
+        "-c",
+        "from word_document_server.main import run_server; run_server()"
+      ],
+      "env": {
+        "MCP_TRANSPORT": "stdio"
+      },
+      "fixture": "docx",
+      "old": "1.1.7",
+      "new": "1.1.11",
+      "old_date": "2025-06-19",
+      "new_date": "2025-12-31",
+      "releases": 14,
+      "needs_key": false,
+      "network": false,
+      "read_only_tools": [],
+      "read_only_tools_confirmed": false,
+      "label": null,
+      "approved": "2026-11-15",
+      "caution": "prints 'Transport: stdio' to stdout before serving; may not start under a strict stdio client, in which case it is unmeasurable. convert_to_pdf drives Microsoft Word and must never be probed.",
+      "why_shortlisted": "Local .docx files only (python-docx). Patch-level releases."
+    },
+    {
+      "name": "mcp-server-tree-sitter",
+      "launcher": "pip",
+      "package": "mcp-server-tree-sitter",
+      "entry": [
+        "-c",
+        "import sys; sys.argv = ['mcp-server-tree-sitter']; from mcp_server_tree_sitter.server import main; main()"
+      ],
+      "env": {},
+      "old": "0.5.1",
+      "new": "0.7.0",
+      "old_date": "2025-05-03",
+      "new_date": "2026-04-09",
+      "releases": 7,
+      "needs_key": false,
+      "network": false,
+      "read_only_tools": [],
+      "read_only_tools_confirmed": false,
+      "label": null,
+      "approved": "2026-11-15",
+      "why_shortlisted": "Local source-code analysis. Minor-version jump."
     }
   ],
   "excluded": [

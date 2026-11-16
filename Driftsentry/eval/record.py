@@ -152,6 +152,8 @@ class ExperimentRow:
     # file stays a prefix of this header and can still be resumed.
     probe_window_events: int = -1
     genuine_window_events: int = -1
+    # H2c: whether the real-call guard contributed an alert this cycle.
+    guard_fired: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)

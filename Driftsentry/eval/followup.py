@@ -90,7 +90,7 @@ def profile_from_sessions(sessions: list[list[dict[str, Any]]], server: str) -> 
     Same fields traffic.learn() derives from a proxy log: gaps between calls,
     the delay before a session's first call, and per-tool argument shapes.
     """
-    from driftsentry.traffic import MAX_GAP_S, ToolShape, TrafficProfile, _arg_text
+    from driftsentry.traffic import MAX_GAP_S, ToolShape, TrafficProfile, _arg_text, skeleton
 
     gaps, startups, texts = [], [], {}
     for calls in sessions:
@@ -109,7 +109,8 @@ def profile_from_sessions(sessions: list[list[dict[str, Any]]], server: str) -> 
             median_len=int(statistics.median(lengths)),
             digit_ratio=(sum(c.isdigit() for c in joined) / len(joined)) if joined else 0.0,
             space_ratio=(joined.count(" ") / len(joined)) if joined else 0.0,
-            lengths=sorted(lengths))
+            lengths=sorted(lengths),
+            skeletons=sorted(skeleton(v) for v in values))
     return TrafficProfile(server=server, n_sessions=len(sessions),
                           n_calls=sum(len(s) for s in sessions),
                           calls_per_session=[len(s) for s in sessions],
@@ -244,8 +245,13 @@ async def insession_cycle(
     monitor_sandbox: bool = True,
     shapes: dict[str, Any] | None = None,
     profile: Any = None,
+    guard: bool = False,
 ) -> tuple[Any, list[Any]]:
     """Open one live session through the proxy and verify inside it.
+
+    ``guard`` (H2c): one continuous watch is shared by the probes and the
+    real-call guard, and the guard checks every replayed genuine call - the
+    same arrangement the product proxy runs.
 
     Returns the drift report and every call record (genuine and probe), in
     the order the server received them.
@@ -285,12 +291,29 @@ async def insession_cycle(
                 session, genuine, key=key, server=server_id, cycle=cycle,
                 profile=profile,
                 expected_probes=expected_probe_calls(baseline, 1, True))
-            report = await verify_server(
-                baseline, session=channel, server_pids=pids,
-                samples_per_probe=1, monitor_sandbox=monitor_sandbox,
-                threshold_ratio=threshold_ratio, cycle=cycle, key=key,
-                subsample_bank=True, shapes=shapes)
-            records = await channel.finish()
+            watch = None
+            if guard and monitor_sandbox and pids:
+                from driftsentry.sandbox import ContinuousMonitor
+
+                watch = ContinuousMonitor(pids).start()
+            try:
+                report = await verify_server(
+                    baseline, session=channel, server_pids=pids,
+                    samples_per_probe=1, monitor_sandbox=monitor_sandbox,
+                    threshold_ratio=threshold_ratio, cycle=cycle, key=key,
+                    subsample_bank=True, shapes=shapes, watch=watch)
+                records = await channel.finish()
+                if guard:
+                    from driftsentry.guard import RealCallGuard, apply_guard
+
+                    checker = RealCallGuard(server_id, baseline, watch)
+                    for r in records:
+                        if r.kind == "genuine" and r.mono_end:
+                            checker.check(r.tool, r.args, r.result, r.mono_start, r.mono_end)
+                    apply_guard(report, checker.take())
+            finally:
+                if watch is not None:
+                    watch.close()
     return report, records
 
 

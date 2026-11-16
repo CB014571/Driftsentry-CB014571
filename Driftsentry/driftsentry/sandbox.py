@@ -272,3 +272,163 @@ class SandboxMonitor:
 
     def __exit__(self, *exc: object) -> None:
         self._observation = self.stop()
+
+
+# --------------------------------------------------------------------------- #
+# Continuous monitoring (product v1.1, follow-up H2c)
+# --------------------------------------------------------------------------- #
+@dataclass
+class _Sample:
+    t0: float                  # monotonic, when the sweep began
+    t1: float                  # monotonic, when it finished
+    hosts: frozenset
+    files: frozenset
+
+
+class ContinuousMonitor:
+    """Watches a process tree for the whole session, one sweep after another.
+
+    Why it replaced the per-probe window for in-session verification
+        SandboxMonitor snapshots the tree before a probe and sweeps it again
+        after. On Windows each sweep costs about 0.1-0.2 s (psutil's
+        open_files), measured at 0.12 s to start and 0.20 s to stop. H2b found
+        probes arriving a median 0.52 s after the previous call against 0.03 s
+        for genuine calls, and timing alone recognised them at AUC 0.80: the
+        detector's own bookkeeping was the tell. Here the sweeps run all the
+        time on their own thread, so a call costs nothing to watch, and a
+        window is answered afterwards from timestamped sweeps.
+
+    What a window means
+        ``window(start, end)`` unions every sweep that overlapped the call plus
+        the first sweep that began after it ended - the same "held during, or
+        still held just after" view SandboxMonitor gives. ``new_*`` is what
+        was absent from the last sweep that finished before the call began.
+
+    Attribution limit, stated rather than hidden
+        Two calls in flight at once share their sweeps, so a side effect is
+        attributed to every call it overlapped. In-session verification sends
+        one call at a time, so this only arises when a client sends calls
+        concurrently with a probe in the live proxy.
+    """
+
+    def __init__(self, pid: int | None | list[int], *, interval: float = 0.0,
+                 keep_s: float = 900.0, isolate: bool = True) -> None:
+        self._pids = [pid] if isinstance(pid, int) else list(pid or [])
+        self._inner = SandboxMonitor(pid)
+        self.available = self._inner.available
+        self.interval = interval
+        self.keep_s = keep_s
+        # Sweep in a separate process (driftsentry/_watcher.py explains the
+        # measured reason). ``isolate=False`` keeps the in-thread loop.
+        self.isolate = isolate
+        self._proc = None
+        self._samples: list[_Sample] = []
+        self._lock = threading.Lock()
+        self._new_sample = threading.Condition(self._lock)
+        self._stop = threading.Event()
+        self._thread: threading.Thread | None = None
+
+    def start(self) -> "ContinuousMonitor":
+        if not self.available or self._thread is not None:
+            return self
+        target = self._loop
+        if self.isolate:
+            import subprocess
+
+            package_root = str(Path(__file__).resolve().parents[1])
+            env = dict(os.environ)
+            env["PYTHONPATH"] = package_root + os.pathsep + env.get("PYTHONPATH", "")
+            self._proc = subprocess.Popen(
+                [sys.executable, "-m", "driftsentry._watcher", str(os.getpid()),
+                 *[str(p) for p in self._pids]],
+                stdout=subprocess.PIPE, stdin=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL, env=env, text=True, bufsize=1)
+            target = self._read
+        self._thread = threading.Thread(target=target, name="driftsentry-watch",
+                                        daemon=True)
+        self._thread.start()
+        return self
+
+    def close(self) -> None:
+        self._stop.set()
+        if self._proc is not None:
+            try:
+                self._proc.kill()
+                self._proc.wait(timeout=2.0)
+            except Exception:  # pragma: no cover - best effort
+                pass
+        if self._thread is not None:
+            self._thread.join(timeout=2.0)
+
+    def _add(self, sample: _Sample) -> None:
+        with self._new_sample:
+            self._samples.append(sample)
+            cutoff = sample.t1 - self.keep_s
+            while self._samples and self._samples[0].t1 < cutoff:
+                self._samples.pop(0)
+            self._new_sample.notify_all()
+
+    def _read(self) -> None:
+        """Collect sweeps from the watcher process. Blocks on I/O, not the GIL."""
+        import json
+
+        assert self._proc is not None and self._proc.stdout is not None
+        for line in self._proc.stdout:
+            if self._stop.is_set():
+                break
+            try:
+                d = json.loads(line)
+                self._add(_Sample(float(d["t0"]), float(d["t1"]),
+                                  frozenset(d.get("hosts") or ()),
+                                  frozenset(d.get("files") or ())))
+            except Exception:  # noqa: BLE001 - one bad line is one lost sweep
+                continue
+        with self._new_sample:
+            self._new_sample.notify_all()
+
+    def _loop(self) -> None:
+        import time
+
+        while not self._stop.is_set():
+            t0 = time.monotonic()
+            hosts, files = self._inner._collect()
+            t1 = time.monotonic()
+            self._add(_Sample(t0, t1, frozenset(hosts), frozenset(files)))
+            if self.interval:
+                self._stop.wait(self.interval)
+
+    def window(self, start: float, end: float, *, wait_s: float = 2.0) -> Observation:
+        """Side effects for a call that ran from ``start`` to ``end`` (monotonic).
+
+        Blocks (up to ``wait_s``) until a sweep that began after ``end`` exists,
+        so call it once the call is over - after a cycle's calls, not between
+        them, or the wait itself becomes a timing tell.
+        """
+        if not self.available:
+            return Observation(available=False)
+        import time
+
+        deadline = time.monotonic() + wait_s
+        with self._new_sample:
+            while not any(s.t0 >= end for s in self._samples):
+                remaining = deadline - time.monotonic()
+                if remaining <= 0 or self._stop.is_set():
+                    break
+                if self._thread is not None and not self._thread.is_alive():
+                    break
+                self._new_sample.wait(remaining)
+            samples = list(self._samples)
+        during = [s for s in samples if s.t1 >= start and s.t0 <= end]
+        after = next((s for s in samples if s.t0 >= end), None)
+        if after is not None:
+            during.append(after)
+        before = [s for s in samples if s.t1 < start]
+        base = before[-1] if before else None
+        hosts = set().union(*(s.hosts for s in during)) if during else set()
+        files = set().union(*(s.files for s in during)) if during else set()
+        return Observation(
+            hosts=sorted(hosts), files=sorted(files),
+            new_hosts=sorted(hosts - (base.hosts if base else set())),
+            new_files=sorted(files - (base.files if base else set())),
+            available=True,
+        )
