@@ -2,7 +2,7 @@
 
 **Detects behavioural rug-pull attacks in the Model Context Protocol (MCP).**
 
-Release 1.0.0. This is the detector half of the final-year project. The project
+Release 1.1.0. This is the detector half of the final-year project. The project
 overview, the research gaps and the headline results are in the
 [repository README](../README.md). Every measured number is in
 [eval_results/tables.md](eval_results/tables.md).
@@ -49,20 +49,31 @@ py -m venv .venv
 .venv\Scripts\python -m pytest -q
 ```
 
-## Commands
+## The product: one workflow
 
-| Command | What it does |
-|---|---|
-| `driftsentry demo` | The demonstration in one command: the attacker's test menu and the dashboard. See [docs/USER_GUIDE.md](docs/USER_GUIDE.md). |
-| `driftsentry ui` | The desktop dashboard, with the monitoring daemon behind it. It checks every enrolled server on a schedule. |
-| `driftsentry baseline --server NAME [--probe-mode keyed] --exec CMD...` | Enrol a server. Use `--probe-mode keyed`. `fixed` stays the default only so earlier experiments reproduce. |
-| `driftsentry calibrate` | Set the alert threshold from benign servers only. Attack data is never used. |
-| `driftsentry verify --server NAME [--update-check] [--cycle N]` | Check once. Exits 1 on an alert. `--update-check` scores a changed definition as an update. `--hash-only` is the mcp-scan-style control. |
-| `driftsentry watch --server NAME` | Re-check on a schedule in the terminal. Uses a new probe cycle each time, with update checking on. |
-| `driftsentry init --config PATH` | Rewrite an MCP client config so every stdio server runs through the DriftSentry proxy, and baseline each one. The original is not modified unless `--in-place` is given, and then a backup is kept. |
-| `driftsentry restore --config PATH` | Take DriftSentry back out of a client config. |
-| `driftsentry run --server NAME --exec CMD...` | The transparent stdio proxy itself. `--enforce` blocks calls to a quarantined server. `--passive` also checks live traffic. |
-| `driftsentry report`, `quarantine`, `trust` | Alert history and policy state. |
+| Step | Command | What it does |
+|---|---|---|
+| 1. Approve | `driftsentry baseline --server NAME --exec CMD...` | Record the server's behaviour with keyed probes (the default since 1.1.0). |
+| 2. Protect | `driftsentry run --server NAME --in-session --exec CMD...` | Proxy the server and verify it from inside the live session: probes travel with the user's own calls, and every real call is checked by the real-call guard. Alerts quarantine the server; `--enforce` also refuses calls to it. |
+| 3. On update | `driftsentry verify --server NAME --update-check` | Check a changed server against what its new tool definitions declare. The product uses residue rules v1.1, the most completely measured set. |
+| Respond | `driftsentry report`, `quarantine`, `trust` | Alert history and policy state. |
+| Set up | `driftsentry init --config PATH`, `restore` | Route an MCP client's servers through DriftSentry, and take it out again. |
+
+### What is measured, and what is not
+
+| Part | Status | Evidence |
+|---|---|---|
+| Keyed probes | Core | Probe-aware attacks fired and were detected 30 of 30 times; fixed probes were recognised in 36 of 36 episodes (Experiments 1 and 2). |
+| Side-effect and content rules | Core | Caught exfiltration and new egress with no false alarm (ablation, Experiment 2). |
+| Real-call guard | Core | Caught probe-aware attacks on real calls; raised no false alarm in H2c. |
+| Behavioural drift (embedding, determinism) | Core, uncalibrated | The only signal that catches silent tampering, and the source of every benign false alarm measured. Calibrate it per server before relying on its alerts. |
+| Residue checking (rules v1.1) | Core | 45 of 45 hidden changes detected, 0 of 6 benign updates alarmed; 1 of 3 held-out real upgrades still flagged. |
+| `driftsentry demo`, `ui` | Demonstration | The attacker's test menu and the dashboard. See [docs/USER_GUIDE.md](docs/USER_GUIDE.md). |
+| `watch` | Experimental | Verifies from a separate session, which a probe-aware server can recognise (H1). Prefer `run --in-session`. |
+| `calibrate` | Experimental | Works, but has only been run on one server. |
+| CUSUM, metamorphic relations, tripwires | Experimental | Built and unit-tested; not part of any verdict. |
+
+Other options: `verify --hash-only` is the mcp-scan-style control; `baseline --probe-mode fixed` reproduces the fixed-probe experiments.
 
 Data is stored under `.driftsentry_data/`, or `DRIFTSENTRY_HOME` if set:
 baselines, the calibration, alerts (JSONL), policy and the per-server probe keys.

@@ -18,6 +18,7 @@ Two rules from the roadmap are enforced here:
 """
 from __future__ import annotations
 
+from driftsentry.residue import PRODUCT_RULES
 import asyncio
 import logging
 import threading
@@ -372,6 +373,7 @@ class Daemon:
                 # declared changes explain the behaviour they cover and only
                 # the residue can alert. Identical scoring otherwise.
                 update_check=True,
+                rules_version=PRODUCT_RULES,
             )
         except Exception as exc:  # noqa: BLE001 - one bad cycle must not stop the daemon
             state.status, state.error = "error", f"{type(exc).__name__}: {exc}"

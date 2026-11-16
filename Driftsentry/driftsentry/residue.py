@@ -230,6 +230,16 @@ RULES_V1_2: dict[str, Any] = {
 }
 
 
+#: The rule set the PRODUCT uses for update checks (proxy, daemon, CLI).
+#: v1.1 is the most completely measured set: on the synthetic matrix it
+#: detected 45 of 45 hidden changes with 0 of 6 benign updates alarmed, and on
+#: held-out real upgrades it left a residue on 1 of 3 (H3b). v1.2 adds rename
+#: and removal rules but its synthetic re-run was not completed, so it stays
+#: available, not default. Library calls keep their own default ("1.0"), so
+#: every frozen experiment still reproduces exactly.
+PRODUCT_RULES = "1.1"
+
+
 def _norm_name(name: str) -> str:
     return "".join(ch for ch in str(name).lower() if ch.isalnum())
 

@@ -387,6 +387,7 @@ async def _insession_loop(server_name: str, injector, server_pids: list[int],
     from driftsentry.injector import LiveSessionChannel
     from driftsentry.store import BaselineStore
     from driftsentry.traffic import load_or_learn as load_traffic
+    from driftsentry.residue import PRODUCT_RULES
     from driftsentry.verify import verify_server
 
     baseline = BaselineStore().load(server_name)
@@ -407,7 +408,7 @@ async def _insession_loop(server_name: str, injector, server_pids: list[int],
             report = await verify_server(
                 baseline, session=channel, server_pids=server_pids,
                 samples_per_probe=1, subsample_bank=True, cycle=cycle, key=key,
-                update_check=True, watch=watch)
+                update_check=True, watch=watch, rules_version=PRODUCT_RULES)
             _handle_insession_report(server_name, report)
         except Exception as exc:  # noqa: BLE001 - never take the user's session down
             log.warning("in-session verification cycle %d failed: %s", cycle, exc)

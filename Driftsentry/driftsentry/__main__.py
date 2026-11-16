@@ -264,6 +264,7 @@ def _cmd_verify(ns: argparse.Namespace) -> int:
             threshold_ratio=ns.threshold,
             cycle=ns.cycle,
             update_check=ns.update_check,
+            rules_version=PRODUCT_RULES,
         )
 
     try:
@@ -463,6 +464,7 @@ def _cmd_watch(ns: argparse.Namespace) -> int:
                     monitor_sandbox=not ns.no_sandbox,
                     cycle=checks + 1,
                     update_check=True,
+                    rules_version=PRODUCT_RULES,
                 )
             except Exception as exc:  # noqa: BLE001 - a bad cycle must not kill the monitor
                 from datetime import datetime
@@ -835,14 +837,30 @@ def _default(_: argparse.Namespace) -> int:
     return 0
 
 
+from driftsentry.residue import PRODUCT_RULES  # noqa: E402  (product rule set)
+
+
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="driftsentry", add_help=True)
+    parser = argparse.ArgumentParser(
+        prog="driftsentry", add_help=True,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description="Detect MCP servers that change behaviour after you approved them.",
+        epilog=(
+            "The workflow:\n"
+            "  1. approve    driftsentry baseline --server NAME --probe-mode keyed --exec ...\n"
+            "  2. protect    driftsentry run --server NAME --in-session --exec ...\n"
+            "                (probes inside the live session + the real-call guard)\n"
+            "  3. on update  driftsentry verify --server NAME --update-check\n"
+            "  respond       driftsentry report | quarantine | trust\n"
+            "\n"
+            "Demonstration: driftsentry demo.  Experimental: watch, calibrate."))
     parser.add_argument("-V", "--version", action="version", version=__version__)
     parser.set_defaults(func=_default)
     sub = parser.add_subparsers(dest="command")
 
     # run ------------------------------------------------------------------
-    run = sub.add_parser("run", help="headless transparent proxy for one stdio MCP server (Phase 1)")
+    run = sub.add_parser("run", help="protect one stdio MCP server: proxy its traffic and, with "
+                         "--in-session, verify it from inside the live session")
     run.add_argument("--server", required=True, help="logical name for the server (used for its log file)")
     run.add_argument("--cwd", default=None, help="working directory for the real server")
     run.add_argument("--forward-env", action="append", default=[], metavar="KEY",
@@ -853,7 +871,8 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--in-session", action="store_true",
                      help="also verify the server from inside this live session: keyed "
                           "probes are injected at the user's own pace and never reach the "
-                          "client, so a server cannot tell them from real calls (H2b)")
+                          "client; every real call is also checked for new hosts, "
+                          "new file locations and instruction-shaped output (recommended)")
     run.add_argument("--verify-interval", type=float, default=300.0,
                      help="average seconds between in-session checks (default 300)")
     run.add_argument("--enforce", action="store_true",
@@ -864,7 +883,7 @@ def build_parser() -> argparse.ArgumentParser:
     run.set_defaults(func=_cmd_run)
 
     # baseline -------------------------------------------------------------
-    baseline = sub.add_parser("baseline", help="capture a behavioural baseline for one server (Phase 3)")
+    baseline = sub.add_parser("baseline", help="approve a server: record its behavioural baseline")
     baseline.add_argument("--server", required=True, help="name to store the baseline under")
     baseline.add_argument("--cwd", default=None, help="working directory for the server")
     baseline.add_argument("--verbose", action="store_true", help="log probe progress")
@@ -872,18 +891,20 @@ def build_parser() -> argparse.ArgumentParser:
                           help="keyed only: draw probe values to the length and character "
                                "mix of the arguments real users send (from the proxy's "
                                "traffic profile), so arguments do not give probes away")
-    baseline.add_argument("--probe-mode", choices=("fixed", "keyed"), default="fixed",
-                          help="fixed: replay stored probe values (default, as the "
-                               "earlier experiments ran). keyed: draw fresh values "
-                               "from this server's secret key every check, so a "
-                               "server cannot learn to recognise them (recommended)")
+    baseline.add_argument("--probe-mode", choices=("fixed", "keyed"), default="keyed",
+                          help="keyed (default): draw fresh values from this server's "
+                               "secret key every check, so a server cannot recognise them "
+                               "by content. fixed: replay stored values, as Experiment 1 "
+                               "did - a probe-aware server recognised them in 36 of 36 "
+                               "episodes")
     _add_probe_options(baseline)
     baseline.add_argument("--exec", required=True, nargs=argparse.REMAINDER,
                           help="the server's launch command (must be last)")
     baseline.set_defaults(func=_cmd_baseline)
 
     # verify ---------------------------------------------------------------
-    verify = sub.add_parser("verify", help="re-probe a server and score it against its baseline (Phase 4)")
+    verify = sub.add_parser("verify", help="check a server once against its baseline; with --update-check, "
+                              "check an update against what it declares")
     verify.add_argument("--server", required=True, help="name of the stored baseline")
     verify.add_argument("--cwd", default=None, help="working directory for the server")
     verify.add_argument("--samples-per-probe", type=int, default=2,
@@ -913,7 +934,7 @@ def build_parser() -> argparse.ArgumentParser:
     # ui -------------------------------------------------------------------
     ui = sub.add_parser(
         "ui",
-        help="open the desktop dashboard, with the monitoring daemon behind it (Phase 6)",
+        help="open the desktop dashboard, with the monitoring daemon behind it",
     )
     ui.add_argument("--interval", type=float, default=20.0,
                     help="seconds between scheduled checks (default 20)")
@@ -948,7 +969,8 @@ def build_parser() -> argparse.ArgumentParser:
     # watch ----------------------------------------------------------------
     watch = sub.add_parser(
         "watch",
-        help="re-verify a server on a schedule and alert live when drift appears (Phase 6 preview)",
+        help="experimental: re-verify on a schedule from a separate session, which a "
+             "probe-aware server can recognise (H1); prefer run --in-session",
     )
     watch.add_argument("--server", required=True, help="name of the stored baseline")
     watch.add_argument("--interval", type=float, default=12.0,
@@ -964,7 +986,7 @@ def build_parser() -> argparse.ArgumentParser:
     # calibrate ------------------------------------------------------------
     calibrate = sub.add_parser(
         "calibrate",
-        help="derive the detection threshold from benign servers only (Phase 4)",
+        help="experimental: derive the alert threshold from servers known to be benign",
     )
     calibrate.add_argument("--server", action="append", default=[], metavar="NAME",
                            help="benign server to calibrate on (repeatable); default is every baseline")
@@ -985,7 +1007,7 @@ def build_parser() -> argparse.ArgumentParser:
     calibrate.set_defaults(func=_cmd_calibrate)
 
     # init -----------------------------------------------------------------
-    init = sub.add_parser("init", help="ingest a client config, rewrite it, and baseline servers (Phase 2+3)")
+    init = sub.add_parser("init", help="route an MCP client's servers through DriftSentry and baseline them")
     init.add_argument("--config", required=True, help="path to the MCP client config JSON")
     init.add_argument("--output", default=None, help="where to write the rewritten config")
     init.add_argument("--in-place", action="store_true",
@@ -994,13 +1016,13 @@ def build_parser() -> argparse.ArgumentParser:
                       help="only rewrite this server (repeatable); default is all supported servers")
     init.add_argument("--no-diff", action="store_true", help="do not print the diff")
     init.add_argument("--no-baseline", action="store_true",
-                      help="rewrite only; skip Phase 3 behavioural baseline capture")
+                      help="rewrite only; skip the behavioural baseline capture")
     init.add_argument("--verbose", action="store_true", help="log probe progress")
     _add_probe_options(init)
     init.set_defaults(func=_cmd_init)
 
     # report ---------------------------------------------------------------
-    report = sub.add_parser("report", help="show alert history and policy state (Phase 5)")
+    report = sub.add_parser("report", help="show alert history and policy state")
     report.add_argument("--server", default=None, help="server to report on (default: all)")
     report.add_argument("--limit", type=int, default=10, help="most recent N alerts (default 10)")
     report.add_argument("--full", action="store_true", help="render each alert in full")
@@ -1008,20 +1030,20 @@ def build_parser() -> argparse.ArgumentParser:
     report.set_defaults(func=_cmd_report)
 
     # quarantine / trust ---------------------------------------------------
-    quarantine = sub.add_parser("quarantine", help="mark a server as quarantined (Phase 5)")
+    quarantine = sub.add_parser("quarantine", help="mark a server as quarantined")
     quarantine.add_argument("--server", required=True)
     quarantine.add_argument("--reason", default=None)
     quarantine.add_argument("--enforce", action="store_true",
                             help="also allow the proxy to refuse calls to this server")
     quarantine.set_defaults(func=_cmd_quarantine)
 
-    trust = sub.add_parser("trust", help="clear a quarantine and trust a server again (Phase 5)")
+    trust = sub.add_parser("trust", help="clear a quarantine and trust a server again")
     trust.add_argument("--server", required=True)
     trust.add_argument("--reason", default=None)
     trust.set_defaults(func=_cmd_trust)
 
     # restore --------------------------------------------------------------
-    restore = sub.add_parser("restore", help="restore a config from backup, removing DriftSentry (Phase 2)")
+    restore = sub.add_parser("restore", help="restore a config from backup, removing DriftSentry")
     restore.add_argument("--config", required=True, help="path to the config to restore")
     restore.add_argument("--backup", default=None, help="specific backup file (default: newest)")
     restore.add_argument("--unwrap", action="store_true",

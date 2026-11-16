@@ -1,5 +1,34 @@
 # Changelog
 
+## 1.1.0 (2026-11-16)
+
+The scope-frozen release. One workflow, defaults chosen from the measured
+results, and the design iterations that followed the failed hypotheses.
+
+### Product (`Driftsentry/`)
+
+* One workflow, shown in `driftsentry --help`: approve (`baseline`), protect
+  (`run --in-session`), check updates (`verify --update-check`), respond.
+  Development labels removed from the command help.
+* `baseline` now defaults to keyed probes: fixed values were recognised in 36
+  of 36 probe-aware episodes (Experiment 1). Pass `--probe-mode fixed` to
+  reproduce the fixed-probe experiments.
+* Update checks in the product (CLI, proxy, dashboard daemon) use residue
+  rules v1.1 (`residue.PRODUCT_RULES`). Library calls keep their own default,
+  so every frozen experiment still reproduces.
+* `run --in-session`: probes injected into the live session; side effects
+  watched continuously from a separate process (`_watcher.py`); probe values
+  matched to one real value's character pattern; and the real-call guard
+  (`guard.py`), which checks every real call for new hosts, new file
+  locations and instruction-shaped output.
+* `watch` and `calibrate` are marked experimental.
+
+### Evaluation (`Driftsentry/eval/`)
+
+* H2c and H3c drivers (`followup_h2c.py`, `followup_h3c.py`), rules v1.2,
+  three held-out real servers. All pre-registered; H2, H2b, H2c, H3, H3b and
+  H3c fail as frozen and are reported as findings.
+
 ## 1.0.0 (2026-11-12)
 
 The final-year-project release: both research gaps built, measured and
