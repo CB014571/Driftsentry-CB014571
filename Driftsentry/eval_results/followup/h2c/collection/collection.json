@@ -1,0 +1,13 @@
+{
+  "windows": 1231,
+  "genuine_windows": 691,
+  "probe_windows": 540,
+  "feature_rows": 1375,
+  "baseline_cutoff": 1794760262.589626,
+  "errors": [],
+  "out_dir": "F:\\fyp project-wt\\Driftsentry\\eval_results\\followup\\h2c\\collection",
+  "benign_verdicts": {
+    "alert": 22,
+    "ok": 38
+  }
+}
