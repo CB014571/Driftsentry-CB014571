@@ -51,7 +51,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from eval.followup import (_sha, _true, events_in_windows, genuine_split,  # noqa: F401
+from eval.followup import (_sha, _true, sha_matches, events_in_windows, genuine_split,  # noqa: F401
                            insession_cycle, profile_from_sessions)
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -152,9 +152,9 @@ def preregister(server_id: str = "target") -> dict[str, Any]:
 def verify_preregistration() -> dict[str, Any]:
     doc = json.loads(PREREG.read_text(encoding="utf-8"))
     recorded = PREREG.with_suffix(".sha256").read_text(encoding="utf-8").strip()
-    if _sha(PREREG) != recorded:
+    if not sha_matches(PREREG, recorded):
         raise RuntimeError("H2c preregistration.json no longer matches its sha256")
-    if _sha(PROFILE_A) != doc["genuine_split"]["profile_a_sha256"]:
+    if not sha_matches(PROFILE_A, doc["genuine_split"]["profile_a_sha256"]):
         raise RuntimeError("H2c profile_split_a.json changed after pre-registration")
     return doc
 

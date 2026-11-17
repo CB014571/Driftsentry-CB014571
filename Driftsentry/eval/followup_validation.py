@@ -39,6 +39,9 @@ FA_RATIO_AT_MOST = 0.5           # per-tool false alarms at most half the global
 RECALL_DROP_AT_MOST_PP = 5.0     # "equal recall"
 
 
+from eval.followup import sha_matches  # noqa: E402
+
+
 def _sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -88,7 +91,7 @@ def preregister() -> dict[str, Any]:
 
 def verify_preregistration() -> dict[str, Any]:
     doc = json.loads(PREREG.read_text(encoding="utf-8"))
-    if _sha(PREREG) != PREREG.with_suffix(".sha256").read_text(encoding="utf-8").strip():
+    if not sha_matches(PREREG, PREREG.with_suffix(".sha256").read_text(encoding="utf-8")):
         raise RuntimeError("validation preregistration.json no longer matches its sha256")
     return doc
 

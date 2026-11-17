@@ -41,6 +41,9 @@ DETECT_AT_LEAST_PCT = 80.0
 REAL_UPGRADES_AT_MOST_PCT = 15.0
 
 
+from eval.followup import sha_matches  # noqa: E402
+
+
 def _sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -99,9 +102,9 @@ def verify_preregistration() -> dict[str, Any]:
     from driftsentry.residue import verify_rules
 
     doc = json.loads(PREREG.read_text(encoding="utf-8"))
-    if _sha(PREREG) != PREREG.with_suffix(".sha256").read_text(encoding="utf-8").strip():
+    if not sha_matches(PREREG, PREREG.with_suffix(".sha256").read_text(encoding="utf-8")):
         raise RuntimeError("H3b preregistration.json no longer matches its sha256")
-    if _sha(RULES_FILE) != doc["rules"]["sha256"]:
+    if not sha_matches(RULES_FILE, doc["rules"]["sha256"]):
         raise RuntimeError("rules_v1_1_frozen.json changed after pre-registration")
     verify_rules(RULES_FILE, "1.1")
     return doc

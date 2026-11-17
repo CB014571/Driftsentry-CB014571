@@ -130,6 +130,22 @@ def _sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def sha_matches(path: Path, recorded: str) -> bool:
+    """Does the file still hash to ``recorded``, whatever its line endings?
+
+    Pre-registrations were written on Windows, so their sha256 was taken over
+    CRLF bytes. The repository's .gitattributes (``eol=lf``) checks text files
+    out with LF, so a merged or freshly cloned copy hashes differently with
+    every character unchanged - found when the merged H2c and H3c verdicts
+    refused to run. The file is accepted as written, or with either line-ending
+    convention applied; any change to the text itself still fails.
+    """
+    data = path.read_bytes()
+    lf = data.replace(b"\r\n", b"\n")
+    forms = {data, lf, lf.replace(b"\n", b"\r\n")}
+    return recorded.strip() in {hashlib.sha256(f).hexdigest() for f in forms}
+
+
 def preregister(server_id: str = "target") -> dict[str, Any]:
     """Freeze the hypothesis, procedure and genuine split. Refuses to overwrite."""
     if PREREG.exists():
@@ -192,9 +208,9 @@ def verify_preregistration() -> dict[str, Any]:
     """Fail loudly if the pre-registration or the split-A profile changed."""
     doc = json.loads(PREREG.read_text(encoding="utf-8"))
     recorded = PREREG.with_suffix(".sha256").read_text(encoding="utf-8").strip()
-    if _sha(PREREG) != recorded:
+    if not sha_matches(PREREG, recorded):
         raise RuntimeError("preregistration.json no longer matches its recorded sha256")
-    if _sha(PROFILE_A) != doc["genuine_split"]["profile_a_sha256"]:
+    if not sha_matches(PROFILE_A, doc["genuine_split"]["profile_a_sha256"]):
         raise RuntimeError("profile_split_a.json changed after pre-registration")
     return doc
 
