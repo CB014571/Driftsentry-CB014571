@@ -1,26 +1,19 @@
 # DriftSentry - measured results
 
-Generated 2026-11-10 from the files in `eval_results/`. Where a result has not been measured this says so and gives the command that would produce it. Nothing here is transcribed by hand.
+Generated 2026-11-17 from the files in `eval_results/`. Where a result has not been measured this says so and gives the command that would produce it. Nothing here is transcribed by hand.
 
 ### Table 1. Fixed against keyed probe values
 
 Detection by attack level, same families, same seeds, same
 threshold. The only variable is how probe arguments are chosen.
 
-**NOT MEASURED.** Experiment 2 has not run: `eval_results/exp2_console.log` holds one line, `waiting for Experiment 1 to finish...`, and no result file exists. Produce it with:
-
-    python -m eval run --experiment 2
-
-Until then the only paired evidence is the four-episode
-demonstration in Table 1b, which is not a rate.
-
 | level | fixed probes | keyed probes |
 | --- | --- | --- |
-| L1 | NOT MEASURED | NOT MEASURED |
-| L2 | NOT MEASURED | NOT MEASURED |
-| L3 | NOT MEASURED | NOT MEASURED |
-| L4 | NOT MEASURED | NOT MEASURED |
-| L5 | NOT MEASURED | NOT MEASURED |
+| L1 | 100.0% [0.82, 1.00] (18/18) | 100.0% [0.80, 1.00] (15/15) |
+| L2 | 100.0% [0.82, 1.00] (18/18) | 100.0% [0.80, 1.00] (15/15) |
+| L3 | 100.0% [0.82, 1.00] (18/18) | 100.0% [0.80, 1.00] (15/15) |
+| L4 | never fired (18 held back) | 100.0% [0.80, 1.00] (15/15) |
+| L5 | never fired (18 held back) | 100.0% [0.80, 1.00] (15/15) |
 
 `never fired` is not a detection failure. A level-4 server that
 recognises a fixed probe value holds back while it is being
@@ -244,19 +237,23 @@ Upgrades leaving a residue: 50.0% [0.15, 0.85] (2/4). Labels are null by the use
 | H1 | a non-argument family separates probes at AUC >= 0.9, and withholding drops recall >= 50pp | PASS | client (AUC 1.000, recall -100pp); session (AUC 0.983, recall -100pp); timing (AUC 0.951, recall -100pp) |
 | H2 | mimicry brings AUC <= 0.6, recall within 10pp, false alarms +2pp at most | FAIL | best AUC 0.994 (needs <= 0.6), recall gap -50pp (needs within 10), false alarms +0.0pp (needs <= +2) |
 | H3 | residue detects >= 80% pooled C0-C2, beats three baselines (Holm p<0.05), <= 15% of real upgrades leave residue | FAIL | on 78 episodes (60 attacks fired); residue detects 45/45 = 100.0% pooled C0-C2 (needs >= 80%): met; vs accept_rebaseline: b01=30 b10=0 p=1.863e-09 Holm p=1.863e-09: significant; vs definition_diff: b01=45 b10=0 p=5.684e-14 Holm p=1.705e-13: significant; vs new_host_only: b01=36 b10=0 p=2.91e-11 Holm p=5.821e-11: significant; 2/4 real upgrades left a residue = 50.0% (needs <= 15%): NOT met |
-| Validation | Per-tool thresholds halve benign-update false alarms at equal recall | NOT MEASURED | no frozen per-tool threshold file exists |
+| Validation | Per-tool thresholds halve benign-update false alarms at equal recall | FAIL | benign-update false alarms 6/6 global vs 6/6 per-tool; recall 12/12 vs 12/12 (pre-registered, followup/validation) |
 | Validation | Full DriftSentry detects significantly more than hash-only | PASS | exp3_argument_L1: full 10/10, hash 0/10, exact McNemar p=0.001953 |
-| Validation | Catches attacks on tools the agent never calls, which passive cannot | NOT MEASURED | no episode confined to a tool the replayed traffic avoids has been run |
+| Validation | Catches attacks on tools the agent never calls, which passive cannot | PASS | full 16/16, passive 0/16, exact McNemar p=3.052e-05 (pre-registered, followup/validation) |
 
 A FAIL is a result, not a defect; nothing was tuned to pass.
 
+### Table 11. Follow-ups to the failed hypotheses (post-hoc, pre-registered)
+
+Designed after H2 and H3 failed; each frozen with a sha256 before its data. H2 and H3 stay FAIL in Table 10.
+
+| | mechanism | result | basis |
+| --- | --- | --- | --- |
+| H2b | in-session verification, shaped probe values | FAIL | best AUC 0.887 (all; all 0.887, argument 0.737, client 0.499, environment 0.499, session 0.532, timing 0.802); probe-earned recall L1 11/11, L6 10/10; false-alarm rise 8.333333333333336 pp |
+| H3b | residue rules v1.1, judged on held-out upgrades | FAIL | held-out: 1/3 measured upgrades left residue (calculator: accepted, sqlite: residue, duckdb: accepted); synthetic re-run residue 45/45 pooled C0-C2, baselines beaten (Holm): True |
+
+A follow-up that passes shows the weakness was fixable; it does not turn the original FAIL into a PASS.
+
 ## Outstanding
 
-- **NOT MEASURED.** Experiment 2 has not run: `eval_results/exp2_console.log` holds one line, `waiting for Experiment 1 to finish...`, and no result file exists. Produce it with:
-- | L1 | NOT MEASURED | NOT MEASURED |
-- | L2 | NOT MEASURED | NOT MEASURED |
-- | L3 | NOT MEASURED | NOT MEASURED |
-- | L4 | NOT MEASURED | NOT MEASURED |
-- | L5 | NOT MEASURED | NOT MEASURED |
-- | Validation | Per-tool thresholds halve benign-update false alarms at equal recall | NOT MEASURED | no frozen per-tool threshold file exists |
-- | Validation | Catches attacks on tools the agent never calls, which passive cannot | NOT MEASURED | no episode confined to a tool the replayed traffic avoids has been run |
+Every table above is populated.
