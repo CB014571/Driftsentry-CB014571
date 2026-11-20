@@ -41,5 +41,17 @@ Thumbs.db
 .idea/
 .vscode/
 
+# Report drafts stay off the public repository until they are submitted, so a
+# similarity check cannot match the report against its own online copy. The
+# builders below hold the chapter text itself.
+/DriftSentry_*.docx
+/DriftSentry_*.pdf
+report_figures/build_ch6.py
+report_figures/build_ch7.py
+report_figures/build_explained.py
+
 # Claude Code per-machine settings (local allowlists, absolute paths)
 .claude/settings.local.json
+
+# Word lock files while a document is open
+~$*

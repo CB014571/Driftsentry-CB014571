@@ -769,6 +769,65 @@ def table_hypotheses() -> str:
     return _lines(lines + ["", "A FAIL is a result, not a defect; nothing was tuned to pass.", ""])
 
 
+H2C_MECHANISM = ("in-session verification with a continuous side-effect watcher, "
+                 "pattern-matched probe values and the real-call guard")
+H3C_MECHANISM = "residue rules v1.2, judged on held-out upgrades"
+
+
+def _h2c_row() -> str:
+    """H2c from its verdict file: both pre-registered claims must pass."""
+    path = RESULTS / "followup" / "h2c" / "verdict.json"
+    if not path.is_file():
+        return (f"| H2c | {H2C_MECHANISM} | {MISSING} | "
+                f"run `python -m eval h2c collect|fit|matrix|control|verdict` |")
+    v = _json(path)
+    auc, rec = v["H2c-1"], v["H2c-2"]
+    fam = ", ".join(f"{k} {a:.3f}" for k, a in sorted(auc["family_auc"].items())
+                    if isinstance(a, (int, float)))
+    l1, l6 = rec["recall_L1"], rec["recall_L6"]
+    fa_in, fa_ctl = rec["false_alarms_insession"], rec["false_alarms_control"]
+    both = auc["verdict"] == "PASS" and rec["verdict"] == "PASS"
+    return (f"| H2c | {H2C_MECHANISM} | {'PASS' if both else 'FAIL'} | "
+            f"AUC claim {auc['verdict']}: best AUC {auc['best_auc']:.3f} ({auc['best_family']}; {fam}); "
+            f"recall-and-false-alarm claim {rec['verdict']}: caught L1 {l1['caught_either_way']}/{l1['fired']}, "
+            f"L6 {l6['caught_either_way']}/{l6['fired']} (by probes {l1['probe_earned']}/{l1['fired']} and "
+            f"{l6['probe_earned']}/{l6['fired']}, by the guard {l1['guard_earned']}/{l1['fired']} and "
+            f"{l6['guard_earned']}/{l6['fired']}); false alarms {fa_in['alarms']}/{fa_in['episodes']} "
+            f"in-session against {fa_ctl['alarms']}/{fa_ctl['episodes']} control, rise "
+            f"{rec['false_alarm_rise_pp']:.1f} pp |")
+
+
+def _h3c_row() -> str:
+    """H3c: the held-out real half decides a FAIL on its own; a PASS also needs
+    the synthetic re-run under v1.2, which was not run before the scope froze."""
+    held = RESULTS / "followup" / "h3c" / "held_out"
+    if not held.is_dir():
+        return f"| H3c | {H3C_MECHANISM} | {MISSING} | run `python -m eval real --rules 1.2 ...` |"
+    from eval.followup_h3c import held_out_result
+
+    res = held_out_result()
+    measured = {k: r for k, r in res.items() if r.get("measured")}
+    left = [k for k, r in measured.items() if r["left_residue"]]
+    pct = 100.0 * len(left) / len(measured) if measured else None
+
+    def state(k: str, r: dict) -> str:
+        if not r.get("measured"):
+            return f"{k}: not measured"
+        s = "residue" if r["left_residue"] else "accepted"
+        return f"{k}: {s}" + (" (weak test: every baseline probe erred)" if r.get("weak_test") else "")
+
+    synth = sorted((RESULTS / "followup" / "h3c").glob("rq3u_*analysis.json"))
+    if pct is not None and pct > 15.0:
+        result = "FAIL"
+    elif not synth:
+        result = "INCOMPLETE"
+    else:
+        result = "see synthetic analysis"
+    return (f"| H3c | {H3C_MECHANISM} | {result} | held-out: {len(left)}/{len(measured)} measured "
+            f"upgrades left residue ({'; '.join(state(k, r) for k, r in res.items())}); synthetic "
+            f"re-run under v1.2: {'not run' if not synth else synth[0].name} |")
+
+
 def table_followups() -> str:
     """Post-hoc follow-ups to the two failed hypotheses, each pre-registered.
 
@@ -789,7 +848,7 @@ def table_followups() -> str:
             f"| H2b | in-session verification, shaped probe values | {v['verdict']} | "
             f"best AUC {v['best_auc']:.3f} ({v['best_family']}; {fam}); probe-earned recall "
             f"L1 {l1['probe_earned']}/{l1['fired']}, L6 {l6['probe_earned']}/{l6['fired']}; "
-            f"false-alarm rise {v['false_alarm_rise_pp']} pp |")
+            f"false-alarm rise {v['false_alarm_rise_pp']:.1f} pp |")
     else:
         lines.append(f"| H2b | in-session verification, shaped probe values | {MISSING} | "
                      f"run `python -m eval h2b collect|fit|matrix|control|verdict` |")
@@ -818,6 +877,8 @@ def table_followups() -> str:
         lines.append(f"| H3b | residue rules v1.1, judged on held-out upgrades | {MISSING} | "
                      f"run `python -m eval real --rules 1.1 --as-of-release ...` and "
                      f"`python -m eval rq3u --rules 1.1` |")
+    lines.append(_h2c_row())
+    lines.append(_h3c_row())
     return _lines(lines + ["", "A follow-up that passes shows the weakness was "
                            "fixable; it does not turn the original FAIL into a PASS.", ""])
 

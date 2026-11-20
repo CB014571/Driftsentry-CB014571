@@ -2,7 +2,7 @@
 
 Final-year project, BSc (Hons) Cyber Security.
 Shevon Fernando (CB014571), APIIT / University of Staffordshire.
-Release 1.0.0. Changes are listed in [CHANGELOG.md](CHANGELOG.md).
+Release 1.1.0. Changes are listed in [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
@@ -24,8 +24,8 @@ has drifted.
 
 | Gap | Question | What was built |
 |---|---|---|
-| **1. Recognisable probes** | Behavioural re-probing only works if the server cannot tell a probe from a real call. Which signals give probes away, how much detection is lost, and do countermeasures get it back? (RQ1, RQ2) | Keyed probes (HMAC per server, rotated each cycle), a learned-recogniser attacker (level L6) that sees five feature families, and three countermeasures (host isolation, traffic mimicry, secret subsampling). |
-| **2. Attacks hidden in legitimate updates** | Real servers ship updates. Accepting every update hides an attack inside one; refusing every update cries wolf. Can the observed change be checked against what the update *declares*? (RQ3) | Declared-diff residue checking: diff the old and new tool definitions, mask the declared output changes, re-score, and alert only on what the declaration does not explain. The permitted-change rules were frozen before any result was measured (`eval_results/rq3u/rules_frozen.json`). |
+| **1. Recognisable probes** | Behavioural re-probing only works if the server cannot tell a probe from a real call. Which signals give probes away, how much detection is lost, and do countermeasures get it back? (RQ1, RQ2) | Keyed probes (HMAC per server, rotated each cycle); a learned-recogniser attacker (level L6) that sees five feature families; countermeasures tested in three pre-registered iterations: a separate session with host isolation, traffic mimicry and secret subsampling (H2), probes inside the user's own session (H2b), and that plus a continuous side-effect watcher, pattern-matched probe values and a real-call guard (H2c, the product's `run --in-session`). |
+| **2. Attacks hidden in legitimate updates** | Real servers ship updates. Accepting every update hides an attack inside one; refusing every update cries wolf. Can the observed change be checked against what the update *declares*? (RQ3) | Declared-diff residue checking: diff the old and new tool definitions, mask the declared output changes, re-score, and alert only on what the declaration does not explain. The permitted-change rules were frozen before any result was measured (`eval_results/rq3u/rules_frozen.json`, v1.0); follow-up versions v1.1 and v1.2 were frozen separately and judged on upgrades they were not designed on. The product uses v1.1. |
 
 ## Results
 
@@ -38,16 +38,32 @@ typed by hand.
 | **H1:** a non-argument feature family separates probes from genuine calls at AUC ≥ 0.9, and exploiting it drops recall by ≥ 50 pp | **PASS** | client AUC 1.000, session 0.983, timing 0.951; each dropped recall from 100% to 0% |
 | **H2:** mimicry and subsampling bring AUC to ≤ 0.6 with recall within 10 pp | **FAIL** | best AUC 0.994; recall gap −50 pp; false alarms +0.0 pp |
 | **H3:** residue detects ≥ 80% of hidden attacks, beats three baselines, and flags ≤ 15% of real upgrades | **FAIL** | 45/45 detected, beats all three baselines (Holm p ≤ 1.9e-9); but 2 of 4 real upgrades left a residue (50%) |
-| Full DriftSentry detects more than hash pinning | **PASS** | 10/10 against 0/10, exact McNemar p = 0.002 |
+| Full DriftSentry detects more than hash pinning | **PASS** | 10/10 against 0/10, exact McNemar p = 0.002; across five replications 56/56 against 0/56 |
+| Catches attacks on tools the agent never calls, which passive monitoring cannot | **PASS** | 16/16 against 0/16, exact McNemar p = 3.05e-5 |
+| Per-tool thresholds halve benign-update false alarms at equal recall | **FAIL** | 6/6 false alarms with either threshold |
 
 A FAIL is reported as a result. Nothing was tuned afterwards to make it pass.
 
-**Not measured.** Experiment 2 (fixed against keyed probes as a rate) was never
-run. Only a four-cell demonstration exists (Table 1b). Per-tool thresholds and
-attacks on never-called tools were not measured either. Three of the seven
-real-upgrade servers (calculator, sqlite, duckdb) could not be run at their old
-release on the current environment. The real-upgrade servers are unlabelled, so
-the RQ3b rate is reported unlabelled.
+**Fixed against keyed probes (Experiments 1 and 2).** With fixed probe values,
+the probe-aware levels L4 and L5 recognised the probes and held back in 36 of 36
+episodes. With keyed values, 75 of 75 attacks that fired were detected,
+including L4 and L5 at 15 of 15 each. Both experiments alarmed on 3 of 6 benign
+episodes.
+
+**Follow-ups to the failed hypotheses.** Each was designed after the failure,
+frozen with a sha256 before its data, and reported as a later iteration. H2 and
+H3 stay FAIL.
+
+| Follow-up | Verdict | Measured |
+|---|---|---|
+| **H2b:** probes inside the user's own session | **FAIL** | best AUC 0.887; L1 11/11 and L6 10/10 detected; false alarms +8.3 pp |
+| **H2c:** H2b plus continuous watcher, pattern-matched values and the real-call guard | **FAIL** | best AUC 0.782; L1 10/10 and L6 10/10 detected (the guard alone 8/10 and 9/10, with no false alarm); false alarms 9/12 against 3/6, +25 pp, all from behavioural drift |
+| **H3b:** residue rules v1.1 on held-out upgrades | **FAIL** | 1 of 3 held-out upgrades left a residue (sqlite, which renamed its tools); synthetic re-run 45/45, 0/6 |
+| **H3c:** residue rules v1.2 on held-out upgrades | **FAIL** | 1 of 3 held-out upgrades left a residue (tree-sitter; excel was a weak test); synthetic re-run not run before the scope was frozen |
+
+**Limits.** The real-upgrade servers are unlabelled by design, so their rates
+are reported unlabelled. The embedding threshold is provisional (ratio 1.5), and
+the behavioural signals cause every benign false alarm measured.
 
 ## The two projects in this repository
 

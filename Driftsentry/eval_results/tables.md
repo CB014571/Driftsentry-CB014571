@@ -1,6 +1,6 @@
 # DriftSentry - measured results
 
-Generated 2026-11-17 from the files in `eval_results/`. Where a result has not been measured this says so and gives the command that would produce it. Nothing here is transcribed by hand.
+Generated 2026-11-20 from the files in `eval_results/`. Where a result has not been measured this says so and gives the command that would produce it. Nothing here is transcribed by hand.
 
 ### Table 1. Fixed against keyed probe values
 
@@ -249,8 +249,10 @@ Designed after H2 and H3 failed; each frozen with a sha256 before its data. H2 a
 
 | | mechanism | result | basis |
 | --- | --- | --- | --- |
-| H2b | in-session verification, shaped probe values | FAIL | best AUC 0.887 (all; all 0.887, argument 0.737, client 0.499, environment 0.499, session 0.532, timing 0.802); probe-earned recall L1 11/11, L6 10/10; false-alarm rise 8.333333333333336 pp |
+| H2b | in-session verification, shaped probe values | FAIL | best AUC 0.887 (all; all 0.887, argument 0.737, client 0.499, environment 0.499, session 0.532, timing 0.802); probe-earned recall L1 11/11, L6 10/10; false-alarm rise 8.3 pp |
 | H3b | residue rules v1.1, judged on held-out upgrades | FAIL | held-out: 1/3 measured upgrades left residue (calculator: accepted, sqlite: residue, duckdb: accepted); synthetic re-run residue 45/45 pooled C0-C2, baselines beaten (Holm): True |
+| H2c | in-session verification with a continuous side-effect watcher, pattern-matched probe values and the real-call guard | FAIL | AUC claim FAIL: best AUC 0.782 (all; all 0.782, argument 0.658, client 0.499, environment 0.499, session 0.541, timing 0.746); recall-and-false-alarm claim FAIL: caught L1 10/10, L6 10/10 (by probes 10/10 and 10/10, by the guard 8/10 and 9/10); false alarms 9/12 in-session against 3/6 control, rise 25.0 pp |
+| H3c | residue rules v1.2, judged on held-out upgrades | FAIL | held-out: 1/3 measured upgrades left residue (excel-server: accepted (weak test: every baseline probe erred); office-word-server: accepted; tree-sitter: residue); synthetic re-run under v1.2: not run |
 
 A follow-up that passes shows the weakness was fixable; it does not turn the original FAIL into a PASS.
 

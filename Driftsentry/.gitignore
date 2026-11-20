@@ -30,6 +30,11 @@ eval/plots/
 # the harness is the artefact and these are not.
 .eval_workspace/
 .eval_workspace_keyed/
+.eval_workspace_*/
+
+# A database the sqlite MCP server creates in its working directory during the
+# real-upgrade runs (RQ3b); runtime state, not evidence.
+sqlite_mcp_server.db
 
 # eval_results/ IS tracked: the CSV and JSONL rows are the experimental evidence
 # behind the write-up. The run transcripts there are added explicitly with
