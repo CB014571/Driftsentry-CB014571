@@ -1,0 +1,12 @@
+> python ablation.py
+Experiment 2 (keyed probes): 150 cycles; recomputed verdicts that differ from the recorded ones: 0
+attacks that fired: 75   benign episodes: 6
+
+variant                               detected  benign alarmed   per family
+Full detector                            75/75             3/6   content-injection 15/15, exfiltration 15/15, new-egress 15/15, silent-tamper 15/15, sleeper 15/15
+Without side-effect rules                45/75             3/6   content-injection 15/15, exfiltration 0/15, new-egress 0/15, silent-tamper 15/15, sleeper 15/15
+Without embedding distance               75/75             3/6   content-injection 15/15, exfiltration 15/15, new-egress 15/15, silent-tamper 15/15, sleeper 15/15
+Without embedding and determinism        54/75             0/6   content-injection 12/15, exfiltration 15/15, new-egress 15/15, silent-tamper 0/15, sleeper 12/15
+Embedding distance only                  45/75             3/6   content-injection 15/15, exfiltration 0/15, new-egress 0/15, silent-tamper 15/15, sleeper 15/15
+
+signals at or above the alert line in benign cycles: {'embedding_score': 3, 'determinism_score': 3}

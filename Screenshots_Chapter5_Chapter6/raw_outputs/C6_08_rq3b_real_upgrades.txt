@@ -1,0 +1,11 @@
+> python -m eval tables   (Table 9. of eval_results/tables.md)
+### Table 9. Residue on real benign upgrades (RQ3b)
+
+| server | runs | residue_alert | escalation | held | residue signals |
+| --- | --- | --- | --- | --- | --- |
+| alchemy | 3 | 0 | 0 | 0 | - |
+| git | 3 | 3 | 0 | 0 | behavioural_drift, determinism_break |
+| motherduck | 3 | 0 | 0 | 0 | - |
+| time | 3 | 3 | 0 | 0 | behavioural_drift, determinism_break |
+
+Upgrades leaving a residue: 50.0% [0.15, 0.85] (2/4). Labels are null by the user's decision, so this rate is reported unlabelled.

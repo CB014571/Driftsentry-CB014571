@@ -1,0 +1,10 @@
+> python live_protection.py benign   (a real MCP client behind driftsentry run --in-session)
+[1] approve  : baseline for 'acme' with keyed probes; tools probed: lookup_customer, read_document, get_weather
+[2] attacker : server left benign
+[3] protect  : driftsentry run --server acme --in-session --verify-interval 4 --exec ...
+[4] client   : 30 tool calls sent by the client, 30 answered
+    proxy    : 110 probe answers kept from the client (the client never saw a probe)
+[5] verdict  : last in-session check OK, score 0.44, triggered by None
+    alerts   : 0 recorded
+[6] policy   : server status TRUSTED
+

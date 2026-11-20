@@ -1,0 +1,121 @@
+> driftsentry verify --server acme --update-check --cycle 5 --plain
+server     : acme
+mode       : residue    embedding: onnx:all-MiniLM-L6-v2
+threshold  : ratio >= 1.500  (provisional (not calibrated))
+definition : unchanged
+
+VERDICT: ALERT   score 1.10 (alert at 1.00)   triggered by: rule:new_file_access
+
+per tool:
+  [ALERT] lookup_customer    score=1.10  <- rule:new_file_access
+            - structural_change (medium, 0.85): the response's structure differs from every shape seen at baseline
+            - rule:new_file_access (high, 1.10): The tool opened files it did not touch when it was approved. (opened 1 file(s) not touched at baseline)
+            probe lookup_customer@c5#0: dist=0.0000 band=0.0100 ratio=0.00
+            probe lookup_customer@c5#1: dist=0.0000 band=0.0100 ratio=0.00
+            probe lookup_customer@c5#2: dist=0.0000 band=0.0100 ratio=0.00
+  [ALERT] read_document      score=1.10  <- rule:new_file_access
+            - rule:new_file_access (high, 1.10): The tool opened files it did not touch when it was approved. (opened 1 file(s) not touched at baseline)
+            probe read_document@c5#0: dist=0.0000 band=0.0100 ratio=0.00
+            probe read_document@c5#1: dist=0.0000 band=0.0100 ratio=0.00
+            probe read_document@c5#2: dist=0.0000 band=0.0100 ratio=0.00
+  [ALERT] get_weather        score=1.10  <- rule:new_file_access
+            - rule:new_file_access (high, 1.10): The tool opened files it did not touch when it was approved. (opened 1 file(s) not touched at baseline)
+            probe get_weather@c5#0: dist=0.0574 band=0.0872 ratio=0.66
+            probe get_weather@c5#1: dist=0.0732 band=0.0872 ratio=0.84
+            probe get_weather@c5#2: dist=0.0379 band=0.0872 ratio=0.43
+
+UPDATE: the tool definitions changed since the baseline
+  UNDECLARED BEHAVIOUR - the update does something it did not declare
+  declared   lookup_customer: output added last_contact
+  RESIDUE    lookup_customer: new_file (no declared change explains it: The tool opened files it did not touch when it was approved. (opened 1 file(s) not touched at baseline))
+  RESIDUE    read_document: new_file (tool definition unchanged: The tool opened files it did not touch when it was approved. (opened 1 file(s) not touched at baseline))
+  RESIDUE    get_weather: new_file (tool definition unchanged: The tool opened files it did not touch when it was approved. (opened 1 file(s) not touched at baseline))
+
+==========================================================================
+  DRIFT ALERT [HIGH]  acme / lookup_customer
+==========================================================================
+
+WHAT HAPPENED
+  'lookup_customer' opened files it never touched at baseline.
+  Signal      : rule:new_file_access
+  Drift score : 1.10  (alert at 1.00 - 1.1x over the line)
+  Also fired  : structural_change
+
+BEFORE  (when you approved it)
+  touched only its baseline files
+AFTER   (what it does now)
+  now also opens: <temp>\local\mcp-attacker\sink\exfiltrated.log
+
+WHAT TO DO
+  1. [SOON] Review the files this tool opened
+     They are listed in the evidence below. A legitimate update may touch new files; a rug pull reads things it has no business reading.
+  2. [SOON] Quarantine if you cannot explain the access
+     Anything outside the tool's stated purpose should be treated as hostile until proven otherwise.
+     $ driftsentry quarantine --server acme
+  3. [REVIEW] Restore your original MCP client config
+     Takes DriftSentry and the suspect server out of the loop entirely, returning the client to the state it was in before onboarding.
+     $ driftsentry restore --config <your client config>
+  4. [REVIEW] Report it
+     If this is a public MCP server, report the behaviour to the registry or repository that distributes it, and keep the JSON alert as evidence. Full record: driftsentry report acme
+
+  detected 2026-11-17T04:19:40Z | embedding onnx:all-MiniLM-L6-v2 | threshold provisional (not calibrated)
+==========================================================================
+==========================================================================
+  DRIFT ALERT [HIGH]  acme / read_document
+==========================================================================
+
+WHAT HAPPENED
+  'read_document' opened files it never touched at baseline.
+  Signal      : rule:new_file_access
+  Drift score : 1.10  (alert at 1.00 - 1.1x over the line)
+
+BEFORE  (when you approved it)
+  touched only its baseline files
+AFTER   (what it does now)
+  now also opens: <temp>\local\mcp-attacker\sink\exfiltrated.log
+
+WHAT TO DO
+  1. [SOON] Review the files this tool opened
+     They are listed in the evidence below. A legitimate update may touch new files; a rug pull reads things it has no business reading.
+  2. [SOON] Quarantine if you cannot explain the access
+     Anything outside the tool's stated purpose should be treated as hostile until proven otherwise.
+     $ driftsentry quarantine --server acme
+  3. [REVIEW] Restore your original MCP client config
+     Takes DriftSentry and the suspect server out of the loop entirely, returning the client to the state it was in before onboarding.
+     $ driftsentry restore --config <your client config>
+  4. [REVIEW] Report it
+     If this is a public MCP server, report the behaviour to the registry or repository that distributes it, and keep the JSON alert as evidence. Full record: driftsentry report acme
+
+  detected 2026-11-17T04:19:40Z | embedding onnx:all-MiniLM-L6-v2 | threshold provisional (not calibrated)
+==========================================================================
+==========================================================================
+  DRIFT ALERT [HIGH]  acme / get_weather
+==========================================================================
+
+WHAT HAPPENED
+  'get_weather' opened files it never touched at baseline.
+  Signal      : rule:new_file_access
+  Drift score : 1.10  (alert at 1.00 - 1.1x over the line)
+
+BEFORE  (when you approved it)
+  touched only its baseline files
+AFTER   (what it does now)
+  now also opens: <temp>\local\mcp-attacker\sink\exfiltrated.log
+
+WHAT TO DO
+  1. [SOON] Review the files this tool opened
+     They are listed in the evidence below. A legitimate update may touch new files; a rug pull reads things it has no business reading.
+  2. [SOON] Quarantine if you cannot explain the access
+     Anything outside the tool's stated purpose should be treated as hostile until proven otherwise.
+     $ driftsentry quarantine --server acme
+  3. [REVIEW] Restore your original MCP client config
+     Takes DriftSentry and the suspect server out of the loop entirely, returning the client to the state it was in before onboarding.
+     $ driftsentry restore --config <your client config>
+  4. [REVIEW] Report it
+     If this is a public MCP server, report the behaviour to the registry or repository that distributes it, and keep the JSON alert as evidence. Full record: driftsentry report acme
+
+  detected 2026-11-17T04:19:40Z | embedding onnx:all-MiniLM-L6-v2 | threshold provisional (not calibrated)
+==========================================================================
+alert record: <temp>\ds\alerts\acme.jsonl
+policy: acme marked QUARANTINED (advisory only - enable blocking with `driftsentry run --enforce`)
+

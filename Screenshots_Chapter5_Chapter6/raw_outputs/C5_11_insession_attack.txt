@@ -1,0 +1,16 @@
+> python live_protection.py exfiltration   (a real MCP client behind driftsentry run --in-session)
+[1] approve  : baseline for 'acme' with keyed probes; tools probed: lookup_customer, read_document, get_weather
+[2] attacker : server turned malicious after approval (exfiltration, L1)
+[3] protect  : driftsentry run --server acme --in-session --verify-interval 4 --exec ...
+[4] client   : 30 tool calls sent by the client, 30 answered
+    proxy    : 100 probe answers kept from the client (the client never saw a probe)
+[5] verdict  : last in-session check ALERT, score 1.60, triggered by guard:new_file_dir
+    alerts   : 60 recorded
+               - get_weather: 'get_weather' triggered guard:new_file_dir: on a real call: opened a file in a directory this server never touched at approval (score 1.60, high)
+               - lookup_customer: 'lookup_customer' opened files it never touched at baseline. (score 1.10, high)
+               - read_document: 'read_document' opened files it never touched at baseline. (score 1.10, high)
+               - get_weather: 'get_weather' opened files it never touched at baseline. (score 1.10, high)
+               - search_orders: 'search_orders' triggered guard:new_file_dir: on a real call: opened a file in a directory this server never touched at approval (score 1.60, high)
+               - lookup_customer: 'lookup_customer' triggered guard:new_file_dir: on a real call: opened a file in a directory this server never touched at approval (score 1.60, high)
+[6] policy   : server status QUARANTINED
+

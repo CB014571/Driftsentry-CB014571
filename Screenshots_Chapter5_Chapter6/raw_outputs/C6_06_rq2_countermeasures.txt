@@ -1,0 +1,31 @@
+> python -m eval tables   (Table 6. of eval_results/tables.md)
+### Table 6. Countermeasures, and what they cost (RQ2, H2)
+
+```
+========================================================================
+  T20 - countermeasures against a learned recogniser (RQ2 / H2)
+========================================================================
+
+  condition     best AUC    recall  false alarms   cycle s   calls
+  ----------------------------------------------------------------
+  none             1.000      0.0%         50.0%      19.0    18.0
+  host             0.994      0.0%         50.0%      19.3    18.0
+  mimic            0.993     50.0%         50.0%      17.5    18.0
+  subsample        1.000      0.0%         50.0%      13.3    18.0
+  all              0.994     50.0%         50.0%      24.5    18.0
+
+  condition          channel   L1 recall   L6 recall      gap
+  ------------------------------------------------------------
+  none                client      100.0%        0.0% -100.0pp
+  host                   all      100.0%        0.0% -100.0pp
+  mimic                  all      100.0%       50.0%  -50.0pp
+  subsample           client      100.0%        0.0% -100.0pp
+  all                    all      100.0%       50.0%  -50.0pp
+
+  H2: FAIL
+    FAIL  auc_at_or_below_ceiling
+    FAIL  recall_within_tolerance
+    pass  false_alarms_contained
+
+  A failed hypothesis is a result. The countermeasures are not to be tuned until it passes.
+```

@@ -1,0 +1,8 @@
+> driftsentry report --server acme --plain
+
+acme: status=quarantined  enforce=False  alerts=3
+  2026-11-17T04:19:00Z  [high    ] lookup_customer  score=1.10  rule:new_file_access
+  2026-11-17T04:19:00Z  [high    ] read_document    score=1.10  rule:new_file_access
+  2026-11-17T04:19:00Z  [high    ] get_weather      score=1.10  rule:new_file_access
+
+  Full detail: driftsentry report --server acme --full

@@ -1,0 +1,46 @@
+> python -m eval rq3u-analyse --csv eval_results/followup/h3b/rq3u_L1_rules11.csv --real-dir ...held_out
+
+==============================================================================
+  RQ3 - declared-diff residue checking
+==============================================================================
+  episodes 78, attacks that fired 60, never fired 12 (excluded)
+
+  Attributed detection, per cover:
+    accept_rebaseline  C0 100.0% [0.80, 1.00] (15/15)  C1   0.0% [0.00, 0.20] (0/15)  C2   0.0% [0.00, 0.20] (0/15)  C3   0.0% [0.00, 0.20] (0/15)
+    refuse_all         C0 100.0% [0.80, 1.00] (15/15)  C1 100.0% [0.80, 1.00] (15/15)  C2 100.0% [0.80, 1.00] (15/15)  C3 100.0% [0.80, 1.00] (15/15)
+    definition_diff    C0   0.0% [0.00, 0.20] (0/15)  C1   0.0% [0.00, 0.20] (0/15)  C2   0.0% [0.00, 0.20] (0/15)  C3   0.0% [0.00, 0.20] (0/15)
+    new_host_only      C0  20.0% [0.07, 0.45] (3/15)  C1  20.0% [0.07, 0.45] (3/15)  C2  20.0% [0.07, 0.45] (3/15)  C3  20.0% [0.07, 0.45] (3/15)
+    residue            C0 100.0% [0.80, 1.00] (15/15)  C1 100.0% [0.80, 1.00] (15/15)  C2 100.0% [0.80, 1.00] (15/15)  C3 100.0% [0.80, 1.00] (15/15)
+
+  Pooled C0-C2, attributed:
+    accept_rebaseline  33.3% [0.21, 0.48] (15/45)
+    refuse_all         100.0% [0.92, 1.00] (45/45)
+    definition_diff    0.0% [0.00, 0.08] (0/45)
+    new_host_only      20.0% [0.11, 0.34] (9/45)
+    residue            100.0% [0.92, 1.00] (45/45)
+
+  Synthetic benign updates - false alarms (any alert):
+    accept_rebaseline  0.0% [0.00, 0.39] (0/6)
+    refuse_all         100.0% [0.61, 1.00] (6/6)
+    definition_diff    100.0% [0.61, 1.00] (6/6)
+    new_host_only      0.0% [0.00, 0.39] (0/6)
+    residue            0.0% [0.00, 0.39] (0/6)
+
+  C3: 15 fired, residue attributed 15, evaded 0; of those, escalated: not measured
+
+  RQ3b - real benign upgrades:
+    upgrades leaving a residue  33.3% [0.06, 0.79] (1/3)
+    runs ending residue_alert   33.3% [0.12, 0.65] (3/9)
+    escalation runs 0, held-for-review runs 0
+      calculator     residue 0/3 runs  -
+      duckdb         residue 0/3 runs  -
+      sqlite         residue 3/3 runs  behavioural_drift, determinism_break
+
+  H3: FAIL
+    - residue detects 45/45 = 100.0% pooled C0-C2 (needs >= 80%): met
+    - vs accept_rebaseline: b01=30 b10=0 p=1.863e-09 Holm p=1.863e-09: significant
+    - vs definition_diff: b01=45 b10=0 p=5.684e-14 Holm p=1.705e-13: significant
+    - vs new_host_only: b01=36 b10=0 p=2.91e-11 Holm p=5.821e-11: significant
+    - 1/3 real upgrades left a residue = 33.3% (needs <= 15%): NOT met
+
+  written to eval_results\followup\h3b\rq3u_L1_rules11_analysis.json

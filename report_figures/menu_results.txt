@@ -1,0 +1,16 @@
+armed 1 Clean server | expect: OK
+  RESULT: 9 ok 0.059 None - [] []
+armed 2 Content injection | expect: ALERT  behavioural_drift
+  RESULT: 11 alert 2.966 behavioural_drift - [] []
+armed 3 Silent tamper | expect: ALERT  behavioural_drift
+  RESULT: 13 alert 3.0 behavioural_drift - [] []
+armed 5 New egress host | expect: ALERT  new_egress_host
+  RESULT: 15 alert 2.0 rule:new_egress_host - [] []
+armed 7 Probe-aware evasion (L4) | expect: ALERT  - keyed probes are not recogni
+  RESULT: 17 alert 2.966 behavioural_drift - [] []
+armed 8 Legitimate rewording | expect: ALERT  determinism_break - a FALSE alarm
+  RESULT: 19 alert 1.15 determinism_break - [] []
+armed 11 Update widens a permission | expect: WATCH  + PERMISSION WIDENED
+  RESULT: 21 watch 0.9 declaration_escalation escalation ['readOnly_removed'] []
+armed 12 Widened permission covering exfil | expect: ALERT  + PERMISSION WIDENED
+  RESULT: 23 alert 1.1 rule:new_file_access residue_alert ['readOnly_removed'] ['new_file']

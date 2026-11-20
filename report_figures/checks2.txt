@@ -1,0 +1,33 @@
+DriftSentry - full verification
+========================================================================
+
+>>> Phase 0: check_stack.py
+    proves: ChromaDB persists/reloads and embeddings run offline
+    PASS  (3.9s)
+
+>>> Phase 0: echo_client.py
+    proves: an MCP client can drive a server over stdio (handshake, list, call)
+    PASS  (2.1s)
+
+>>> Phase 1: proxy_demo.py
+    proves: the proxy is transparent, survives 8 concurrent calls, and logs every exchange
+    PASS  (6.3s)
+
+>>> Phase 2: init_demo.py
+    proves: config rewrite produces a WORKING config, hides secrets, is idempotent, and restores
+    PASS  (72.8s)
+
+>>> Phase 3: baseline_demo.py
+    proves: probe safety, learned variance, and drift caught on an identical definition hash
+    PASS  (73.7s)
+
+========================================================================
+SUMMARY
+  [PASS] Phase 0  check_stack.py            3.9s
+  [PASS] Phase 0  echo_client.py            2.1s
+  [PASS] Phase 1  proxy_demo.py             6.3s
+  [PASS] Phase 2  init_demo.py             72.8s
+  [PASS] Phase 3  baseline_demo.py         73.7s
+
+5/5 checks passed.
+exit=0

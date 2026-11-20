@@ -1,0 +1,6 @@
+> python -m pytest -v -p no:cacheprovider tests/test_cli_update.py
+test_cli_update.py::test_baseline_takes_a_probe_mode_and_keeps_fixed_as_the_default PASSED [ 25%]
+test_cli_update.py::test_verify_update_check_is_off_by_default PASSED [ 50%]
+test_cli_update.py::test_the_update_is_printed_in_the_dashboards_words PASSED [ 75%]
+test_cli_update.py::test_an_explained_update_says_so PASSED        [100%]
+============================== 4 passed in 0.59s ==============================

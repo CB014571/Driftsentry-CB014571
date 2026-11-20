@@ -1,0 +1,27 @@
+> python -m eval h3b verdict
+{
+  "calculator": {
+    "measured": true,
+    "upgrade_runs": 3,
+    "residue_runs": 0,
+    "left_residue": false,
+    "same_release_alerts": 0,
+    "same_release_runs": 3
+  },
+  "sqlite": {
+    "measured": true,
+    "upgrade_runs": 3,
+    "residue_runs": 3,
+    "left_residue": true,
+    "same_release_alerts": 0,
+    "same_release_runs": 3
+  },
+  "duckdb": {
+    "measured": true,
+    "upgrade_runs": 3,
+    "residue_runs": 0,
+    "left_residue": false,
+    "same_release_alerts": 0,
+    "same_release_runs": 3
+  }
+}

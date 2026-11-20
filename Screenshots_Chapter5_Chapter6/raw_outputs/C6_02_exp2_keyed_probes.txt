@@ -1,0 +1,29 @@
+> python -m eval run --experiment 2   (summary, eval_results/exp2_console.log)
+
+==================================================================
+  OVERALL
+==================================================================
+  attack recall      : 100.0%   (75/75 executed attacks detected)
+  false-alarm rate   :  50.0%   (3/6 benign episodes alerted)
+  trigger exposure   :  83.3%   (75/90 malicious episodes actually fired)
+
+  RECALL BY LEVEL   (executed attacks only)
+  --------------------------------------------------------------
+  level       recall   detected   executed   never fired
+  L1         100.0%         15         15             3
+  L2         100.0%         15         15             3
+  L3         100.0%         15         15             3
+  L4         100.0%         15         15             3
+  L5         100.0%         15         15             3
+
+  RECALL BY FAMILY
+  --------------------------------------------------------------
+  exfiltration           100.0%         15         15
+  silent-tamper          100.0%         15         15
+  content-injection      100.0%         15         15
+  new-egress             100.0%         15         15
+  sleeper                100.0%         15         15
+  conditional              0.0%          0          0
+==================================================================
+
+rows written to F:\fyp project\Driftsentry\eval_results\exp2_keyed_probes.csv

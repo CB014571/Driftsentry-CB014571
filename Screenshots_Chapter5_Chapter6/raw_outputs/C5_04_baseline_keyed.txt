@@ -1,0 +1,14 @@
+> driftsentry baseline --server acme --cwd <attack server> --exec python -m attacker serve
+server          : acme
+definition hash : sha256:6805aff88dcf676e2c042c5e0c067214fb45831c57cc2511c1ee4486211fcf0b
+embedding       : onnx:all-MiniLM-L6-v2 (dim 384)
+seed            : 20260720   probes/tool: 3   samples/probe: 8
+tools:
+  - lookup_customer  3 probes, variance bands [0.0100, 0.0100, 0.0100]
+  - read_document    3 probes, variance bands [0.0100, 0.0100, 0.0100]
+  - search_orders    not probed (name suggests state change ('order'))
+  - get_weather      3 probes, variance bands [0.1119, 0.1097, 0.0837]
+  - send_invoice     not probed (name suggests state change ('send'))
+
+baseline saved: <temp>\ds\baselines\acme.json
+

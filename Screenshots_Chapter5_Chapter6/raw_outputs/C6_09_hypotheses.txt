@@ -1,0 +1,24 @@
+> python -m eval tables   (Table 10. of eval_results/tables.md)
+### Table 10. Hypotheses
+
+| | hypothesis | result | basis |
+| --- | --- | --- | --- |
+| H1 | a non-argument family separates probes at AUC >= 0.9, and withholding drops recall >= 50pp | PASS | client (AUC 1.000, recall -100pp); session (AUC 0.983, recall -100pp); timing (AUC 0.951, recall -100pp) |
+| H2 | mimicry brings AUC <= 0.6, recall within 10pp, false alarms +2pp at most | FAIL | best AUC 0.994 (needs <= 0.6), recall gap -50pp (needs within 10), false alarms +0.0pp (needs <= +2) |
+| H3 | residue detects >= 80% pooled C0-C2, beats three baselines (Holm p<0.05), <= 15% of real upgrades leave residue | FAIL | on 78 episodes (60 attacks fired); residue detects 45/45 = 100.0% pooled C0-C2 (needs >= 80%): met; vs accept_rebaseline: b01=30 b10=0 p=1.863e-09 Holm p=1.863e-09: significant; vs definition_diff: b01=45 b10=0 p=5.684e-14 Holm p=1.705e-13: significant; vs new_host_only: b01=36 b10=0 p=2.91e-11 Holm p=5.821e-11: significant; 2/4 real upgrades left a residue = 50.0% (needs <= 15%): NOT met |
+| Validation | Per-tool thresholds halve benign-update false alarms at equal recall | FAIL | benign-update false alarms 6/6 global vs 6/6 per-tool; recall 12/12 vs 12/12 (pre-registered, followup/validation) |
+| Validation | Full DriftSentry detects significantly more than hash-only | PASS | exp3_argument_L1: full 10/10, hash 0/10, exact McNemar p=0.001953 |
+| Validation | Catches attacks on tools the agent never calls, which passive cannot | PASS | full 16/16, passive 0/16, exact McNemar p=3.052e-05 (pre-registered, followup/validation) |
+
+A FAIL is a result, not a defect; nothing was tuned to pass.
+
+### Table 11. Follow-ups to the failed hypotheses (post-hoc, pre-registered)
+
+Designed after H2 and H3 failed; each frozen with a sha256 before its data. H2 and H3 stay FAIL in Table 10.
+
+| | mechanism | result | basis |
+| --- | --- | --- | --- |
+| H2b | in-session verification, shaped probe values | FAIL | best AUC 0.887 (all; all 0.887, argument 0.737, client 0.499, environment 0.499, session 0.532, timing 0.802); probe-earned recall L1 11/11, L6 10/10; false-alarm rise 8.333333333333336 pp |
+| H3b | residue rules v1.1, judged on held-out upgrades | FAIL | held-out: 1/3 measured upgrades left residue (calculator: accepted, sqlite: residue, duckdb: accepted); synthetic re-run residue 45/45 pooled C0-C2, baselines beaten (Holm): True |
+
+A follow-up that passes shows the weakness was fixable; it does not turn the original FAIL into a PASS.

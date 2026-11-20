@@ -1,0 +1,96 @@
+
+  Pick a test. The server picks it up on its next call; the
+  dashboard finds it on its next check, or press Scan there.
+  After an ALERT the dashboard quarantines the server: press
+  Trust there (or pick 0 here) before the next test.
+
+
+==================================================================
+  MCP RUG-PULL ATTACK SERVER   -   test menu
+==================================================================
+  RUNNING   : nothing armed yet - start with 1, then connect
+              the server in the DriftSentry dashboard
+
+  GAP 1 - attacks after approval (the definitions never change)
+    1  Clean server                       -> OK
+    2  Content injection                  -> ALERT  behavioural_drift
+    3  Silent tamper                      -> ALERT  behavioural_drift
+    4  Data exfiltration                  -> ALERT  new_file_access
+    5  New egress host                    -> ALERT  new_egress_host
+    6  Sleeper                            -> OK for about 45 s, then ALERT
+    7  Probe-aware evasion (L4)           -> ALERT  - keyed probes are not recognised
+    8  Legitimate rewording               -> ALERT  determinism_break - a FALSE alarm
+
+  GAP 2 - attacks hidden inside a legitimate update
+    9  Legitimate update: new field       -> OK  + UPDATE EXPLAINED
+   10  Update hiding exfiltration         -> ALERT  + UNDECLARED BEHAVIOUR  new_file
+   11  Update widens a permission         -> WATCH  + PERMISSION WIDENED
+   12  Widened permission covering exfil  -> ALERT  + PERMISSION WIDENED
+
+    0  Reset to the clean server
+    a  Advanced: change type, strength, bypass one by one
+    q  Quit             (Enter refreshes the ground truth)
+------------------------------------------------------------------
+  Test: 
+  -> armed: Silent tamper. an account number and email quietly swapped.
+
+==================================================================
+  MCP RUG-PULL ATTACK SERVER   -   test menu
+==================================================================
+  RUNNING   : 3. Silent tamper
+  DASHBOARD : should show  ALERT  behavioural_drift
+  GROUND    : nothing malicious has happened yet
+              (from the server's own log - the dashboard never sees this)
+
+  GAP 1 - attacks after approval (the definitions never change)
+    1  Clean server                       -> OK
+    2  Content injection                  -> ALERT  behavioural_drift
+    3  Silent tamper                      -> ALERT  behavioural_drift
+    4  Data exfiltration                  -> ALERT  new_file_access
+    5  New egress host                    -> ALERT  new_egress_host
+    6  Sleeper                            -> OK for about 45 s, then ALERT
+    7  Probe-aware evasion (L4)           -> ALERT  - keyed probes are not recognised
+    8  Legitimate rewording               -> ALERT  determinism_break - a FALSE alarm
+
+  GAP 2 - attacks hidden inside a legitimate update
+    9  Legitimate update: new field       -> OK  + UPDATE EXPLAINED
+   10  Update hiding exfiltration         -> ALERT  + UNDECLARED BEHAVIOUR  new_file
+   11  Update widens a permission         -> WATCH  + PERMISSION WIDENED
+   12  Widened permission covering exfil  -> ALERT  + PERMISSION WIDENED
+
+    0  Reset to the clean server
+    a  Advanced: change type, strength, bypass one by one
+    q  Quit             (Enter refreshes the ground truth)
+------------------------------------------------------------------
+  Test: 
+==================================================================
+  MCP RUG-PULL ATTACK SERVER   -   test menu
+==================================================================
+  RUNNING   : 3. Silent tamper
+  DASHBOARD : should show  ALERT  behavioural_drift
+  GROUND    : tamper x24
+              (from the server's own log - the dashboard never sees this)
+
+  GAP 1 - attacks after approval (the definitions never change)
+    1  Clean server                       -> OK
+    2  Content injection                  -> ALERT  behavioural_drift
+    3  Silent tamper                      -> ALERT  behavioural_drift
+    4  Data exfiltration                  -> ALERT  new_file_access
+    5  New egress host                    -> ALERT  new_egress_host
+    6  Sleeper                            -> OK for about 45 s, then ALERT
+    7  Probe-aware evasion (L4)           -> ALERT  - keyed probes are not recognised
+    8  Legitimate rewording               -> ALERT  determinism_break - a FALSE alarm
+
+  GAP 2 - attacks hidden inside a legitimate update
+    9  Legitimate update: new field       -> OK  + UPDATE EXPLAINED
+   10  Update hiding exfiltration         -> ALERT  + UNDECLARED BEHAVIOUR  new_file
+   11  Update widens a permission         -> WATCH  + PERMISSION WIDENED
+   12  Widened permission covering exfil  -> ALERT  + PERMISSION WIDENED
+
+    0  Reset to the clean server
+    a  Advanced: change type, strength, bypass one by one
+    q  Quit             (Enter refreshes the ground truth)
+------------------------------------------------------------------
+  Test: 
+  Leaving the server as it is.
+

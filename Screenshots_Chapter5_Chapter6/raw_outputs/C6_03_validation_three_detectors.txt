@@ -1,0 +1,37 @@
+> python -m eval tables   (Table 2. of eval_results/tables.md)
+### Table 2. Three detectors on the same attacks (Validation)
+
+Each row is one sweep of the same twelve attack configurations
+(six families, two seeds). The sweeps differ only in which
+recogniser was copied into the attacker's home, which L1
+ignores, so they are replications rather than independent
+attacks - and they are reported separately for that reason.
+
+| sweep | attacks fired | hash pinning | passive | full |
+| --- | --- | --- | --- | --- |
+| argument | 10 | 0/10 | 0/10 | 10/10 |
+| client | 12 | 0/12 | 0/12 | 12/12 |
+| environment | 11 | 0/11 | 0/11 | 11/11 |
+| session | 12 | 0/12 | 0/12 | 12/12 |
+| timing | 11 | 0/11 | 0/11 | 11/11 |
+
+Across all 5 replications, 56 episodes in which
+the attack executed: hash pinning caught 0, passive monitoring 0, the full detector 56.
+
+A single-replication interval, which is the honest one for a
+design of twelve configurations:
+
+| detector | caught (sweep `argument`) |
+| --- | --- |
+| definition hash (TOFU pinning) | 0.0% [0.00, 0.28] (0/10) |
+| passive monitoring | 0.0% [0.00, 0.28] (0/10) |
+| DriftSentry, full | 100.0% [0.72, 1.00] (10/10) |
+
+The advertised tool definition changed in 0/56 of these
+attacks. That is the mechanism of a behavioural rug pull: the
+declared interface is byte-identical before and after the tool
+turns, so a pinned hash has nothing to compare.
+
+Passive monitoring was available in every episode, so its
+zero is a genuine non-detection and not an absence of
+monitoring.

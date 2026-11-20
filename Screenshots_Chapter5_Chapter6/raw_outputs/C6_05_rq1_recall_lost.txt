@@ -1,0 +1,40 @@
+> python -m eval tables   (Table 4. of eval_results/tables.md)
+### Table 4. Detection lost to a learned recogniser (RQ1, H1)
+
+The same attack matrix at L1, where the server attacks every
+call, and at L6, where it scores each call against a model
+fitted to traffic it observed and stays benign for anything it
+believes is a probe.
+
+| channel | AUC | L1 recall | L6 recall | drop |
+| --- | --- | --- | --- | --- |
+| client | 1.000 | 100.0% [0.76, 1.00] (12/12) | 0.0% [0.00, 0.28] (0/10) | -100.0pp |
+| session | 0.983 | 100.0% [0.76, 1.00] (12/12) | 0.0% [0.00, 0.28] (0/10) | -100.0pp |
+| timing | 0.951 | 100.0% [0.74, 1.00] (11/11) | 0.0% [0.00, 0.43] (0/5) | -100.0pp |
+| argument | 0.763 | 100.0% [0.72, 1.00] (10/10) | 0.0% [0.00, 0.43] (0/5) | -100.0pp |
+| environment | 0.500 | 100.0% [0.74, 1.00] (11/11) | undefined (0 of 18 episodes fired) | - |
+
+The drop does not track the AUC. A channel at 0.763 cost as
+much detection as one at 1.000, because an attacker does not
+need to classify every call correctly - it needs to be right
+about the calls it would otherwise have attacked on.
+
+The two arms have different denominators, and the difference is
+itself part of the result. An L6 episode where the server
+believed every call was a probe never attacks, so it is
+classified `never_triggered` and excluded from recall: there
+was no attack to catch. Counting those as detections would
+credit the detector for an attack that did not happen, and
+counting them as misses would penalise it for the same.
+
+The environment row is that argument taken to its limit, and
+it is a result rather than a gap. All 18 L6 episodes ran and
+none fired, so there is no denominator: the recall is
+undefined, not zero. The attacker's own log gives the reason -
+it scored every single call `probe (p=0.929)`, the same value
+throughout, and so stayed benign for all of them. That is what
+an AUC of 0.500 does in deployment. A recogniser that cannot
+separate probe traffic from genuine traffic, and guesses
+`probe`, disables the attack it was built to protect. Reported
+as -100.0pp it would read as perfect evasion, which is the
+opposite of what happened.

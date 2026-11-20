@@ -1,0 +1,17 @@
+> driftsentry verify --server acme --update-check --cycle 4 --plain
+server     : acme
+mode       : residue    embedding: onnx:all-MiniLM-L6-v2
+threshold  : ratio >= 1.500  (provisional (not calibrated))
+definition : unchanged
+
+VERDICT: OK   score 0.51 (alert at 1.00)
+
+per tool:
+  [OK   ] get_weather        score=0.51
+  [OK   ] lookup_customer    score=0.00
+  [OK   ] read_document      score=0.00
+
+UPDATE: the tool definitions changed since the baseline
+  UPDATE EXPLAINED - every change was declared
+  declared   search_orders: output added total_count
+

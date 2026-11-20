@@ -1,0 +1,11 @@
+> python -c "<print versions of the stack>"
+CPython 3.14.6
+driftsentry  1.1.0
+mcp          1.28.1
+chromadb     1.5.9
+numpy        2.5.1
+psutil       7.2.2
+fastapi      0.140.13
+uvicorn      0.51.0
+pywebview    6.2.1
+pytest       9.1.1

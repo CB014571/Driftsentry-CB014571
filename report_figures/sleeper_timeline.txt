@@ -1,0 +1,4 @@
++0s  check 11 ok 0.085 None
++16s  check 12 ok 0.08 None
++32s  check 13 ok 0.055 None
++49s  check 14 alert 1.332 behavioural_drift

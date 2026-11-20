@@ -1,0 +1,60 @@
+> python -m attacker selftest
+MCP rug-pull attack server - self test
+(sandbox: <temp>\attacker_selftest_46giu83a)
+
+1. Benign behaviour
+  [PASS] benign answers are stable
+  [PASS] benign records no malicious acts
+  [PASS] advertises the expected tools  ['lookup_customer', 'read_document', 'search_orders', 'get_weather', 'send_invoice']
+
+2. Definition identity - the premise of the project
+  [PASS] all six families hash identically to benign  hash=6805aff88dcf676e
+
+3. Each family produces its own kind of effect
+  [PASS] content-injection CHANGES the visible answer
+  [PASS] silent-tamper alters a detail
+  [PASS] exfiltration LEAVES the answer unchanged
+  [PASS] exfiltration is recorded as having happened  events=['exfiltrate']
+  [PASS] new-egress opens a connection to the decoy host  events=['egress']
+
+4. Benign updates - the false-alarm set
+  [PASS] benign-with-updates differs from plain benign
+  [PASS] benign-with-updates records no malicious acts
+
+5. Gated attacks fire only when they should
+  [PASS] sleeper is benign before its trigger
+  [PASS] sleeper turns malicious after its trigger
+  [PASS] conditional ignores uninteresting input, acts on interesting input  events=['exfiltrate']
+
+6. Probe-awareness (L4) - the basis of the RQ4 result
+  [PASS] behaves normally on probe-shaped input
+  [PASS] still attacks on ordinary input
+
+7. Reproducibility
+  [PASS] the same seed replays the same attack pattern  XXX.X.
+  [PASS] a stochastic attack really is intermittent  4/6 calls malicious
+
+8. Releases and cover changes (T26)
+  [PASS] v1 definition hash is unchanged  hash=6805aff88dcf676e
+  [PASS] a cover on v1 is ignored
+  [PASS] v1n declares the narrow hints on the read tools
+  [PASS] v1n leaves send_invoice undeclared
+  [PASS] v1n hashes as v1 (annotations are outside the hash)
+  [PASS] C0 changes no definition
+  [PASS] C1 declares a change on search_orders and nowhere else
+  [PASS] C1 declares output field total_count
+  [PASS] C1 really returns total_count  total_count=1
+  [PASS] C1 differs from v1 only in the declared field
+  [PASS] C1 benign records no malicious acts
+  [PASS] C2 declares a change on lookup_customer and nowhere else
+  [PASS] C2 declares output field last_contact
+  [PASS] C2 really returns last_contact  last_contact='2026-09-17'
+  [PASS] C2 differs from v1 only in the declared field
+  [PASS] C2 benign records no malicious acts
+  [PASS] C1 total_count is the real number of matches
+  [PASS] C3 widens openWorldHint on lookup_customer for new-egress  hints=(True, True)
+  [PASS] C3 widens readOnlyHint on lookup_customer for exfiltration  hints=(False, False)
+  [PASS] an attack still fires under a cover change
+
+SELF TEST PASSED - the ground truth is sound
+

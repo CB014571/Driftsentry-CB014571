@@ -1,0 +1,35 @@
+> python -m eval tables   (Table 7. of eval_results/tables.md)
+### Table 7. Attacks hidden in legitimate updates (RQ3a)
+
+Attributed detection: an alert naming a signal the hidden change causes.
+Attacks that fired: 60; never fired, excluded: 12.
+
+| condition | C0 | C1 | C2 | C3 | pooled C0-C2 |
+| --- | --- | --- | --- | --- | --- |
+| accept_rebaseline | 100.0% [0.80, 1.00] (15/15) | 0.0% [0.00, 0.20] (0/15) | 0.0% [0.00, 0.20] (0/15) | 0.0% [0.00, 0.20] (0/15) | 33.3% [0.21, 0.48] (15/45) |
+| refuse_all | 100.0% [0.80, 1.00] (15/15) | 100.0% [0.80, 1.00] (15/15) | 100.0% [0.80, 1.00] (15/15) | 100.0% [0.80, 1.00] (15/15) | 100.0% [0.92, 1.00] (45/45) |
+| definition_diff | 0.0% [0.00, 0.20] (0/15) | 0.0% [0.00, 0.20] (0/15) | 0.0% [0.00, 0.20] (0/15) | 0.0% [0.00, 0.20] (0/15) | 0.0% [0.00, 0.08] (0/45) |
+| new_host_only | 20.0% [0.07, 0.45] (3/15) | 20.0% [0.07, 0.45] (3/15) | 20.0% [0.07, 0.45] (3/15) | 20.0% [0.07, 0.45] (3/15) | 20.0% [0.11, 0.34] (9/45) |
+| residue | 100.0% [0.80, 1.00] (15/15) | 100.0% [0.80, 1.00] (15/15) | 100.0% [0.80, 1.00] (15/15) | 100.0% [0.80, 1.00] (15/15) | 100.0% [0.92, 1.00] (45/45) |
+
+Residue against each baseline, paired, exact McNemar with Holm correction:
+
+| baseline | only residue | only baseline | p | Holm p | significant |
+| --- | --- | --- | --- | --- | --- |
+| accept_rebaseline | 30 | 0 | 1.863e-09 | 1.863e-09 | yes |
+| definition_diff | 45 | 0 | 5.684e-14 | 1.705e-13 | yes |
+| new_host_only | 36 | 0 | 2.91e-11 | 5.821e-11 | yes |
+
+C3, declaration widened to cover the payload: 15 fired, residue attributed 15, evaded 0; no attack evaded, so there is no share to report.
+
+### Table 8. Synthetic benign updates: false alarms (RQ3a)
+
+A legitimate declared change shipped with no attack. Any alert is a false alarm.
+
+| condition | false alarms |
+| --- | --- |
+| accept_rebaseline | 0.0% [0.00, 0.39] (0/6) |
+| refuse_all | 100.0% [0.61, 1.00] (6/6) |
+| definition_diff | 100.0% [0.61, 1.00] (6/6) |
+| new_host_only | 0.0% [0.00, 0.39] (0/6) |
+| residue | 0.0% [0.00, 0.39] (0/6) |

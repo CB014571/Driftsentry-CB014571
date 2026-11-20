@@ -1,0 +1,43 @@
+> driftsentry --help
+usage: driftsentry [-h] [-V]
+                   {run,baseline,verify,ui,demo,watch,calibrate,init,report,quarantine,trust,restore} ...
+
+Detect MCP servers that change behaviour after you approved them.
+
+positional arguments:
+  {run,baseline,verify,ui,demo,watch,calibrate,init,report,quarantine,trust,restore}
+    run                 protect one stdio MCP server: proxy its traffic and,
+                        with --in-session, verify it from inside the live
+                        session
+    baseline            approve a server: record its behavioural baseline
+    verify              check a server once against its baseline; with
+                        --update-check, check an update against what it
+                        declares
+    ui                  open the desktop dashboard, with the monitoring daemon
+                        behind it
+    demo                the demonstration in one command: attacker test menu +
+                        dashboard
+    watch               experimental: re-verify on a schedule from a separate
+                        session, which a probe-aware server can recognise
+                        (H1); prefer run --in-session
+    calibrate           experimental: derive the alert threshold from servers
+                        known to be benign
+    init                route an MCP client's servers through DriftSentry and
+                        baseline them
+    report              show alert history and policy state
+    quarantine          mark a server as quarantined
+    trust               clear a quarantine and trust a server again
+    restore             restore a config from backup, removing DriftSentry
+
+options:
+  -h, --help            show this help message and exit
+  -V, --version         show program's version number and exit
+
+The workflow:
+  1. approve    driftsentry baseline --server NAME --probe-mode keyed --exec ...
+  2. protect    driftsentry run --server NAME --in-session --exec ...
+                (probes inside the live session + the real-call guard)
+  3. on update  driftsentry verify --server NAME --update-check
+  respond       driftsentry report | quarantine | trust
+
+Demonstration: driftsentry demo.  Experimental: watch, calibrate.
